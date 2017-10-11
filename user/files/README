@@ -1,0 +1,5 @@
+It is possible to build non-executable files from 410user/files into the
+"RAM disk" by listing them in 410FILES in your config.mk.
+
+It is possible to build non-executable files from user/files into the
+"RAM disk" by listing them in STUDENTFILES in your config.mk.

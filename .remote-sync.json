@@ -1,0 +1,16 @@
+{
+  "uploadOnSave": false,
+  "useAtomicWrites": false,
+  "deleteLocal": false,
+  "hostname": "ghc33.ghc.andrew.cmu.edu",
+  "port": "22",
+  "target": "osprj/scratch/p3",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "leiyuz",
+  "password": "res.SendCode(1994)",
+  "watch": [],
+  "transport": "scp"
+}

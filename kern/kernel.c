@@ -13,6 +13,7 @@
 
 /* libc includes. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <simics.h>                 /* lprintf() */
 
 /* multiboot header file */
@@ -21,21 +22,24 @@
 /* x86 specific includes */
 #include <x86/asm.h>                /* enable_interrupts() */
 
+#include "driver.h"
+
+void _tickback(unsigned int _) {
+  return;
+}
+
 /** @brief Kernel entrypoint.
- *  
+ *
  *  This is the entrypoint for the kernel.
  *
  * @return Does not return
  */
-int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
-{
-    /*
-     * When kernel_main() begins, interrupts are DISABLED.
-     * You should delete this comment, and enable them --
-     * when you are ready.
-     */
-
-    lprintf( "Hello from a brand new kernel!" );
+int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
+    lprintf("Hello from a brand new kernel!");
+    if (handler_install(_tickback) != 0) {
+      panic("Fail to install all drivers");
+    }
+    lprintf("Drivers installed");
 
     while (1) {
         continue;

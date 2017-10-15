@@ -23,6 +23,7 @@
 #include <x86/asm.h>                /* enable_interrupts() */
 
 #include "driver.h"
+#include "loader.h"
 #include "vm.h"
 #include "pm.h"
 
@@ -45,6 +46,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
 
     enablePaging();
     claimUserMem();
+
+    loadFile("init");
 
     while (1) {
         continue;

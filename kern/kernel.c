@@ -24,6 +24,7 @@
 
 #include "driver.h"
 #include "vm.h"
+#include "pm.h"
 
 void _tickback(unsigned int _) {
   return;
@@ -43,6 +44,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     lprintf("Drivers installed");
 
     enablePaging();
+    claimUserMem();
 
     while (1) {
         continue;

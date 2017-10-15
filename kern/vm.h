@@ -41,6 +41,9 @@ typedef PDE* PageDirectory;
 #define PE_DECODE_ADDR(pt) ((pt) & 0xfffff000)
 #define PDE2PT(pde) ((PageTable)PE_DECODE_ADDR(pde))
 
+//
+#define IS_PAGE_ALIGNED(addr) (((addr) >> PAGE_SHIFT << PAGE_SHIFT) == addr)
+
 
 void enablePaging();
 

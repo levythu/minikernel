@@ -23,6 +23,7 @@
 #include <x86/asm.h>                /* enable_interrupts() */
 
 #include "driver.h"
+#include "vm.h"
 
 void _tickback(unsigned int _) {
   return;
@@ -40,6 +41,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
       panic("Fail to install all drivers");
     }
     lprintf("Drivers installed");
+
+    enablePaging();
 
     while (1) {
         continue;

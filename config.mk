@@ -57,7 +57,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory.
 #
-410TESTS = loader_test1 loader_test2
+410TESTS = loader_test1 loader_test2 getpid_test1 ck1
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -99,7 +99,7 @@ THREAD_OBJS = malloc.o panic.o
 ###########################################################################
 # Object files for your syscall wrappers
 ###########################################################################
-SYSCALL_OBJS = syscall.o
+SYSCALL_OBJS = syscall_wrapper.o
 
 ###########################################################################
 # Object files for your automatic stack handling
@@ -119,6 +119,7 @@ AUTOSTACK_OBJS = autostack.o
 KERNEL_OBJS = kernel.o loader.o malloc_wrappers.o cpu.o
 KERNEL_OBJS += driver.o graphic_driver.o int_handler.o keyboard_driver.o timer_driver.o
 KERNEL_OBJS += vm.o pm.o set_register.o zeus.o mode_switch.o process.o
+KERNEL_OBJS += syscall.o syscall_handler.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

@@ -19,6 +19,7 @@ typedef struct _pcb {
   struct _pcb* next;
   ProcessMemoryMeta memMeta;
   PageDirectory pd;
+  uint32_t kernelStackPage;
 } pcb;
 
 typedef struct _tcb {

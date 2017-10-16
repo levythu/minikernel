@@ -17,6 +17,7 @@
 #include "pm.h"
 #include "vm.h"
 #include "bool.h"
+#include "cpu.h"
 
 static int physicalFrames;
 static int userPhysicalFrames;
@@ -24,7 +25,10 @@ static int userPhysicalFrames;
 static uint32_t* availableFrameStack;
 static int stackSize;
 
+static CrossCPULock latch;
+
 void claimUserMem() {
+  initCrossCPULock(&latch);
   physicalFrames = machine_phys_frames();
   userPhysicalFrames = physicalFrames - USER_MEM_START / PAGE_SIZE;
   availableFrameStack = smalloc(sizeof(uint32_t) * userPhysicalFrames);
@@ -41,11 +45,18 @@ void claimUserMem() {
 
 // zero for out-of-memory
 uint32_t getUserMemPage() {
-  if (stackSize == 0) return 0;
+  GlobalLockR(&latch);
+  if (stackSize == 0) {
+    GlobalUnlockR(&latch);
+    return 0;
+  }
+  GlobalUnlockR(&latch);
   return availableFrameStack[--stackSize];
 }
 
 void freeUserMemPage(uint32_t mem) {
   assert(IS_PAGE_ALIGNED(mem));
+  GlobalLockR(&latch);
   availableFrameStack[stackSize++] = mem;
+  GlobalUnlockR(&latch);
 }

@@ -35,6 +35,8 @@
 #include "zeus.h"
 #include "syscall.h"
 
+extern void initMemManagement();
+
 void _tickback(unsigned int _) {
   return;
 }
@@ -67,6 +69,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     lprintf("Hello from a brand new kernel!");
 
     initCPU();
+    initMemManagement();
 
     if (handler_install(_tickback) != 0) {
       panic("Fail to install all drivers");

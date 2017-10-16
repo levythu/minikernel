@@ -18,24 +18,29 @@
 #include "process.h"
 #include "bool.h"
 #include "vm.h"
+#include "cpu.h"
 
 static pcb* pcbList;
 static tcb* tcbList;
 static int pidNext;
 static int tidNext;
 
+static CrossCPULock latch;
 
 void initProcess() {
+  initCrossCPULock(&latch);
   pcbList = NULL;
   tcbList = NULL;
   pidNext = tidNext = 1;
 }
 
 static pcb** _findPCB(int pid) {
+  GlobalLockR(&latch);
   pcb** ptr;
   for (ptr = &pcbList; *ptr != NULL; ptr = &(*ptr)->next ) {
     if ((*ptr)->id == pid) break;
   }
+  GlobalUnlockR(&latch);
   return ptr;
 }
 
@@ -44,6 +49,7 @@ pcb* findPCB(int pid) {
 }
 
 pcb* newPCB() {
+  GlobalLockR(&latch);
   pcb* npcb = (pcb*)smalloc(sizeof(pcb));
   if (!npcb) {
     panic("newPCB: fail to get space for new PCB.");
@@ -51,14 +57,17 @@ pcb* newPCB() {
   npcb->id = pidNext++;
   npcb->next = pcbList;
   pcbList = npcb;
+  GlobalUnlockR(&latch);
   return npcb;
 }
 
 static tcb** _findTCB(int tid) {
+  GlobalLockR(&latch);
   tcb** ptr;
   for (ptr = &tcbList; *ptr != NULL; ptr = &(*ptr)->next ) {
     if ((*ptr)->id == tid) break;
   }
+  GlobalUnlockR(&latch);
   return ptr;
 }
 
@@ -67,6 +76,7 @@ tcb* findTCB(int tid) {
 }
 
 tcb* newTCB() {
+  GlobalLockR(&latch);
   tcb* ntcb = (tcb*)smalloc(sizeof(tcb));
   if (!ntcb) {
     panic("newTCB: fail to get space for new TCB.");
@@ -74,5 +84,6 @@ tcb* newTCB() {
   ntcb->id = tidNext++;
   ntcb->next = tcbList;
   tcbList = ntcb;
+  GlobalUnlockR(&latch);
   return ntcb;
 }

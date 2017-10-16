@@ -27,6 +27,7 @@
 #include "set_register.h"
 #include "vm.h"
 #include "pm.h"
+#include "cpu.h"
 
 void _tickback(unsigned int _) {
   return;
@@ -40,6 +41,9 @@ void _tickback(unsigned int _) {
  */
 int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     lprintf("Hello from a brand new kernel!");
+
+    initCPU();
+
     if (handler_install(_tickback) != 0) {
       panic("Fail to install all drivers");
     }

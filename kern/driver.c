@@ -13,6 +13,7 @@
 #include "keyboard_driver.h"
 #include "timer_driver.h"
 #include "x86/asm.h"
+#include "cpu.h"
 
 int handler_install(void (*tickback)(unsigned int)) {
   int rc;
@@ -29,6 +30,6 @@ int handler_install(void (*tickback)(unsigned int)) {
   if ((rc = install_keyboard_driver(tickback)) != 0) {
     return rc;
   }
-  enable_interrupts();
+  EnableInterrupts();
   return 0;
 }

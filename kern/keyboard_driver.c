@@ -20,6 +20,7 @@
 #include "x86/interrupt_defines.h"
 #include "x86/seg.h"
 #include "x86/keyhelp.h"
+#include "cpu.h"
 
 #define KEY_BUFFER_SIZE 4096
 // keyPressBuffer is a cyclic array, with range [bufferStart, bufferEnd)
@@ -47,14 +48,14 @@ static void pushKeyEvent(uint8_t scanCode) {
 // NOTE: the function is not interleavable, so caller MUST guarantee that only
 // one instance of pushKeyEvent and fetchKeyEvent is running.
 static int fetchKeyEvent() {
-  disable_interrupts();
+  DisableInterrupts();
   if (bufferStart == bufferEnd) {
-    enable_interrupts();
+    EnableInterrupts();
     return -1;
   }
   int ret = keyPressBuffer[bufferStart];
   bufferStart = (bufferStart + 1) % KEY_BUFFER_SIZE;
-  enable_interrupts();
+  EnableInterrupts();
   return ret;
 }
 

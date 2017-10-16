@@ -116,7 +116,7 @@ AUTOSTACK_OBJS = autostack.o
 #
 # Kernel object files you provide in from kern/
 #
-KERNEL_OBJS = kernel.o loader.o malloc_wrappers.o
+KERNEL_OBJS = kernel.o loader.o malloc_wrappers.o cpu.o
 KERNEL_OBJS += driver.o graphic_driver.o int_handler.o keyboard_driver.o timer_driver.o
 KERNEL_OBJS += vm.o pm.o set_register.o
 

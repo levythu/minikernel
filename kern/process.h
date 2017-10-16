@@ -19,7 +19,6 @@ typedef struct _pcb {
   struct _pcb* next;
   ProcessMemoryMeta memMeta;
   PageDirectory pd;
-  uint32_t kernelStackPage;
 } pcb;
 
 typedef struct _tcb {
@@ -27,6 +26,7 @@ typedef struct _tcb {
   struct _tcb* next;
   pcb* process;
   ureg_t regs;
+  uint32_t kernelStackPage;
 } tcb;
 
 void initProcess();

@@ -26,13 +26,13 @@ pcb* SpawnProcess(tcb** firstThread) {
   pcb* npcb = newPCB();
   npcb->pd = newPageDirectory();
   setKernelMapping(npcb->pd);
-  npcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
-  if (!npcb->kernelStackPage) {
-    panic("SpawnProcess: fail to create kernel stack for new process.");
-  }
 
   tcb* ntcb = newTCB();
   ntcb->process = npcb;
+  ntcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
+  if (!ntcb->kernelStackPage) {
+    panic("SpawnProcess: fail to create kernel stack for new process.");
+  }
 
   *firstThread = ntcb;
   return npcb;

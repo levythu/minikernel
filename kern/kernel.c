@@ -53,7 +53,7 @@ void RunInit(const char* filename) {
   }
   getLocalCPU()->runningPID = firstProc->id;
   getLocalCPU()->runningTID = firstThread->id;
-  set_esp0(firstProc->kernelStackPage + PAGE_SIZE - 1);
+  set_esp0(firstThread->kernelStackPage + PAGE_SIZE - 1);
 
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;

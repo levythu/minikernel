@@ -11,15 +11,13 @@
 
 #include "sysconf.h"
 #include "vm.h"
-
-typedef struct {
-  int id;
-  void* next;
-} cb;
+#include "loader.h"
+#include "ureg.h"
 
 typedef struct _pcb {
   int id;
   struct _pcb* next;
+  ProcessMemoryMeta memMeta;
   PageDirectory pd;
 } pcb;
 
@@ -27,6 +25,15 @@ typedef struct _tcb {
   int id;
   struct _tcb* next;
   pcb* process;
+  ureg_t regs;
 } tcb;
+
+void initProcess();
+
+pcb* findPCB(int pid);
+pcb* newPCB();
+
+tcb* newTCB();
+tcb* findTCB(int tid);
 
 #endif

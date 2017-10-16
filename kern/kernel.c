@@ -21,16 +21,35 @@
 
 /* x86 specific includes */
 #include <x86/asm.h>                /* enable_interrupts() */
+#include <x86/eflags.h>
 
 #include "driver.h"
 #include "loader.h"
 #include "set_register.h"
+#include "mode_switch.h"
 #include "vm.h"
 #include "pm.h"
+#include "process.h"
 #include "cpu.h"
+#include "zeus.h"
 
 void _tickback(unsigned int _) {
   return;
+}
+
+void RunInit(const char* filename) {
+  tcb* firstThread;
+  pcb* firstProc = SpawnProcess(&firstThread);
+  activatePageDirectory(firstProc->pd);
+  if (LoadELFToProcess(firstProc, firstThread, filename) < 0) {
+    panic("RunInit: Fail to init the first process");
+  }
+  getLocalCPU()->runningPID = firstProc->id;
+  getLocalCPU()->runningTID = firstThread->id;
+  uint32_t neweflags = (get_eflags() | EFL_RESV1) & ~EFL_AC;
+  lprintf("Into Ring3...");
+
+  switchToRing3(firstThread->regs.esp, neweflags, firstThread->regs.eip);
 }
 
 /** @brief Kernel entrypoint.
@@ -52,11 +71,9 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     enablePaging();
     claimUserMem();
 
-    PageDirectory pd = getActivePageDirectory();
-    ProcessMemoryMeta memMeta;
-    uint32_t eip, esp;
-    initELFMemory("loader_test2", pd, &memMeta, &eip, &esp);
-    setContext(esp, eip);
+    initProcess();
+
+    RunInit("loader_test2");
 
     while (1) {
         continue;

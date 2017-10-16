@@ -93,13 +93,17 @@ PageDirectory getActivePageDirectory() {
   return (PageDirectory)PE_DECODE_ADDR(get_cr3());
 }
 
+void setKernelMapping(PageDirectory pd) {
+  for (int i = 0; i < USER_MEM_START; i+= PAGE_SIZE) {
+    createMapPageDirectory(pd, i, i, false, true);
+  }
+}
+
 static PageDirectory initPD;
 void enablePaging() {
   // Set up a table with direct map only on kernel addresses
   initPD = newPageDirectory();
-  for (int i = 0; i < USER_MEM_START; i+= PAGE_SIZE) {
-    createMapPageDirectory(initPD, i, i, false, true);
-  }
+  setKernelMapping(initPD);
   activatePageDirectory(initPD);
   set_cr0(get_cr0() | CR0_PG);
   lprintf("Initial page directory established.");

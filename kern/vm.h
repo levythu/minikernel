@@ -52,6 +52,8 @@ void enablePaging();
 
 PageDirectory newPageDirectory();
 
+void setKernelMapping(PageDirectory pd);
+
 void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
     bool isUserMem, bool isWritable);
 

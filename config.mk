@@ -119,6 +119,7 @@ AUTOSTACK_OBJS = autostack.o
 KERNEL_OBJS = kernel.o loader.o malloc_wrappers.o cpu.o
 KERNEL_OBJS += driver.o graphic_driver.o int_handler.o keyboard_driver.o timer_driver.o
 KERNEL_OBJS += vm.o pm.o set_register.o zeus.o mode_switch.o process.o
+KERNEL_OBJS += syscall.o syscall_handler.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

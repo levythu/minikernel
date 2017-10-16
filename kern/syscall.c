@@ -14,22 +14,27 @@
 
 #include "x86/asm.h"
 #include "x86/cr.h"
+#include "x86/seg.h"
 #include "common_kern.h"
+#include "syscall.h"
+#include "int_handler.h"
 #include "bool.h"
 
 #define MAKE_SYSCALL_IDT(syscallName, syscallIntNumber) \
   do { \
     int32_t* idtBase = (int32_t*)idt_base(); \
     idtBase[syscallIntNumber  << 1] = ENCRYPT_IDT_TRAPGATE_LSB( \
-      0, (int32_t)syscallName ## _Handler, 1, SEGSEL_KERNEL_CS, 1); \
+      0, (int32_t)(syscallName ## _Handler), 1, SEGSEL_KERNEL_CS, 1); \
     idtBase[(syscallIntNumber  << 1) + 1] = ENCRYPT_IDT_TRAPGATE_MSB( \
-      0, (int32_t)syscallName ## _Handler, 1, SEGSEL_KERNEL_CS, 1); \
+      0, (int32_t)(syscallName ## _Handler), 1, SEGSEL_KERNEL_CS, 1); \
   } while (false) \
 
 void initSyscall() {
   MAKE_SYSCALL_IDT(gettid, GETTID_INT);
+
+  lprintf("Registered all system call handler.");
 }
 
-void gettid_Internal() {
+int gettid_Internal() {
   return 0;
 }

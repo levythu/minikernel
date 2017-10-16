@@ -12,9 +12,3 @@ keyboardIntHandler:
     call keyboardIntHandlerInternal
     popa
     iret
-
-keyboardIntHandler:
-    pusha
-    call keyboardIntHandlerInternal
-    popa
-    iret

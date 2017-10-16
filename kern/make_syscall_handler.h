@@ -4,11 +4,11 @@
     syscallName ## _Handler:                                \
       pusha;                                                       \
       call syscallName ## _Internal;                        \
-      movl %eax, (%esp)                                            \
+      movl %eax, (%esp);                                            \
       popa;                                                        \
-      iret;                                                        \
+      iret;
 
 
 #define DECLARE_SYSCALL_WRAPPER(syscallName)    \
-    void syscallName # _Handler ();
-    void syscallName # _Internal ();
+    void syscallName ## _Handler ();             \
+    int syscallName ## _Internal ();

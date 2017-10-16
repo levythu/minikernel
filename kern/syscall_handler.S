@@ -1,3 +1,3 @@
-#include "make_syscall_wrapper.h"
+#include "make_syscall_handler.h"
 
 MAKE_SYSCALL_WRAPPER(gettid)

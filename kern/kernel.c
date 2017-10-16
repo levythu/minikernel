@@ -32,6 +32,7 @@
 #include "process.h"
 #include "cpu.h"
 #include "zeus.h"
+#include "syscall.h"
 
 void _tickback(unsigned int _) {
   return;
@@ -72,6 +73,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     claimUserMem();
 
     initProcess();
+
+    initSyscall();
 
     RunInit("loader_test2");
 

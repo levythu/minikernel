@@ -22,6 +22,7 @@
 /* x86 specific includes */
 #include <x86/asm.h>                /* enable_interrupts() */
 #include <x86/eflags.h>
+#include <x86/cr.h>
 
 #include "driver.h"
 #include "loader.h"
@@ -47,7 +48,10 @@ void RunInit(const char* filename) {
   }
   getLocalCPU()->runningPID = firstProc->id;
   getLocalCPU()->runningTID = firstThread->id;
-  uint32_t neweflags = (get_eflags() | EFL_RESV1) & ~EFL_AC;
+  set_esp0(firstProc->kernelStackPage + PAGE_SIZE - 1);
+
+  uint32_t neweflags =
+      (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   lprintf("Into Ring3...");
 
   switchToRing3(firstThread->regs.esp, neweflags, firstThread->regs.eip);
@@ -76,7 +80,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
 
     initSyscall();
 
-    RunInit("loader_test2");
+    RunInit("ck1");
 
     while (1) {
         continue;

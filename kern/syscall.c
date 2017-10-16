@@ -24,10 +24,10 @@
   do { \
     int32_t* idtBase = (int32_t*)idt_base(); \
     idtBase[syscallIntNumber  << 1] = ENCRYPT_IDT_TRAPGATE_LSB( \
-      0, (int32_t)(syscallName ## _Handler), 1, SEGSEL_KERNEL_CS, 1); \
+      3, (int32_t)(syscallName ## _Handler), 1, SEGSEL_KERNEL_CS, 1); \
     idtBase[(syscallIntNumber  << 1) + 1] = ENCRYPT_IDT_TRAPGATE_MSB( \
-      0, (int32_t)(syscallName ## _Handler), 1, SEGSEL_KERNEL_CS, 1); \
-  } while (false) \
+      3, (int32_t)(syscallName ## _Handler), 1, SEGSEL_KERNEL_CS, 1); \
+  } while (false)
 
 void initSyscall() {
   MAKE_SYSCALL_IDT(gettid, GETTID_INT);
@@ -36,5 +36,6 @@ void initSyscall() {
 }
 
 int gettid_Internal() {
+  lprintf("GETTID");
   return 0;
 }

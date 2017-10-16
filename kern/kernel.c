@@ -24,6 +24,7 @@
 
 #include "driver.h"
 #include "loader.h"
+#include "set_register.h"
 #include "vm.h"
 #include "pm.h"
 
@@ -50,7 +51,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     PageDirectory pd = getActivePageDirectory();
     ProcessMemoryMeta memMeta;
     uint32_t eip, esp;
-    initELFMemory("init", pd, &memMeta, &eip, &esp);
+    initELFMemory("loader_test2", pd, &memMeta, &eip, &esp);
+    setContext(esp, eip);
 
     while (1) {
         continue;

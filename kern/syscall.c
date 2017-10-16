@@ -1,0 +1,35 @@
+/** @file syscall.c
+ *
+ *  @brief TODO
+
+ *
+ *  @author Leiyu Zhao
+ */
+
+#include <stdio.h>
+#include <simics.h>
+#include <malloc.h>
+#include <assert.h>
+#include <syscall_int.h>
+
+#include "x86/asm.h"
+#include "x86/cr.h"
+#include "common_kern.h"
+#include "bool.h"
+
+#define MAKE_SYSCALL_IDT(syscallName, syscallIntNumber) \
+  do { \
+    int32_t* idtBase = (int32_t*)idt_base(); \
+    idtBase[syscallIntNumber  << 1] = ENCRYPT_IDT_TRAPGATE_LSB( \
+      0, (int32_t)syscallName ## _Handler, 1, SEGSEL_KERNEL_CS, 1); \
+    idtBase[(syscallIntNumber  << 1) + 1] = ENCRYPT_IDT_TRAPGATE_MSB( \
+      0, (int32_t)syscallName ## _Handler, 1, SEGSEL_KERNEL_CS, 1); \
+  } while (false) \
+
+void initSyscall() {
+  MAKE_SYSCALL_IDT(gettid, GETTID_INT);
+}
+
+void gettid_Internal() {
+  return 0;
+}

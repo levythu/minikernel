@@ -37,7 +37,10 @@
 
 extern void initMemManagement();
 
-void _tickback(unsigned int _) {
+void _tickback(unsigned int tk) {
+  if (tk % 1000 == 0) {
+    lprintf("tick");
+  }
   return;
 }
 
@@ -81,6 +84,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
 
     initProcess();
 
+    // TODO set more exception handler!
     initSyscall();
 
     RunInit("ck1");

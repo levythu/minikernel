@@ -11,6 +11,7 @@
 #include <malloc.h>
 #include <assert.h>
 
+#include "dbgconf.h"
 #include "x86/asm.h"
 #include "x86/cr.h"
 #include "common_kern.h"
@@ -47,6 +48,9 @@ void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
     bool isUserMem, bool isWritable) {
   assert(PE_DECODE_ADDR(vaddr) == vaddr);
   assert(PE_DECODE_ADDR(paddr) == paddr);
+  #ifdef VERBOSE_PRINT
+    if (isUserMem) lprintf("Mapping 0x%08lx to 0x%08lx", vaddr, paddr);
+  #endif
 
   uint32_t pdIndex = STRIP_PD_INDEX(vaddr);
   uint32_t ptIndex = STRIP_PT_INDEX(vaddr);
@@ -68,10 +72,25 @@ void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
                          PE_SIZE_FLAG(0) | PT_GLOBAL_FLAG(0) | paddr;
 }
 
+PTE* searchPTEntryPageDirectory(PageDirectory pd, uint32_t vaddr) {
+  assert(PE_DECODE_ADDR(vaddr) == vaddr);
+
+  uint32_t pdIndex = STRIP_PD_INDEX(vaddr);
+  uint32_t ptIndex = STRIP_PT_INDEX(vaddr);
+
+  if (!PE_IS_PRESENT(pd[pdIndex])) return NULL;
+  if (!PE_IS_PRESENT(PDE2PT(pd[pdIndex])[ptIndex])) return NULL;
+  return &PDE2PT(pd[pdIndex])[ptIndex];
+}
+
 void activatePageDirectory(PageDirectory pd) {
   uint32_t pdNum = (uint32_t)pd;
   assert(PE_DECODE_ADDR(pdNum) == pdNum);
   set_cr3(pdNum);
+}
+
+PageDirectory getActivePageDirectory() {
+  return (PageDirectory)PE_DECODE_ADDR(get_cr3());
 }
 
 static PageDirectory initPD;

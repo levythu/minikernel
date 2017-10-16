@@ -47,7 +47,10 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     enablePaging();
     claimUserMem();
 
-    loadFile("init");
+    PageDirectory pd = getActivePageDirectory();
+    ProcessMemoryMeta memMeta;
+    uint32_t eip, esp;
+    initELFMemory("init", pd, &memMeta, &eip, &esp);
 
     while (1) {
         continue;

@@ -6,7 +6,10 @@
 #define VM_H
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <x86/page.h>
+
+#include "bool.h"
 
 typedef uint32_t PTE;
 typedef PTE* PageTable;
@@ -47,5 +50,15 @@ typedef PDE* PageDirectory;
 
 void enablePaging();
 
+PageDirectory newPageDirectory();
+
+void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
+    bool isUserMem, bool isWritable);
+
+PTE* searchPTEntryPageDirectory(PageDirectory pd, uint32_t vaddr);
+
+void activatePageDirectory(PageDirectory pd);
+
+PageDirectory getActivePageDirectory();
 
 #endif

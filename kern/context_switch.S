@@ -12,8 +12,7 @@ switchTheWorld:
     mov %edx, 44(%eax)
     mov %ecx, 48(%eax)
     mov %esp, 72(%eax)
-        ret
-    mov resume, %ecx
+    lea resume, %ecx
     mov %ecx, 60(%eax)
 
 
@@ -30,7 +29,8 @@ switchTheWorld:
     mov 24(%eax), %edi
 
     mov 60(%eax), %eax
-    # jmp *%eax
+    jmp *%eax
 
 resume:
+    mov (%esp), %ecx
     ret

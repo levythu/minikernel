@@ -34,6 +34,7 @@
 #include "cpu.h"
 #include "zeus.h"
 #include "syscall.h"
+#include "context_switch.h"
 
 extern void initMemManagement();
 
@@ -54,6 +55,9 @@ void RunInit(const char* filename) {
   getLocalCPU()->runningPID = firstProc->id;
   getLocalCPU()->runningTID = firstThread->id;
   set_esp0(firstThread->kernelStackPage + PAGE_SIZE - 1);
+
+  ureg_t useless;
+  switchTheWorld(&useless, &useless);
 
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;

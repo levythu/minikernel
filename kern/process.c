@@ -87,3 +87,18 @@ tcb* newTCB() {
   GlobalUnlockR(&latch);
   return ntcb;
 }
+
+tcb* roundRobinNextTCB(int tid) {
+  GlobalLockR(&latch);
+  tcb* cTCB = findTCB(tid);
+  if (!cTCB) {
+    panic("roundRobinNextTCB: trying to round robin a non-existing thread");
+  }
+  if (!cTCB->next) {
+    cTCB = tcbList;
+  } else {
+    cTCB = cTCB->next;
+  }
+  GlobalUnlockR(&latch);
+  return cTCB;
+}

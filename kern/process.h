@@ -36,5 +36,6 @@ pcb* newPCB();
 
 tcb* newTCB();
 tcb* findTCB(int tid);
+tcb* roundRobinNextTCB(int tid);
 
 #endif

@@ -20,29 +20,29 @@
 #ifndef ASSEMBLER
 
 typedef struct ureg_t {
-	unsigned int cause;
-	unsigned int cr2;   /* Or else zero. */
+	unsigned int cause;  // 0
+	unsigned int cr2;   /* Or else zero. */  // 4
 
-	unsigned int ds;
-	unsigned int es;
-	unsigned int fs;
-	unsigned int gs;
+	unsigned int ds; // 8
+	unsigned int es; // 12
+	unsigned int fs; // 16
+	unsigned int gs; // 20
 
-	unsigned int edi;
-	unsigned int esi;
-	unsigned int ebp;
-	unsigned int zero;  /* Dummy %esp, set to zero */
-	unsigned int ebx;
-	unsigned int edx;
-	unsigned int ecx;
-	unsigned int eax;
+	unsigned int edi;  // 24
+	unsigned int esi;  // 28
+	unsigned int ebp;  // 32
+	unsigned int zero;  /* Dummy %esp, set to zero */  // 36
+	unsigned int ebx;  // 40
+	unsigned int edx;  // 44
+	unsigned int ecx;  // 48
+	unsigned int eax;  // 52
 
-	unsigned int error_code;
-	unsigned int eip;
-	unsigned int cs;
-	unsigned int eflags;
-	unsigned int esp;
-	unsigned int ss;
+	unsigned int error_code; // 56
+	unsigned int eip;  // 60
+	unsigned int cs;   // 64
+	unsigned int eflags; // 68
+	unsigned int esp;  // 72
+	unsigned int ss;   // 76
 } ureg_t;
 
 #endif /* ASSEMBLER */

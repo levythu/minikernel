@@ -10,7 +10,10 @@
 #define CONTEXT_SWITCH_H
 
 #include "ureg.h"
+#include "process.h"
 
 void switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg);
+
+void swtichToThread(tcb* thread);
 
 #endif

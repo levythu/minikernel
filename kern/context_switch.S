@@ -32,5 +32,4 @@ switchTheWorld:
     jmp *%eax
 
 resume:
-    mov (%esp), %ecx
     ret

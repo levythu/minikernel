@@ -45,25 +45,38 @@ void _tickback(unsigned int tk) {
   return;
 }
 
-void RunInit(const char* filename) {
-  tcb* firstThread;
-  pcb* firstProc = SpawnProcess(&firstThread);
-  activatePageDirectory(firstProc->pd);
+void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
+  // From swtichToThread, so we must unlock.
+  LocalUnlockR();
+
+  lprintf("Hello from the 1st thread! The init program is: %s", filename);
+
   if (LoadELFToProcess(firstProc, firstThread, filename) < 0) {
     panic("RunInit: Fail to init the first process");
   }
-  getLocalCPU()->runningPID = firstProc->id;
-  getLocalCPU()->runningTID = firstThread->id;
-  set_esp0(firstThread->kernelStackPage + PAGE_SIZE - 1);
-
-  ureg_t useless;
-  switchTheWorld(&useless, &useless);
 
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   lprintf("Into Ring3...");
 
   switchToRing3(firstThread->regs.esp, neweflags, firstThread->regs.eip);
+}
+
+void EmitInitProcess(const char* filename) {
+  tcb* firstThread;
+  pcb* firstProc = SpawnProcess(&firstThread);
+  firstThread->regs.eip = (uint32_t)RunInit;
+  firstThread->regs.esp = firstThread->kernelStackPage + PAGE_SIZE - 1;
+
+  uint32_t* futureStack = (uint32_t*)firstThread->regs.esp;
+  futureStack[-1] = (uint32_t)firstThread;
+  futureStack[-2] = (uint32_t)firstProc;
+  futureStack[-3] = (uint32_t)filename;
+  futureStack[-4] = 0xdeadbeef;   // invalid ret address of root call frame
+  firstThread->regs.esp = (uint32_t)&futureStack[-4];
+
+  // This is a one way trip!
+  swtichToThread(firstThread);
 }
 
 /** @brief Kernel entrypoint.
@@ -91,7 +104,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    RunInit("ck1");
+    EmitInitProcess("ck1");
 
     while (1) {
         continue;

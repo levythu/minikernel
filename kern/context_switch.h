@@ -12,8 +12,10 @@
 #include "ureg.h"
 #include "process.h"
 
-void switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg);
+int switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint);
 
+// Must own the thread, and, of course, the current thread.
+// It will disown current thread
 void swtichToThread(tcb* thread);
 
 #endif

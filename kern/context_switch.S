@@ -1,7 +1,7 @@
 .globl switchTheWorld
 
 
-# switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg)
+# switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint)
 switchTheWorld:
     mov 4(%esp), %eax
 
@@ -9,20 +9,17 @@ switchTheWorld:
     mov %esi, 28(%eax)
     mov %ebp, 32(%eax)
     mov %ebx, 40(%eax)
-    mov %edx, 44(%eax)
-    mov %ecx, 48(%eax)
     mov %esp, 72(%eax)
     lea resume, %ecx
     mov %ecx, 60(%eax)
 
+    mov 12(%esp), %ecx
 
     # Start loading new!
 
     mov 8(%esp), %eax
 
     mov 72(%eax), %esp
-    mov 48(%eax), %ecx
-    mov 44(%eax), %edx
     mov 40(%eax), %ebx
     mov 32(%eax), %ebp
     mov 28(%eax), %esi
@@ -32,4 +29,5 @@ switchTheWorld:
     jmp *%eax
 
 resume:
+    mov %ecx, %eax
     ret

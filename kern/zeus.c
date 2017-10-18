@@ -21,18 +21,23 @@
 #include "vm.h"
 #include "loader.h"
 
-
+// Will own the thread
 pcb* SpawnProcess(tcb** firstThread) {
   pcb* npcb = newPCB();
   npcb->pd = newPageDirectory();
   setKernelMapping(npcb->pd);
 
   tcb* ntcb = newTCB();
+  int cpuid = getLocalCPU()->id;
+  // Only happens in multi-cpu
+  while (!__sync_bool_compare_and_swap(&ntcb->ownerCPU, -1, cpuid))
+    ;
   ntcb->process = npcb;
   ntcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
   if (!ntcb->kernelStackPage) {
     panic("SpawnProcess: fail to create kernel stack for new process.");
   }
+  ntcb->status = THREAD_INITIALIZED;
 
   *firstThread = ntcb;
   return npcb;

@@ -44,7 +44,11 @@ void swtichToThread(tcb* thread) {
     }
     currentUReg = &cThread->regs;
   }
-  switchTheWorld(currentUReg, &thread->regs);
+  tcb* switchedFrom =
+      (tcb*)switchTheWorld(currentUReg, &thread->regs, (int)thread);
+
+  // disown the former thread
+  switchedFrom->ownerCPU = -1;
   // Now it should be where the entry of newly switched thread.
   // Also notice that the init thread (thread #1) is special, it will not get
   // out at this place!!

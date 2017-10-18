@@ -81,6 +81,8 @@ tcb* newTCB() {
   if (!ntcb) {
     panic("newTCB: fail to get space for new TCB.");
   }
+  ntcb->ownerCPU = -1;
+  ntcb->status = THREAD_UNINITIALIZED;
   ntcb->id = tidNext++;
   ntcb->next = tcbList;
   tcbList = ntcb;
@@ -88,7 +90,18 @@ tcb* newTCB() {
   return ntcb;
 }
 
-tcb* roundRobinNextTCB(int tid) {
+tcb* roundRobinNextTCB(tcb* thread) {
+  GlobalLockR(&latch);
+  if (!thread->next) {
+    thread = tcbList;
+  } else {
+    thread = thread->next;
+  }
+  GlobalUnlockR(&latch);
+  return thread;
+}
+
+tcb* roundRobinNextTCBID(int tid) {
   GlobalLockR(&latch);
   tcb* cTCB = findTCB(tid);
   if (!cTCB) {

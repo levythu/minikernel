@@ -26,7 +26,8 @@ typedef enum ThreadStatus {
   THREAD_UNINITIALIZED = 0,
   THREAD_INITIALIZED = 1,
   THREAD_RUNNABLE = 2,
-  THREAD_BLOCKED = 3
+  THREAD_BLOCKED = 3,
+  THREAD_RUNNING = 4
 } ThreadStatus;
 
 #define THREAD_STATUS_CAN_RUN(status) \

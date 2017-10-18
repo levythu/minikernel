@@ -8,6 +8,7 @@ switchToRing3:
 
     mov $SEGSEL_USER_DS, %eax
     mov %ax, %ds
+    mov %ax, %es
     pushl $SEGSEL_USER_DS  # ss
     pushl 4(%ecx) # esp
     pushl 8(%ecx) # eflags

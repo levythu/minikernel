@@ -43,7 +43,10 @@ void swtichToThread(tcb* thread) {
             core->runningTID);
     }
     currentUReg = &cThread->regs;
+    cThread->status = THREAD_RUNNABLE;
   }
+  core->runningTID = thread->id;
+  thread->status = THREAD_RUNNING;
   tcb* switchedFrom =
       (tcb*)switchTheWorld(currentUReg, &thread->regs, (int)thread);
 

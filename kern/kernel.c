@@ -35,6 +35,7 @@
 #include "zeus.h"
 #include "syscall.h"
 #include "context_switch.h"
+#include "scheduler.h"
 
 extern void initMemManagement();
 
@@ -46,7 +47,13 @@ void _tickback(unsigned int tk) {
 }
 
 void _keyboardback() {
-  lprintf("ha");
+  int currentTID = getLocalCPU()->runningTID;
+  if (currentTID == -1) return;
+
+  tcb* nextThread = pickNextRunnableThread(findTCB(currentTID));
+  if (nextThread == NULL) return;
+  lprintf("Scheduling to thread #%d", nextThread->id);
+  swtichToThread(nextThread);
 }
 
 void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
@@ -66,11 +73,12 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   switchToRing3(firstThread->regs.esp, neweflags, firstThread->regs.eip);
 }
 
-void EmitInitProcess(const char* filename) {
+void EmitInitProcess(const char* filename, bool runImmediate) {
   tcb* firstThread;
   pcb* firstProc = SpawnProcess(&firstThread);
   firstThread->regs.eip = (uint32_t)RunInit;
   firstThread->regs.esp = firstThread->kernelStackPage + PAGE_SIZE - 1;
+  lprintf("xxxx [0x%08lx, 0x%08lx)", firstThread->kernelStackPage, firstThread->kernelStackPage + PAGE_SIZE);
 
   uint32_t* futureStack = (uint32_t*)firstThread->regs.esp;
   futureStack[-1] = (uint32_t)firstThread;
@@ -79,8 +87,12 @@ void EmitInitProcess(const char* filename) {
   futureStack[-4] = 0xdeadbeef;   // invalid ret address of root call frame
   firstThread->regs.esp = (uint32_t)&futureStack[-4];
 
-  // This is a one way trip!
-  swtichToThread(firstThread);
+  if (runImmediate) {
+    // This is a one way trip!
+    swtichToThread(firstThread);
+  } else {
+    firstThread->ownerCPU = -1;
+  }
 }
 
 /** @brief Kernel entrypoint.
@@ -108,7 +120,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("ck1");
+    EmitInitProcess("ck1", false);
+    EmitInitProcess("idle", true);
 
     while (1) {
         continue;

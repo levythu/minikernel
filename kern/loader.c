@@ -104,6 +104,9 @@ static void setupInitialStack(ProcessMemoryMeta* memMeta, uint32_t *esp) {
 
 int initELFMemory(const char *filename, PageDirectory pd,
     ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp) {
+  #ifdef VERBOSE_PRINT
+    lprintf("Loading %s", filename);
+  #endif
   if (elf_check_header(filename) != ELF_SUCCESS) {
     lprintf("%s is not a valid elf", filename);
     return -1;
@@ -121,69 +124,77 @@ int initELFMemory(const char *filename, PageDirectory pd,
   char* fileContentTmp;
 
   // Init .text
-  fileContentTmp = smalloc(elfMetadata.e_txtlen);
-  assert(
-    getbytes(filename, elfMetadata.e_txtoff,
-        elfMetadata.e_txtlen, fileContentTmp) == elfMetadata.e_txtlen
-  );
-  if (cloneMemoryWithPTERange(pd, elfMetadata.e_txtstart,
-                              elfMetadata.e_txtstart + elfMetadata.e_txtlen,
-                              (uint32_t)fileContentTmp,
-                              false) < 0) {
+  if (elfMetadata.e_txtlen > 0) {
+    fileContentTmp = smalloc(elfMetadata.e_txtlen);
+    assert(
+      getbytes(filename, elfMetadata.e_txtoff,
+          elfMetadata.e_txtlen, fileContentTmp) == elfMetadata.e_txtlen
+    );
+    if (cloneMemoryWithPTERange(pd, elfMetadata.e_txtstart,
+                                elfMetadata.e_txtstart + elfMetadata.e_txtlen,
+                                (uint32_t)fileContentTmp,
+                                false) < 0) {
+      sfree(fileContentTmp, elfMetadata.e_txtlen);
+      return -1;
+    }
     sfree(fileContentTmp, elfMetadata.e_txtlen);
-    return -1;
   }
-  sfree(fileContentTmp, elfMetadata.e_txtlen);
   #ifdef VERBOSE_PRINT
     lprintf("Inited text segment");
   #endif
 
   // Init .data
-  fileContentTmp = smalloc(elfMetadata.e_datlen);
-  assert(
-    getbytes(filename, elfMetadata.e_datoff,
-        elfMetadata.e_datlen, fileContentTmp) == elfMetadata.e_datlen
-  );
-  if (cloneMemoryWithPTERange(pd, elfMetadata.e_datstart,
-                              elfMetadata.e_datstart + elfMetadata.e_datlen,
-                              (uint32_t)fileContentTmp,
-                              true) < 0) {
+  if (elfMetadata.e_datlen > 0) {
+    fileContentTmp = smalloc(elfMetadata.e_datlen);
+    assert(
+      getbytes(filename, elfMetadata.e_datoff,
+          elfMetadata.e_datlen, fileContentTmp) == elfMetadata.e_datlen
+    );
+    if (cloneMemoryWithPTERange(pd, elfMetadata.e_datstart,
+                                elfMetadata.e_datstart + elfMetadata.e_datlen,
+                                (uint32_t)fileContentTmp,
+                                true) < 0) {
+      sfree(fileContentTmp, elfMetadata.e_datlen);
+      return -1;
+    }
     sfree(fileContentTmp, elfMetadata.e_datlen);
-    return -1;
+    #ifdef VERBOSE_PRINT
+      lprintf("Inited data segment");
+    #endif
   }
-  sfree(fileContentTmp, elfMetadata.e_datlen);
-  #ifdef VERBOSE_PRINT
-    lprintf("Inited data segment");
-  #endif
 
   // Init .rodata
-  fileContentTmp = smalloc(elfMetadata.e_rodatlen);
-  assert(
-    getbytes(filename, elfMetadata.e_rodatoff,
-        elfMetadata.e_rodatlen, fileContentTmp) == elfMetadata.e_rodatlen
-  );
-  if (cloneMemoryWithPTERange(pd, elfMetadata.e_rodatstart,
-                              elfMetadata.e_rodatstart + elfMetadata.e_rodatlen,
-                              (uint32_t)fileContentTmp,
-                              false) < 0) {
+  if (elfMetadata.e_rodatlen > 0) {
+    fileContentTmp = smalloc(elfMetadata.e_rodatlen);
+    assert(
+      getbytes(filename, elfMetadata.e_rodatoff,
+          elfMetadata.e_rodatlen, fileContentTmp) == elfMetadata.e_rodatlen
+    );
+    if (cloneMemoryWithPTERange(pd, elfMetadata.e_rodatstart,
+                                elfMetadata.e_rodatstart + elfMetadata.e_rodatlen,
+                                (uint32_t)fileContentTmp,
+                                false) < 0) {
+      sfree(fileContentTmp, elfMetadata.e_rodatlen);
+      return -1;
+    }
     sfree(fileContentTmp, elfMetadata.e_rodatlen);
-    return -1;
+    #ifdef VERBOSE_PRINT
+      lprintf("Inited readonly data segment");
+    #endif
   }
-  sfree(fileContentTmp, elfMetadata.e_rodatlen);
-  #ifdef VERBOSE_PRINT
-    lprintf("Inited readonly data segment");
-  #endif
 
   // Init .bss
-  if (cloneMemoryWithPTERange(pd, elfMetadata.e_bssstart,
-                              elfMetadata.e_bssstart + elfMetadata.e_bsslen,
-                              0,
-                              true) < 0) {
-    return -1;
+  if (elfMetadata.e_bssstart > 0) {
+    if (cloneMemoryWithPTERange(pd, elfMetadata.e_bssstart,
+                                elfMetadata.e_bssstart + elfMetadata.e_bsslen,
+                                0,
+                                true) < 0) {
+      return -1;
+    }
+    #ifdef VERBOSE_PRINT
+      lprintf("Inited bss segment");
+    #endif
   }
-  #ifdef VERBOSE_PRINT
-    lprintf("Inited bss segment");
-  #endif
 
   // Init stack
   if (cloneMemoryWithPTERange(pd, 0 - (uint32_t)(PAGE_SIZE),

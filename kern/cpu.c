@@ -1,7 +1,9 @@
 /** @file cpu.c
  *
- *  @brief TODO
-
+ *  @brief The module for managing CPUs.
+ *
+ *  What we are trying to achieve is that all CPU-number dependent stuff are
+ *  kept inside the module, so that scaling to multicore does not hurt too much
  *
  *  @author Leiyu Zhao
  */

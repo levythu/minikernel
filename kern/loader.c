@@ -23,6 +23,7 @@
 #include "vm.h"
 #include "pm.h"
 
+// Only for debug
 void printELF(simple_elf_t* elfMetadata) {
   lprintf("ELF info for %s:", elfMetadata->e_fname);
   lprintf("- Entry Point: 0x%08lx", elfMetadata->e_entry);
@@ -38,7 +39,8 @@ void printELF(simple_elf_t* elfMetadata) {
       elfMetadata->e_bssstart + elfMetadata->e_bsslen);
 }
 
-// [start, end), even if end is overflowing (0xffffffff+1)
+// Copy sth to the address in memory [start, end), it's okay that end is 0.
+// Will claim new PM->VM mappings (or lift write privilege) if necessary
 static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
     uint32_t endAddr, uint32_t sourceStartAddr, bool isWritable) {
   endAddr -= 1;
@@ -89,6 +91,9 @@ static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
   return 0;
 }
 
+// Set up the initial stack for a new elf so that
+// _main fucntion in crt0.c will have correct view of parameters.
+// Now we are assuming the argc and argv is null. TODO: correct it
 static void setupInitialStack(ProcessMemoryMeta* memMeta, uint32_t *esp) {
   // TODO, one page may not be enough to hold everything!
   *esp = memMeta->stackHigh - sizeof(void*) + 1;
@@ -102,6 +107,7 @@ static void setupInitialStack(ProcessMemoryMeta* memMeta, uint32_t *esp) {
   *esp = (uint32_t)&initialStack[-5];
 }
 
+// see loader.h
 int initELFMemory(const char *filename, PageDirectory pd,
     ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp) {
   #ifdef VERBOSE_PRINT

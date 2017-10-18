@@ -26,7 +26,6 @@
 
 #include "driver.h"
 #include "loader.h"
-#include "set_register.h"
 #include "mode_switch.h"
 #include "vm.h"
 #include "pm.h"

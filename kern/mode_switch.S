@@ -1,3 +1,12 @@
+/** @file mode_switch.S
+ *
+ *  @brief Infrastructure for mode switch
+ *
+ *  Implement mode switch with iret
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <x86/seg.h>
 
 .globl switchToRing3

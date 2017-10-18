@@ -45,6 +45,10 @@ void _tickback(unsigned int tk) {
   return;
 }
 
+void _keyboardback() {
+  lprintf("ha");
+}
+
 void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   // From swtichToThread, so we must unlock.
   LocalUnlockR();
@@ -91,7 +95,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     initCPU();
     initMemManagement();
 
-    if (handler_install(_tickback) != 0) {
+    if (handler_install(_tickback, _keyboardback) != 0) {
       panic("Fail to install all drivers");
     }
     lprintf("Drivers installed");

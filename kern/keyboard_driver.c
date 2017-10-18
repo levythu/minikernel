@@ -16,6 +16,7 @@
 
 #include "int_handler.h"
 #include "timer_driver.h"
+#include "keyboard_driver.h"
 #include "x86/asm.h"
 #include "x86/interrupt_defines.h"
 #include "x86/seg.h"
@@ -60,10 +61,14 @@ static int fetchKeyEvent() {
 }
 
 /******************************************************************************/
+
+static KeyboardCallback kbCallback = NULL;
+
 // Install the keyboard driver. For any errors return negative integer;
 // otherwise return 0;
-int install_keyboard_driver() {
+int install_keyboard_driver(KeyboardCallback callback) {
   bufferStart = bufferEnd = 0;
+  kbCallback = callback;
 
   int32_t* idtBase = (int32_t*)idt_base();
   idtBase[KEY_IDT_ENTRY  << 1] = ENCRYPT_IDT_TRAPGATE_LSB(
@@ -79,6 +84,9 @@ void keyboardIntHandlerInternal() {
   uint8_t scanCode = inb(KEYBOARD_PORT);
   pushKeyEvent(scanCode);
   outb(INT_CTL_PORT, INT_ACK_CURRENT);
+  if (kbCallback) {
+    kbCallback();
+  }
 }
 
 // Returns the next character in the keyboard buffer; if there's no character

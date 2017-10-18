@@ -15,7 +15,7 @@
 #include "x86/asm.h"
 #include "cpu.h"
 
-int handler_install(void (*tickback)(unsigned int)) {
+int handler_install(void (*tickback)(unsigned int), void (*keyback)()) {
   int rc;
   lprintf("Installing video driver...");
   if ((rc = install_graphic_driver()) != 0) {
@@ -27,7 +27,7 @@ int handler_install(void (*tickback)(unsigned int)) {
     return rc;
   }
   lprintf("Installing keyboard driver...");
-  if ((rc = install_keyboard_driver(tickback)) != 0) {
+  if ((rc = install_keyboard_driver(keyback)) != 0) {
     return rc;
   }
   EnableInterrupts();

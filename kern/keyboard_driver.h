@@ -14,8 +14,11 @@
 
 #include "bool.h"
 
+// The type for kb callback
+typedef void (*KeyboardCallback)();
+
 // Install the keyboard driver. For any errors return negative integer;
 // otherwise return 0;
-extern int install_keyboard_driver();
+extern int install_keyboard_driver(KeyboardCallback callback);
 
 #endif

@@ -216,6 +216,7 @@ int initELFMemory(const char *filename, PageDirectory pd,
   // Makeup mem meta
   memMeta->stackHigh = 0xffffffff;
   memMeta->stackLow = 0 - (uint32_t)(PAGE_SIZE);
+  // TODO not correct! e_bssstart may be 0!
   memMeta->heapLow = elfMetadata.e_bssstart + elfMetadata.e_bsslen;
   memMeta->heapSize = 0;
   setupInitialStack(memMeta, esp);

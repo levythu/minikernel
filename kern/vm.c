@@ -103,7 +103,7 @@ uint32_t traverseEntryPageDirectory(PageDirectory pd,
   for (int i = startPDIndex; i <= endPDIndex; i++) {
     if (!PE_IS_PRESENT(pd[i])) continue;
     PageTable cpt = PDE2PT(pd[i]);
-    for (int j = 0; j < PT_SIZE; i++) {
+    for (int j = 0; j < PT_SIZE; j++) {
       if (!PE_IS_PRESENT(cpt[j])) continue;
       initialToken = onPTE(i, j, &cpt[j], initialToken);
     }

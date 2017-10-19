@@ -20,7 +20,8 @@
 // New register is adopted.
 int switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint);
 
-bool checkpointTheWorld(ureg_t* savePlace);
+bool checkpointTheWorld(ureg_t* savePlace,
+    uint32_t memToSnapshot, uint32_t memDst, uint32_t size);
 
 // Swtich to the thread pointed by parameter, also switch the process if needed
 // NOTE Current CPU must own the current thread and the thread to switch

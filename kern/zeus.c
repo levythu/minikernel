@@ -78,7 +78,11 @@ static uint32_t rebuildPD_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
 }
 
 // mypd must be active pd
+// Rebuild (duplicate the page directoy), return whether success
+// If any failure, all page from parent pd will be discarded and newly allocated
+// will be kept, so that it's safe to free
 static bool rebuildPD(PageDirectory mypd) {
+        lprintf("build new PD!");
   uint32_t buffer = (uint32_t)smalloc(PAGE_SIZE);
   if (buffer == 0) {
     panic("rebuildPD: no kernel space to rebuild page table.");
@@ -113,14 +117,12 @@ void forkProcess(tcb* currentThread) {
   newProc->parentPID = currentProc->id;
 
   // thread-related
-  memcpy((void*)newThread->kernelStackPage,
-         (void*)currentThread->kernelStackPage,
-         PAGE_SIZE);
   newThread->regs = currentThread->regs;
   // block the current thread, forbid it run until the new finish copying the
   // pages.
   currentThread->status = THREAD_BLOCKED;
-  if (!checkpointTheWorld(&newThread->regs)) {
+  if (!checkpointTheWorld(&newThread->regs,
+      currentThread->kernelStackPage, newThread->kernelStackPage, PAGE_SIZE)) {
     // This is the old process!
     // We want to rebase the newThread, overflow does not matter :)
     newThread->regs.ebp +=
@@ -134,7 +136,6 @@ void forkProcess(tcb* currentThread) {
     // But we cannot access thread (it may have already ends!)
     // However, newProc is good to access! It's my child, and it cannot die
     // (while maybe zombie) before I wait()
-
   } else {
     // This is the new process!
     // newProc/newThread is me now.
@@ -153,6 +154,7 @@ void forkProcess(tcb* currentThread) {
         &currentThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
       ;
 
+    lprintf("Setting %d to runnable", currentThread->id);
     currentThread->status = THREAD_RUNNABLE;
     currentThread->owned = THREAD_NOT_OWNED;
   }

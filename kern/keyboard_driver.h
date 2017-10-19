@@ -21,4 +21,8 @@ typedef void (*KeyboardCallback)();
 // otherwise return 0;
 extern int install_keyboard_driver(KeyboardCallback callback);
 
+// Kayboard APIs
+
+int readchar();
+
 #endif

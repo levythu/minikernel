@@ -35,6 +35,7 @@
 #include "syscall.h"
 #include "context_switch.h"
 #include "scheduler.h"
+#include "keyboard_driver.h"
 
 extern void initMemManagement();
 
@@ -46,6 +47,7 @@ void _tickback(unsigned int tk) {
 }
 
 void _keyboardback() {
+  if (readchar() != 's') return;
   int currentTID = getLocalCPU()->runningTID;
   if (currentTID == -1) return;
 

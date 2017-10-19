@@ -33,7 +33,8 @@ resume:
     mov %ecx, %eax
     ret
 
-# checkpointTheWorld(ureg_t* savePlace)
+# bool checkpointTheWorld(ureg_t* savePlace,
+#     uint32_t memToSnapshot, uint32_t memDst, uint32_t size);
 checkpointTheWorld:
     mov 4(%esp), %eax
 
@@ -44,6 +45,20 @@ checkpointTheWorld:
     mov %esp, 72(%eax)
     lea checkpointTheWorld_reenter, %ecx
     mov %ecx, 60(%eax)
+
+    # make snapshot
+    # memcpy(dst, src, size)
+    mov %esp, %ecx
+    mov 16(%ecx), %eax
+    push %eax       # size
+    mov 8(%ecx), %eax
+    push %eax       # src
+    mov 12(%ecx), %eax
+    push %eax       # dst
+    call memcpy
+    pop %eax
+    pop %eax
+    pop %eax
 
     mov $0, %eax
     ret

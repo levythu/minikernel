@@ -33,6 +33,9 @@
 void initSyscall() {
   MAKE_SYSCALL_IDT(gettid, GETTID_INT);
   MAKE_SYSCALL_IDT(fork, FORK_INT);
+  MAKE_SYSCALL_IDT(set_status, SET_STATUS_INT);
+  MAKE_SYSCALL_IDT(wait, WAIT_INT);
+  MAKE_SYSCALL_IDT(vanish, VANISH_INT);
 
   lprintf("Registered all system call handler.");
 }

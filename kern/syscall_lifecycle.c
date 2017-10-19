@@ -38,3 +38,21 @@ int fork_Internal() {
   }
   return forkProcess(currentThread);
 }
+
+int wait_Internal() {
+  // TODO dummy
+  lprintf("Dummy wait() is called. It loops");
+  while (true)
+    ;
+}
+
+int vanish_Internal() {
+  // TODO dummy
+  lprintf("Dummy vanish() is called. It loops");
+  while (true)
+    ;
+}
+
+int set_status_Internal() {
+  return 0;
+}

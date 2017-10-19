@@ -23,11 +23,11 @@
 #include "cpu.h"
 #include "zeus.h"
 
-int gettid_Internal() {
+int gettid_Internal(SyscallParams params) {
   return getLocalCPU()->runningTID;
 }
 
-int fork_Internal() {
+int fork_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   // Precheck: the process has only one thread
@@ -39,20 +39,20 @@ int fork_Internal() {
   return forkProcess(currentThread);
 }
 
-int wait_Internal() {
+int wait_Internal(SyscallParams params) {
   // TODO dummy
   lprintf("Dummy wait() is called. It loops");
   while (true)
     ;
 }
 
-int vanish_Internal() {
+int vanish_Internal(SyscallParams params) {
   // TODO dummy
   lprintf("Dummy vanish() is called. It loops");
   while (true)
     ;
 }
 
-int set_status_Internal() {
+int set_status_Internal(SyscallParams params) {
   return 0;
 }

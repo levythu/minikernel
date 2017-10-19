@@ -29,7 +29,9 @@
       mov $SEGSEL_KERNEL_DS, %eax;     \
       mov %ax, %ds;                    \
       mov %ax, %es;                    \
+      push %esi;                       \
       call syscallName ## _Internal;                        \
+      pop %esi;                       \
       pop %es;  \
       pop %ds;  \
       movl %eax, 28(%esp);                                            \
@@ -39,6 +41,6 @@
 
 #define DECLARE_SYSCALL_WRAPPER(syscallName)    \
     void syscallName ## _Handler ();             \
-    int syscallName ## _Internal ();
+    int syscallName ## _Internal (SyscallParams params);
 
 #endif

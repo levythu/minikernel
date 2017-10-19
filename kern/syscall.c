@@ -39,3 +39,10 @@ void initSyscall() {
 
   lprintf("Registered all system call handler.");
 }
+
+/******************************************************************************/
+// Helper functions for parsing params
+
+uint32_t parseSingleParam(SyscallParams params) {
+  return (uint32_t)params;
+}

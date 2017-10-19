@@ -14,6 +14,8 @@
 //      syscall.c::initSyscall()
 // 4. Write your implementation of syscall-name_Internal somewhere
 
+typedef uint32_t SyscallParams;
+
 DECLARE_SYSCALL_WRAPPER(gettid);
 DECLARE_SYSCALL_WRAPPER(fork);
 DECLARE_SYSCALL_WRAPPER(set_status);

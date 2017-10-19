@@ -141,6 +141,7 @@ void forkProcess(tcb* currentThread) {
     // newProc/newThread is me now.
     // currentProc/currentThread is not me anymore, but we need to disown it.
     currentThread->owned = THREAD_NOT_OWNED;
+    LocalUnlockR();
 
     // Now it's time to rebuild my page directory
     if (!rebuildPD(newProc->pd)) {

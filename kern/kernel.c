@@ -69,17 +69,17 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   }
 
   forkProcess(firstThread);
+  forkProcess(findTCB(getLocalCPU()->runningPID));
   lprintf("Hi, I'm process %d", getLocalCPU()->runningPID);
 
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   lprintf("Into Ring3...");
 
-  lprintf("esp = 0x%08x; eip = 0x%08x", firstThread->regs.esp, firstThread->regs.eip);
   switchToRing3(esp, neweflags, eip);
 }
 
-void EmitInitProcess(const char* filename, bool runImmediate) {
+void EmitInitProcess(const char* filename) {
   tcb* firstThread;
   pcb* firstProc = SpawnProcess(&firstThread);
   firstThread->regs.eip = (uint32_t)RunInit;
@@ -92,12 +92,8 @@ void EmitInitProcess(const char* filename, bool runImmediate) {
   futureStack[-4] = 0xdeadbeef;   // invalid ret address of root call frame
   firstThread->regs.esp = (uint32_t)&futureStack[-4];
 
-  if (runImmediate) {
-    // This is a one way trip!
-    swtichToThread(firstThread);
-  } else {
-    firstThread->owned = THREAD_NOT_OWNED;
-  }
+  // This is a one way trip!
+  swtichToThread(firstThread);
 }
 
 /** @brief Kernel entrypoint.
@@ -125,8 +121,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("ck1", false);
-    EmitInitProcess("idle", true);
+    EmitInitProcess("ck1");
 
     while (1) {
         continue;

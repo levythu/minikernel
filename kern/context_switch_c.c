@@ -55,8 +55,9 @@ void swtichToThread(tcb* thread) {
 
   ureg_t dummyUReg;
   ureg_t* currentUReg = &dummyUReg;
+  tcb* cThread = NULL;
   if (core->runningTID != -1) {
-    tcb* cThread = findTCB(core->runningTID);
+    cThread = findTCB(core->runningTID);
     if (!cThread) {
       panic("swtichToThread: fail to find the thread with id = %d",
             core->runningTID);
@@ -67,10 +68,13 @@ void swtichToThread(tcb* thread) {
   core->runningTID = thread->id;
   thread->status = THREAD_RUNNING;
   tcb* switchedFrom =
-      (tcb*)switchTheWorld(currentUReg, &thread->regs, (int)thread);
+      (tcb*)switchTheWorld(currentUReg, &thread->regs, (int)cThread);
 
   // disown the former thread
-  switchedFrom->owned = THREAD_NOT_OWNED;
+  if (switchedFrom) {
+    lprintf("disown thread #%d", switchedFrom->id);
+    switchedFrom->owned = THREAD_NOT_OWNED;
+  }
   // Now it should be where the entry of newly switched thread.
   // Also notice that the init thread (thread #1) is special, it will not get
   // out at this place!!

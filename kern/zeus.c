@@ -11,6 +11,7 @@
 #include <simics.h>
 #include <malloc.h>
 #include <assert.h>
+#include <string.h>
 
 #include "x86/asm.h"
 #include "x86/cr.h"
@@ -21,6 +22,7 @@
 #include "vm.h"
 #include "pm.h"
 #include "loader.h"
+#include "context_switch.h"
 
 // Will own the thread
 pcb* SpawnProcess(tcb** firstThread) {
@@ -87,7 +89,7 @@ static bool rebuildPD(PageDirectory mypd) {
                                  STRIP_PD_INDEX(0xffffffff),
                                  rebuildPD_EachPage,
                                  buffer);
-  sfree(buffer, PAGE_SIZE);
+  sfree((void*)buffer, PAGE_SIZE);
   if (!success) {
     lprintf("Fail to rebuild new page directory, no enough user space");
     return false;
@@ -98,10 +100,10 @@ static bool rebuildPD(PageDirectory mypd) {
 // Fork a new process, based on the process of current thread.
 // NOTE: the current process *must* only have the current thread
 // and of course, currentThread must be owned by the CPU
-void forkProcess(tid* currentThread) {
+void forkProcess(tcb* currentThread) {
   tcb* newThread;
   pcb* newProc = SpawnProcess(&newThread);
-  pcb* currentProc = currentThread->proc;
+  pcb* currentProc = currentThread->process;
 
   // proc-related
   clonePageDirectory(currentProc->pd, newProc->pd,

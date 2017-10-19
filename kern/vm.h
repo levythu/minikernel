@@ -74,7 +74,7 @@ void clonePageDirectory(PageDirectory src, PageDirectory dst,
 
 uint32_t traverseEntryPageDirectory(PageDirectory pd,
     uint32_t startPDIndex, uint32_t endPDIndex,
-    bool (*onPTE)(int, int, PTE*, uint32_t),
+    uint32_t (*onPTE)(int, int, PTE*, uint32_t),
     uint32_t initialToken);
 
 void invalidateTLB(uint32_t addr);

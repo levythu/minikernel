@@ -10,6 +10,7 @@
 #include <simics.h>
 #include <malloc.h>
 #include <assert.h>
+#include <string.h>
 
 #include "dbgconf.h"
 #include "x86/asm.h"
@@ -74,7 +75,7 @@ void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
 
 PageTable clonePageTable(PageTable old) {
   PageTable newPT = newPageTable();
-  memset((void*)newPT, (void*)old, sizeof(PTE) * PT_SIZE);
+  memcpy((void*)newPT, (void*)old, sizeof(PTE) * PT_SIZE);
   return newPT;
 }
 
@@ -97,7 +98,7 @@ void clonePageDirectory(PageDirectory src, PageDirectory dst,
 
 uint32_t traverseEntryPageDirectory(PageDirectory pd,
     uint32_t startPDIndex, uint32_t endPDIndex,
-    bool (*onPTE)(int, int, PTE*, uint32_t),
+    uint32_t (*onPTE)(int, int, PTE*, uint32_t),
     uint32_t initialToken) {
   for (int i = startPDIndex; i <= endPDIndex; i++) {
     if (!PE_IS_PRESENT(pd[i])) continue;

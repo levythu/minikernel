@@ -23,7 +23,6 @@
 // NULL if there's no other thread runnable
 tcb* pickNextRunnableThread(tcb* currentThread) {
   tcb* nextThread = currentThread;
-  int cpuid = getLocalCPU()->id;
   while (true) {
     nextThread = roundRobinNextTCB(nextThread);
     if (nextThread == currentThread) {

@@ -1,4 +1,5 @@
 .globl switchTheWorld
+.globl checkpointTheWorld
 
 
 # switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint)
@@ -30,4 +31,23 @@ switchTheWorld:
 
 resume:
     mov %ecx, %eax
+    ret
+
+# checkpointTheWorld(ureg_t* savePlace)
+checkpointTheWorld:
+    mov 4(%esp), %eax
+
+    mov %edi, 24(%eax)
+    mov %esi, 28(%eax)
+    mov %ebp, 32(%eax)
+    mov %ebx, 40(%eax)
+    mov %esp, 72(%eax)
+    lea checkpointTheWorld_reenter, %ecx
+    mov %ecx, 60(%eax)
+
+    mov $0, %eax
+    ret
+
+checkpointTheWorld_reenter:
+    mov $1, %eax
     ret

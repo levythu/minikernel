@@ -20,6 +20,7 @@ typedef struct _pcb {
   struct _pcb* next;
   ProcessMemoryMeta memMeta;
   PageDirectory pd;
+  int parentPID;
 } pcb;
 
 typedef enum ThreadStatus {
@@ -42,8 +43,12 @@ typedef struct _tcb {
   pcb* process;
   ureg_t regs;
   uint32_t kernelStackPage;
-  int ownerCPU;
+  int owned;
 } tcb;
+
+#define THREAD_NOT_OWNED -1
+#define THREAD_OWNED_BY_CPU 1
+#define THREAD_OWNED_BY_THREAD 2
 
 void initProcess();
 

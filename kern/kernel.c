@@ -90,7 +90,7 @@ void EmitInitProcess(const char* filename, bool runImmediate) {
     // This is a one way trip!
     swtichToThread(firstThread);
   } else {
-    firstThread->ownerCPU = -1;
+    firstThread->owned = THREAD_NOT_OWNED;
   }
 }
 

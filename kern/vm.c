@@ -72,6 +72,44 @@ void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
                          PE_SIZE_FLAG(0) | PT_GLOBAL_FLAG(0) | paddr;
 }
 
+PageTable clonePageTable(PageTable old) {
+  PageTable newPT = newPageTable();
+  memset((void*)newPT, (void*)old, sizeof(PTE) * PT_SIZE);
+  return newPT;
+}
+
+// [startPDIndex, endPDIndex]
+// The PD index must be nonexist
+void clonePageDirectory(PageDirectory src, PageDirectory dst,
+    uint32_t startPDIndex, uint32_t endPDIndex) {
+  for (int i = startPDIndex; i <= endPDIndex; i++) {
+    if (PE_IS_PRESENT(dst[i])) {
+      panic("clonePageDirectory: cannot clone to a dest pd with "
+            "conflicting page table");
+    }
+    dst[i] = src[i];
+    if (PE_IS_PRESENT(src[i])) {
+      PageTable newPT = clonePageTable(PDE2PT(src[i]));
+      dst[i] = PDE_CLEAR_PT(src[i]) | (uint32_t)newPT;
+    }
+  }
+}
+
+uint32_t traverseEntryPageDirectory(PageDirectory pd,
+    uint32_t startPDIndex, uint32_t endPDIndex,
+    bool (*onPTE)(int, int, PTE*, uint32_t),
+    uint32_t initialToken) {
+  for (int i = startPDIndex; i <= endPDIndex; i++) {
+    if (!PE_IS_PRESENT(pd[i])) continue;
+    PageTable cpt = PDE2PT(pd[i]);
+    for (int j = 0; j < PT_SIZE; i++) {
+      if (!PE_IS_PRESENT(cpt[j])) continue;
+      initialToken = onPTE(i, j, &cpt[j], initialToken);
+    }
+  }
+  return initialToken;
+}
+
 PTE* searchPTEntryPageDirectory(PageDirectory pd, uint32_t vaddr) {
   assert(PE_DECODE_ADDR(vaddr) == vaddr);
 

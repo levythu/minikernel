@@ -81,7 +81,7 @@ tcb* newTCB() {
   if (!ntcb) {
     panic("newTCB: fail to get space for new TCB.");
   }
-  ntcb->ownerCPU = -1;
+  ntcb->owned = THREAD_NOT_OWNED;
   ntcb->status = THREAD_UNINITIALIZED;
   ntcb->id = tidNext++;
   ntcb->next = tcbList;

@@ -25,6 +25,8 @@ typedef PDE* PageDirectory;
 #define STRIP_PD_INDEX(addr) ((addr) >> (32 - PD_BIT))
 #define STRIP_PT_INDEX(addr) \
     (  ((addr) >> (32 - PD_BIT - PT_BIT)) & ((1 << PT_BIT) - 1)  )
+#define RECONSTRUCT_ADDR(pdindex, ptindex) \
+    (  ((pdindex) << (32 - PD_BIT)) | ((ptindex) << (32 - PD_BIT - PT_BIT))  )
 
 #define PE_PRESENT(flag) ((flag) << 0)
 #define PE_IS_PRESENT(pe) ((pe) & PE_PRESENT(1))
@@ -43,6 +45,8 @@ typedef PDE* PageDirectory;
 
 #define PE_DECODE_ADDR(pt) ((pt) & 0xfffff000)
 #define PDE2PT(pde) ((PageTable)PE_DECODE_ADDR(pde))
+#define PDE_CLEAR_PT(pde) ((pde) & 0xfff)
+#define PTE_CLEAR_ADDR(pte) PDE_CLEAR_PT(pte)
 
 //
 #define IS_PAGE_ALIGNED(addr) (((addr) >> PAGE_SHIFT << PAGE_SHIFT) == addr)
@@ -62,5 +66,17 @@ PTE* searchPTEntryPageDirectory(PageDirectory pd, uint32_t vaddr);
 void activatePageDirectory(PageDirectory pd);
 
 PageDirectory getActivePageDirectory();
+
+PageTable clonePageTable(PageTable old);
+
+void clonePageDirectory(PageDirectory src, PageDirectory dst,
+    uint32_t startPDIndex, uint32_t endPDIndex);
+
+uint32_t traverseEntryPageDirectory(PageDirectory pd,
+    uint32_t startPDIndex, uint32_t endPDIndex,
+    bool (*onPTE)(int, int, PTE*, uint32_t),
+    uint32_t initialToken);
+
+void invalidateTLB(uint32_t addr);
 
 #endif

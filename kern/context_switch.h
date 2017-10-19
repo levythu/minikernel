@@ -11,6 +11,7 @@
 
 #include "ureg.h"
 #include "process.h"
+#include "bool.h"
 
 // The kernel of the kernel, switch the whole world to some other context
 // Only regular registers (plus eip) are switched, except %eax %ecx %edx
@@ -18,6 +19,8 @@
 // when it is resumed, it will return from the function with return value = hint
 // New register is adopted.
 int switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint);
+
+bool checkpointTheWorld(ureg_t* savePlace);
 
 // Swtich to the thread pointed by parameter, also switch the process if needed
 // NOTE Current CPU must own the current thread and the thread to switch
@@ -31,7 +34,10 @@ int switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint);
 // looks like returnning from switchTheWorld() call.
 // - Disown the former thread
 //
-// The function is interrupt-safe (it acquires locak lock)
+// When it returns, you have no idea about whether thread still exist, you
+// MUST NOT access it anymore. Unless you know it.
+//
+// The function is interrupt-safe (it acquires local lock)
 void swtichToThread(tcb* thread);
 
 #endif

@@ -30,14 +30,15 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
       // We've gone through everything, no one else is good to go.
       return NULL;
     }
-    bool owned = __sync_bool_compare_and_swap(&nextThread->ownerCPU, -1, cpuid);
+    bool owned = __sync_bool_compare_and_swap(
+        &nextThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
     if (!owned) {
       // someone else is using this, skip.
       continue;
     }
     if (!THREAD_STATUS_CAN_RUN(nextThread->status)) {
       // Not runnable. Put it back sir.
-      nextThread->ownerCPU = -1;
+      nextThread->owned = THREAD_NOT_OWNED;
       continue;
     }
 

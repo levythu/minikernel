@@ -27,18 +27,19 @@ static bool verifyUserSpaceAddrGivenPD(uint32_t startAddr, uint32_t endAddr,
   int lastVerifiedPageNum = 0;
   for (uint32_t i = startAddr; ; i++) {
     int myPageNum = PE_DECODE_ADDR(i);
-    if (myPageNum == lastVerifiedPageNum) continue;
-    lastVerifiedPageNum = myPageNum;
+    if (myPageNum != lastVerifiedPageNum) {
+      lastVerifiedPageNum = myPageNum;
 
-    PTE* targetPTE = searchPTEntryPageDirectory(mypd, lastVerifiedPageNum);
-    if (!targetPTE) {
-      // The page does not exist at all
-      return false;
-    }
+      PTE* targetPTE = searchPTEntryPageDirectory(mypd, lastVerifiedPageNum);
+      if (!targetPTE) {
+        // The page does not exist at all
+        return false;
+      }
 
-    if (mustWritable && !PE_IS_WRITABLE(*targetPTE)) {
-      // We want a writable page, but it's not writable for user
-      return false;
+      if (mustWritable && !PE_IS_WRITABLE(*targetPTE)) {
+        // We want a writable page, but it's not writable for user
+        return false;
+      }
     }
 
     if (i == endAddr) {

@@ -11,10 +11,8 @@
 #include <malloc.h>
 #include <assert.h>
 #include <syscall_int.h>
+#include <stdlib.h>
 
-#include "x86/asm.h"
-#include "x86/cr.h"
-#include "x86/seg.h"
 #include "common_kern.h"
 #include "syscall.h"
 #include "process.h"
@@ -22,6 +20,8 @@
 #include "bool.h"
 #include "cpu.h"
 #include "zeus.h"
+#include "loader.h"
+#include "source_untrusted.h"
 
 int gettid_Internal(SyscallParams params) {
   return getLocalCPU()->runningTID;
@@ -55,4 +55,14 @@ int vanish_Internal(SyscallParams params) {
 
 int set_status_Internal(SyscallParams params) {
   return 0;
+}
+
+int exec_Internal(SyscallParams params) {
+  ArgPackage* pkg = (ArgPackage*)smalloc(sizeof(ArgPackage));
+  int execName;
+  parseMultiParam(params, 0, &execName);
+  int get = sGetString((uint32_t)execName, pkg->c[0], ARGPKG_MAX_ARG_LEN);
+  lprintf("exec: %d:%s", get, pkg->c[0]);
+  sfree(pkg, sizeof(ArgPackage));
+  return -1;
 }

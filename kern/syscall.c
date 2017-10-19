@@ -20,7 +20,7 @@
 #include "int_handler.h"
 #include "bool.h"
 #include "cpu.h"
-#include "source_untrusted"
+#include "source_untrusted.h"
 
 #define MAKE_SYSCALL_IDT(syscallName, syscallIntNumber) \
   do { \
@@ -37,6 +37,7 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(set_status, SET_STATUS_INT);
   MAKE_SYSCALL_IDT(wait, WAIT_INT);
   MAKE_SYSCALL_IDT(vanish, VANISH_INT);
+  MAKE_SYSCALL_IDT(exec, EXEC_INT);
 
   lprintf("Registered all system call handler.");
 }

@@ -19,7 +19,9 @@
 
 // Sum up to 4096, and it contains the terminating zero, both in string and
 // array
-typedef char ArgPackage[ARGPKG_MAX_ARG_COUNT][ARGPKG_MAX_ARG_LEN];
+typedef struct {
+  char c[ARGPKG_MAX_ARG_COUNT][ARGPKG_MAX_ARG_LEN];
+} ArgPackage;
 
 /*****************************************************************************/
 

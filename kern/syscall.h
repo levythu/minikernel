@@ -5,7 +5,10 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
+#include <stdint.h>
+
 #include "make_syscall_handler.h"
+#include "bool.h"
 
 // To add a syscall handler, you need:
 // 1. DECLARE_SYSCALL_WRAPPER(syscall-name) in syscall.h
@@ -21,7 +24,11 @@ DECLARE_SYSCALL_WRAPPER(fork);
 DECLARE_SYSCALL_WRAPPER(set_status);
 DECLARE_SYSCALL_WRAPPER(wait);
 DECLARE_SYSCALL_WRAPPER(vanish);
+DECLARE_SYSCALL_WRAPPER(exec);
 
 void initSyscall();
+
+bool parseSingleParam(SyscallParams params, int* result);
+bool parseMultiParam(SyscallParams params, int argnum, int* result);
 
 #endif

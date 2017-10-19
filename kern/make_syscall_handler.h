@@ -14,13 +14,25 @@
 #ifndef MAKE_SYSCALL_HANDLER_H
 #define MAKE_SYSCALL_HANDLER_H
 
-// TODO ds and es
+#include <x86/seg.h>
+
+// On syscall_Interal returns, the stack is:
+// EAX, ECX, EDX, EBX, EBP, ESP, EBP, ESI, EDI, DS, ES
+//                                                  ^
+//                                                 %esp
 #define MAKE_SYSCALL_WRAPPER(syscallName)                          \
     .globl syscallName ## _Handler;                         \
     syscallName ## _Handler:                                \
       pusha;                                                       \
+      push %ds;                        \
+      push %es;                          \
+      mov $SEGSEL_KERNEL_DS, %eax;     \
+      mov %ax, %ds;                    \
+      mov %ax, %es;                    \
       call syscallName ## _Internal;                        \
-      movl %eax, (%esp);                                            \
+      pop %es;  \
+      pop %ds;  \
+      movl %eax, 28(%esp);                                            \
       popa;                                                        \
       iret;
 

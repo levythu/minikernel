@@ -19,6 +19,7 @@
 #include "syscall.h"
 #include "int_handler.h"
 #include "bool.h"
+#include "cpu.h"
 
 #define MAKE_SYSCALL_IDT(syscallName, syscallIntNumber) \
   do { \
@@ -36,6 +37,5 @@ void initSyscall() {
 }
 
 int gettid_Internal() {
-  lprintf("GETTID");
-  return 0;
+  return getLocalCPU()->runningTID;
 }

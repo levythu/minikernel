@@ -30,6 +30,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   npcb->pd = newPageDirectory();
   setKernelMapping(npcb->pd);
   npcb->parentPID = -1;
+  npcb->numThread = 1;
 
   tcb* ntcb = newTCB();
   // Only happens in multi-cpu
@@ -104,7 +105,7 @@ static bool rebuildPD(PageDirectory mypd) {
 // Fork a new process, based on the process of current thread.
 // NOTE: the current process *must* only have the current thread
 // and of course, currentThread must be owned by the CPU
-void forkProcess(tcb* currentThread) {
+int forkProcess(tcb* currentThread) {
   tcb* newThread;
   pcb* newProc = SpawnProcess(&newThread);
   pcb* currentProc = currentThread->process;
@@ -121,6 +122,11 @@ void forkProcess(tcb* currentThread) {
   // block the current thread, forbid it run until the new finish copying the
   // pages.
   currentThread->status = THREAD_BLOCKED;
+
+  // Use this to let child access parent's stack
+  int retValueForParentCall;
+  int* ptr_retValueForParentCall = &retValueForParentCall;
+
   if (!checkpointTheWorld(&newThread->regs,
       currentThread->kernelStackPage, newThread->kernelStackPage, PAGE_SIZE)) {
     // This is the old process!
@@ -136,6 +142,11 @@ void forkProcess(tcb* currentThread) {
     // But we cannot access thread (it may have already ends!)
     // However, newProc is good to access! It's my child, and it cannot die
     // (while maybe zombie) before I wait()
+
+    // Now I'm rescheduled, meaning my child has finish forking!
+    // So, retValueForParentCall is safely holding the return value (either
+    // failure (-1) or its tid)
+    return retValueForParentCall;
   } else {
     // This is the new process!
     // newProc/newThread is me now.
@@ -146,6 +157,9 @@ void forkProcess(tcb* currentThread) {
     // Now it's time to rebuild my page directory
     if (!rebuildPD(newProc->pd)) {
       // TODO kill the process
+      // TODO unblock parent
+      *ptr_retValueForParentCall = -1;  // Fork fail
+      return 0;
     }
 
     // On single core machine it's nothing
@@ -155,9 +169,13 @@ void forkProcess(tcb* currentThread) {
         &currentThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
       ;
 
+    // Before unblock parent process, tell him about our success.
+    *ptr_retValueForParentCall = newThread->id;
+
     lprintf("Setting %d to runnable", currentThread->id);
     currentThread->status = THREAD_RUNNABLE;
     currentThread->owned = THREAD_NOT_OWNED;
+    return 0;
   }
 }
 

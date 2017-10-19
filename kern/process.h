@@ -18,9 +18,14 @@
 typedef struct _pcb {
   int id;
   struct _pcb* next;
+  // Read only after creation
   ProcessMemoryMeta memMeta;
   PageDirectory pd;
   int parentPID;
+
+  // Changable
+  int numThread;
+  // TODO access control
 } pcb;
 
 typedef enum ThreadStatus {

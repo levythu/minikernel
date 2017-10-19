@@ -17,14 +17,24 @@
 #include "x86/seg.h"
 #include "common_kern.h"
 #include "syscall.h"
+#include "process.h"
 #include "int_handler.h"
 #include "bool.h"
 #include "cpu.h"
+#include "zeus.h"
 
 int gettid_Internal() {
   return getLocalCPU()->runningTID;
 }
 
 int fork_Internal() {
-  return -1;
+  // We own currentThread
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  // Precheck: the process has only one thread
+  // TODO Consider locking the process data structure
+  if (currentThread->process->numThread > 1) {
+    // We reject a multithread process to fork
+    return -1;
+  }
+  return forkProcess(currentThread);
 }

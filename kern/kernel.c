@@ -68,10 +68,6 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
     panic("RunInit: Fail to init the first process");
   }
 
-  forkProcess(firstThread);
-  forkProcess(findTCB(getLocalCPU()->runningPID));
-  lprintf("Hi, I'm process %d", getLocalCPU()->runningPID);
-
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   lprintf("Into Ring3...");
@@ -121,7 +117,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("ck1");
+    EmitInitProcess("fork_test1");
 
     while (1) {
         continue;

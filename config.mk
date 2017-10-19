@@ -122,6 +122,7 @@ KERNEL_OBJS += driver.o graphic_driver.o int_handler.o keyboard_driver.o timer_d
 KERNEL_OBJS += vm.o pm.o zeus.o mode_switch.o process.o
 KERNEL_OBJS += syscall.o syscall_handler.o syscall_lifecycle.o
 KERNEL_OBJS += scheduler.o context_switch.o context_switch_c.o scheduler.o vm_asm.o
+KERNEL_OBJS += source_untrusted.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

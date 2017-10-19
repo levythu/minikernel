@@ -14,6 +14,15 @@
 #include "bool.h"
 #include "vm.h"
 
+#define ARGPKG_MAX_ARG_LEN 128
+#define ARGPKG_MAX_ARG_COUNT 32
+
+// Sum up to 4096, and it contains the terminating zero, both in string and
+// array
+typedef char ArgPackage[ARGPKG_MAX_ARG_COUNT][ARGPKG_MAX_ARG_LEN];
+
+/*****************************************************************************/
+
 // This is the memory situation after an elf is loaded.
 // To be more concise, it describe the range of stack and range of heap
 // [stackLow, stackHigh] is the stack range

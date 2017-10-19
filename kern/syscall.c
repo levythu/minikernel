@@ -20,6 +20,7 @@
 #include "int_handler.h"
 #include "bool.h"
 #include "cpu.h"
+#include "source_untrusted"
 
 #define MAKE_SYSCALL_IDT(syscallName, syscallIntNumber) \
   do { \
@@ -43,6 +44,11 @@ void initSyscall() {
 /******************************************************************************/
 // Helper functions for parsing params
 
-uint32_t parseSingleParam(SyscallParams params) {
-  return (uint32_t)params;
+bool parseSingleParam(SyscallParams params, int* result) {
+  *result = (int)params;
+  return true;
+}
+
+bool parseMultiParam(SyscallParams params, int argnum, int* result) {
+  return sGetInt(params + 4 * argnum, result);
 }

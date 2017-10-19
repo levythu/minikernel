@@ -31,7 +31,9 @@ typedef PDE* PageDirectory;
 #define PE_PRESENT(flag) ((flag) << 0)
 #define PE_IS_PRESENT(pe) ((pe) & PE_PRESENT(1))
 
+// Page Directory is always writable
 #define PE_WRITABLE(flag) ((flag) << 1)
+#define PE_IS_WRITABLE(pe) ((pe) & PE_WRITABLE(1))
 
 #define PE_USERMODE(flag) ((flag) << 2)
 

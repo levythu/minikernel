@@ -32,10 +32,7 @@
 
 void initSyscall() {
   MAKE_SYSCALL_IDT(gettid, GETTID_INT);
+  MAKE_SYSCALL_IDT(fork, FORK_INT);
 
   lprintf("Registered all system call handler.");
-}
-
-int gettid_Internal() {
-  return getLocalCPU()->runningTID;
 }

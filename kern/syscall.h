@@ -8,6 +8,7 @@
 #include "make_syscall_handler.h"
 
 DECLARE_SYSCALL_WRAPPER(gettid);
+DECLARE_SYSCALL_WRAPPER(fork);
 
 void initSyscall();
 

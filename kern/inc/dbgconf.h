@@ -14,4 +14,6 @@
 
 #define SCHEDULER_DECISION_PRINT
 
+#define CPULOCK_PRINT
+
 #endif

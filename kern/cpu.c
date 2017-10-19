@@ -18,6 +18,7 @@
 #include "common_kern.h"
 #include "cpu.h"
 #include "bool.h"
+#include "dbgconf.h"
 
 static cpu UniCore;
 
@@ -50,11 +51,19 @@ void EnableInterrupts() {
 void LocalLockR() {
   DisableInterrupts();
   getLocalCPU()->currentMutexLayer++;
+  #ifdef CPULOCK_PRINT
+    lprintf("[CPU] CPU%d locked, layer = %d",
+        getLocalCPU()->id, getLocalCPU()->currentMutexLayer);
+  #endif
 }
 
 void LocalUnlockR() {
   assert(!getLocalCPU()->interruptSwitch);
   getLocalCPU()->currentMutexLayer--;
+  #ifdef CPULOCK_PRINT
+    lprintf("[CPU] CPU%d unlocked, layer = %d",
+        getLocalCPU()->id, getLocalCPU()->currentMutexLayer);
+  #endif
   if (getLocalCPU()->currentMutexLayer < 0) {
     EnableInterrupts();
   }

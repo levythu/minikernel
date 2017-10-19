@@ -61,15 +61,20 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
 
   lprintf("Hello from the 1st thread! The init program is: %s", filename);
 
-  if (LoadELFToProcess(firstProc, firstThread, filename) < 0) {
+  uint32_t esp, eip;
+  if (LoadELFToProcess(firstProc, firstThread, filename, &eip, &esp) < 0) {
     panic("RunInit: Fail to init the first process");
   }
+
+  forkProcess(firstThread);
+  lprintf("Hi, I'm process %d", getLocalCPU()->runningPID);
 
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   lprintf("Into Ring3...");
 
-  switchToRing3(firstThread->regs.esp, neweflags, firstThread->regs.eip);
+  lprintf("esp = 0x%08x; eip = 0x%08x", firstThread->regs.esp, firstThread->regs.eip);
+  switchToRing3(esp, neweflags, eip);
 }
 
 void EmitInitProcess(const char* filename, bool runImmediate) {
@@ -77,7 +82,6 @@ void EmitInitProcess(const char* filename, bool runImmediate) {
   pcb* firstProc = SpawnProcess(&firstThread);
   firstThread->regs.eip = (uint32_t)RunInit;
   firstThread->regs.esp = firstThread->kernelStackPage + PAGE_SIZE - 1;
-  lprintf("xxxx [0x%08lx, 0x%08lx)", firstThread->kernelStackPage, firstThread->kernelStackPage + PAGE_SIZE);
 
   uint32_t* futureStack = (uint32_t*)firstThread->regs.esp;
   futureStack[-1] = (uint32_t)firstThread;

@@ -116,6 +116,7 @@ void forkProcess(tcb* currentThread) {
   memcpy((void*)newThread->kernelStackPage,
          (void*)currentThread->kernelStackPage,
          PAGE_SIZE);
+  newThread->regs = currentThread->regs;
   // block the current thread, forbid it run until the new finish copying the
   // pages.
   currentThread->status = THREAD_BLOCKED;
@@ -158,11 +159,9 @@ void forkProcess(tcb* currentThread) {
 }
 
 
-int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName) {
-  if (initELFMemory(fileName,
-        proc->pd, &proc->memMeta,
-        (uint32_t*)&firstThread->regs.eip,
-        (uint32_t*)&firstThread->regs.esp) < 0) {
+int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
+    uint32_t* eip, uint32_t* esp) {
+  if (initELFMemory(fileName, proc->pd, &proc->memMeta, eip, esp) < 0) {
     return -1;
   }
   return 0;

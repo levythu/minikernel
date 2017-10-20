@@ -18,10 +18,17 @@
 #define ARGPKG_MAX_ARG_COUNT 32
 
 // Sum up to 4096, and it contains the terminating zero, both in string and
-// array
+// array.
+// every entry is a string terminated by zero. The space after the entry is
+// also zero padding
+// But the terminator of arg is "\0\0xff"
+// i.e., ArgPackage can only holds (ARGPKG_MAX_ARG_COUNT-1) real strings plus
+// a special terminator
 typedef struct {
   char c[ARGPKG_MAX_ARG_COUNT][ARGPKG_MAX_ARG_LEN];
 } ArgPackage;
+
+void printArgPackage(ArgPackage* pkg);
 
 /*****************************************************************************/
 

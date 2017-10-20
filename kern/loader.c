@@ -23,6 +23,17 @@
 #include "vm.h"
 #include "pm.h"
 
+void printArgPackage(ArgPackage* pkg) {
+  lprintf("++ Print Argument Package:");
+  for (int i = 0; i < ARGPKG_MAX_ARG_COUNT; i++) {
+    if (pkg->c[i][0] == 0 && pkg->c[i][1] == -1) break;
+    lprintf("- %s", pkg->c[i]);
+  }
+  lprintf("++ End");
+}
+
+/*****************************************************************************/
+
 // Only for debug
 void printELF(simple_elf_t* elfMetadata) {
   lprintf("ELF info for %s:", elfMetadata->e_fname);

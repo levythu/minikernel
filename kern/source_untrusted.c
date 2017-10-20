@@ -56,9 +56,12 @@ bool verifyUserSpaceAddr(
   return verifyUserSpaceAddrGivenPD(startAddr, endAddr, mustWritable, mypd);
 }
 
+// TODO: these things are not thread safe!
+// It is not atomic, another thread may use syscall to change the memory.
+// But since the memory can only grow, so it's safe
 bool sGetInt(uint32_t addr, int* target) {
   if (!verifyUserSpaceAddr(addr, addr - 1 + sizeof(int), false)) return false;
-  *target = *((int*)addr);
+  if (target) *target = *((int*)addr);
   return true;
 }
 
@@ -74,9 +77,10 @@ bool sGetInt(uint32_t addr, int* target) {
       lastVerifiedPageNum = PE_DECODE_ADDR(addr + i); \
  \
       if (i % sizeof(TYPE) == 0) { \
-        target[i] = *((TYPE*)(addr + i)); \
-        if (target[i] == 0) { \
-          return i; \
+        TYPE tmp = *((TYPE*)(addr + i)); \
+        if (target) target[i] = tmp; \
+        if (tmp == 0) { \
+          return i / sizeof(TYPE); \
         } \
       } \
     } \

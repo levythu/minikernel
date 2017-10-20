@@ -20,6 +20,13 @@
 // New register is adopted.
 int switchTheWorld(ureg_t* oldURegSavePlace, ureg_t *newUReg, int hint);
 
+// Similar to setjump, will make a snapshot of common register and store it to
+// savePlace, so that it can be passed to switchTheWorld to restore.
+// It also snapshot some memory [memToSnapshot, memToSnapshot + size) to
+// [memDst, memToSnapshot + size), so that the most realtime memory can be
+// preserved (it is used to duplicate kernel stack on fork)
+// Return: false if it is making the snapshot; true if it is jumped back from
+// a snapshot
 bool checkpointTheWorld(ureg_t* savePlace,
     uint32_t memToSnapshot, uint32_t memDst, uint32_t size);
 

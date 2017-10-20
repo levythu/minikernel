@@ -1,7 +1,16 @@
 /** @file process.h
  *
- *  @brief TODO
-
+ *  @brief Core data structure for PCB and TCB.
+ *
+ *  The description of TCB and PCB are detailed below; Besides the definition,
+ *  this module only manages the internal storage of TCB/PCB itself. To specify,
+ *  it's add/delete/find, and a global lock is used to only protect its present
+ *  data sturcture.
+ *
+ *  Besides those, this module is NOT RESPONSIBLE for any synchronization and
+ *  race-prevention between different user of tcb/pcb.
+ *
+ *  TCB and PCB are kept in two linked list.
  *
  *  @author Leiyu Zhao
  */
@@ -39,6 +48,8 @@ typedef enum ThreadStatus {
 #define THREAD_STATUS_CAN_RUN(status) \
     (((status) == THREAD_INITIALIZED) || ((status) == THREAD_RUNNABLE))
 
+// TCB is the kernel presentation of a thread, and is also the unit for
+// scheduler
 typedef struct _tcb {
   int id;
   struct _tcb* next;

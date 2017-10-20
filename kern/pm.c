@@ -1,7 +1,9 @@
 /** @file pm.c
  *
- *  @brief TODO
-
+ *  @brief Physical Memory manager, only for non-kernel space.
+ *
+ *  All free pages are kept in a stack, and latch serves as a global lock to
+ *  protect the data structure
  *
  *  @author Leiyu Zhao
  */

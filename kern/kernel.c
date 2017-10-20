@@ -1,12 +1,8 @@
 /** @file kernel.c
- *  @brief An initial kernel.c
+ *  @brief The entry from bootstrap, doing all kernel initializing things, and
+ *  make the 1st process, load init()
  *
- *  You should initialize things in kernel_main(),
- *  and then run stuff.
- *
- *  @author Harry Q. Bovik (hqbovik)
- *  @author Fred Hacker (fhacker)
- *  @bug No known bugs.
+ *  @author Leiyu Zhao
  */
 
 #include <common_kern.h>

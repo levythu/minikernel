@@ -32,7 +32,7 @@ static void switchToProcess(pcb* process) {
 }
 
 // Swtich to the thread pointed by parameter, also switch the process if needed
-// NOTE Current CPU must own the current thread and the thread to switch
+// NOTE Current CPU must own the current thread and the target thread
 // It will do several things:
 // - Switch the process, if possible
 // - Switch the kernel stack
@@ -43,7 +43,9 @@ static void switchToProcess(pcb* process) {
 // looks like returnning from switchTheWorld() call.
 // - Disown the former thread
 //
-// The function is interrupt-safe (it acquires locak lock)
+// The function is interrupt-safe (it acquires local lock)
+// NOTE that if target thread has different entry other than swtichToThread(),
+// the entry should disown the former thread and LocalUnlockR
 void swtichToThread(tcb* thread) {
   LocalLockR();
   cpu* core = getLocalCPU();

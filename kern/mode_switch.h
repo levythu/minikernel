@@ -14,8 +14,9 @@
 
 #include <stdint.h>
 
-// Switch to ring3, given the user-space esp, eip and eflags
-// It will set segment registers according
+// Switch to ring3, given the user-space esp, eip and eflags. This function
+// NEVER returns!
+// It will set segment registers accordingly
 void switchToRing3(uint32_t esp, uint32_t eflags, uint32_t eip);
 
 #endif

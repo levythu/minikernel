@@ -4,6 +4,8 @@
  *
  * Structure definitions, #defines, and function prototypes
  * for the user process loader.
+ *
+ *  @author Leiyu Zhao
  */
 
 #ifndef _LOADER_H
@@ -13,6 +15,9 @@
 
 #include "bool.h"
 #include "vm.h"
+
+// Below are the definition of argument package, which is a package to hold
+// the initial argv from exec.
 
 #define ARGPKG_MAX_ARG_LEN 128
 #define ARGPKG_MAX_ARG_COUNT 32
@@ -56,6 +61,13 @@ int getbytes( const char *filename, int offset, int size, char *buf );
 // argpkg is used to provide argv and argc, the function will not own it, so
 // the caller can dispose it after use. It can also be NULL, then argc = 0
 // and argv = {NULL}
+//
+// The function is good to go as long as CPU own current thread. The process
+// MUST only contains the current thread.
+//
+// The function is idempotent, i.e., it can be called multiple times, with
+// some other pages in the page table. Existing page mappings will be preserved
+// and new mappings will be created if needed
 //
 // - filename: the file to load
 // - pd: current page directory (the caller must ensure the pd is activated

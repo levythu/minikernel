@@ -23,6 +23,7 @@
 #include "vm.h"
 #include "pm.h"
 
+// Only for debug
 void printArgPackage(ArgPackage* pkg) {
   lprintf("++ Print Argument Package:");
   for (int i = 0; i < ARGPKG_MAX_ARG_COUNT; i++) {
@@ -32,6 +33,7 @@ void printArgPackage(ArgPackage* pkg) {
   lprintf("++ End");
 }
 
+// Get argc from ArgPackage. Just trace the terminator
 static int getArgCount(ArgPackage* pkg) {
   for (int i = 0; i < ARGPKG_MAX_ARG_COUNT; i++) {
     if (pkg->c[i][0] == 0 && pkg->c[i][1] == -1) return i;
@@ -112,6 +114,8 @@ static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
 
 // Set up the initial stack for a new elf so that
 // _main fucntion in crt0.c will have correct view of parameters.
+// argpkg define the argv and caller should dispose it, it can also be NULL,
+// and (argc=0, argv={NULL}) will be initiated
 static void setupInitialStack(ArgPackage* argpkg,
     ProcessMemoryMeta* memMeta, uint32_t *esp) {
   *esp = memMeta->stackHigh - sizeof(void*) + 1;

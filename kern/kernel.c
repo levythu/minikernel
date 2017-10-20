@@ -20,7 +20,7 @@
 #include <multiboot.h>              /* boot_info */
 
 /* x86 specific includes */
-#include <x86/asm.h>                /* enable_interrupts() */
+#include <x86/asm.h>
 #include <x86/eflags.h>
 #include <x86/cr.h>
 
@@ -63,17 +63,9 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
 
   lprintf("Hello from the 1st thread! The init program is: %s", filename);
 
-  uint32_t esp, eip;
-  if (LoadELFToProcess(
-      firstProc, firstThread, filename, NULL, &eip, &esp) < 0) {
-    panic("RunInit: Fail to init the first process");
-  }
-
-  uint32_t neweflags =
-      (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
-  lprintf("Into Ring3...");
-
-  switchToRing3(esp, neweflags, eip);
+  // Will go into ring3
+  execProcess(firstThread, filename, NULL);
+  panic("RunInit: fail to run the 1st process");
 }
 
 void EmitInitProcess(const char* filename) {

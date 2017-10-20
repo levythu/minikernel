@@ -59,6 +59,15 @@ int set_status_Internal(SyscallParams params) {
 }
 
 int exec_Internal(SyscallParams params) {
+  // We own currentThread
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  // Precheck: the process has only one thread
+  // TODO Consider locking the process data structure
+  if (currentThread->process->numThread > 1) {
+    // We reject a multithread process to fork
+    return -1;
+  }
+
   ArgPackage* pkg = (ArgPackage*)smalloc(sizeof(ArgPackage));
   if (!pkg) {
     panic("exec_Internal: no kernel space");

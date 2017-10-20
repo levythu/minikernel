@@ -13,8 +13,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "x86/asm.h"
-#include "x86/cr.h"
+#include <x86/asm.h>
+#include <x86/eflags.h>
+#include <x86/cr.h>
+
 #include "common_kern.h"
 #include "process.h"
 #include "bool.h"
@@ -23,6 +25,7 @@
 #include "pm.h"
 #include "loader.h"
 #include "context_switch.h"
+#include "mode_switch.h"
 
 // Will own the thread
 pcb* SpawnProcess(tcb** firstThread) {
@@ -185,5 +188,23 @@ int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
   if (initELFMemory(fileName, proc->pd, argpkg, &proc->memMeta, eip, esp) < 0) {
     return -1;
   }
+  return 0;
+}
+
+// NOTE: the current process *must* only have the current thread
+int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
+  uint32_t esp, eip;
+  if (LoadELFToProcess(
+          currentThread->process, currentThread, filename,
+          argpkg, &eip, &esp) < 0) {
+    return -1;
+  }
+
+  uint32_t neweflags =
+      (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
+  lprintf("Into Ring3...");
+
+  // Will never return!
+  switchToRing3(esp, neweflags, eip);
   return 0;
 }

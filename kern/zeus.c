@@ -181,8 +181,8 @@ int forkProcess(tcb* currentThread) {
 
 
 int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
-    uint32_t* eip, uint32_t* esp) {
-  if (initELFMemory(fileName, proc->pd, &proc->memMeta, eip, esp) < 0) {
+    ArgPackage* argpkg, uint32_t* eip, uint32_t* esp) {
+  if (initELFMemory(fileName, proc->pd, argpkg, &proc->memMeta, eip, esp) < 0) {
     return -1;
   }
   return 0;

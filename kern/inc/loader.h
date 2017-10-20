@@ -53,6 +53,9 @@ int getbytes( const char *filename, int offset, int size, char *buf );
 // the function, the program is ready to run from
 // `_main(int argc, char *argv[], void *stack_high, void *stack_low)`
 // at crt0.c with all parameters set.
+// argpkg is used to provide argv and argc, the function will not own it, so
+// the caller can dispose it after use. It can also be NULL, then argc = 0
+// and argv = {NULL}
 //
 // - filename: the file to load
 // - pd: current page directory (the caller must ensure the pd is activated
@@ -62,7 +65,7 @@ int getbytes( const char *filename, int offset, int size, char *buf );
 // - esp: if success, esp is the current top of stack (with initial parameter
 //       for _main set)
 // Return: 0 if success, -1 otherwise
-int initELFMemory(const char *filename, PageDirectory pd,
+int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
      ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp);
 
 #endif /* _LOADER_H */

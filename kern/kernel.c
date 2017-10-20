@@ -64,7 +64,8 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   lprintf("Hello from the 1st thread! The init program is: %s", filename);
 
   uint32_t esp, eip;
-  if (LoadELFToProcess(firstProc, firstThread, filename, &eip, &esp) < 0) {
+  if (LoadELFToProcess(
+      firstProc, firstThread, filename, NULL, &eip, &esp) < 0) {
     panic("RunInit: Fail to init the first process");
   }
 

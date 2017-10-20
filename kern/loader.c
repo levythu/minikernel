@@ -32,6 +32,14 @@ void printArgPackage(ArgPackage* pkg) {
   lprintf("++ End");
 }
 
+static int getArgCount(ArgPackage* pkg) {
+  for (int i = 0; i < ARGPKG_MAX_ARG_COUNT; i++) {
+    if (pkg->c[i][0] == 0 && pkg->c[i][1] == -1) return i;
+  }
+  panic("getArgCount: ArgPackage is not valid (without terminator)");
+  return -1;
+}
+
 /*****************************************************************************/
 
 // Only for debug
@@ -104,22 +112,46 @@ static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
 
 // Set up the initial stack for a new elf so that
 // _main fucntion in crt0.c will have correct view of parameters.
-// Now we are assuming the argc and argv is null. TODO: correct it
-static void setupInitialStack(ProcessMemoryMeta* memMeta, uint32_t *esp) {
-  // TODO, one page may not be enough to hold everything!
+static void setupInitialStack(ArgPackage* argpkg,
+    ProcessMemoryMeta* memMeta, uint32_t *esp) {
   *esp = memMeta->stackHigh - sizeof(void*) + 1;
+  int argc;
+
+  if (argpkg) {
+    // push ArgPackage on stack!
+    *esp -= sizeof(ArgPackage);
+    memcpy((void*)*esp, (void*)argpkg, sizeof(ArgPackage));
+    ArgPackage* pkgOnStack = (ArgPackage*)(*esp);
+    argc = getArgCount(pkgOnStack);
+    // push argv table on stack
+    for (int i = argc; i >= 0; i--) {
+      uint32_t strAddr;
+      if (i == argc) {
+        strAddr = 0;  // NULL terminator
+      } else {
+        strAddr = (uint32_t)(&pkgOnStack[i]);
+      }
+      *esp -= sizeof(uint32_t);
+      *(uint32_t*)(*esp) = strAddr;
+    }
+  } else {
+    // Push a null terminated thing
+    argc = 0;
+    *esp -= sizeof(uint32_t);
+    *(uint32_t*)(*esp) = 0;
+  }
+
   uint32_t* initialStack = (uint32_t*)(*esp);
-  initialStack[0] = 0;
   initialStack[-1] = memMeta->stackLow;   // stacklow
   initialStack[-2] = memMeta->stackHigh;   // stackhigh
   initialStack[-3] = *esp;   // argv
-  initialStack[-4] = 0;     // argc
+  initialStack[-4] = argc;     // argc
   initialStack[-5] = 0xdeadbeef;  // return address: invalid one
   *esp = (uint32_t)&initialStack[-5];
 }
 
 // see loader.h
-int initELFMemory(const char *filename, PageDirectory pd,
+int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
     ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp) {
   #ifdef VERBOSE_PRINT
     lprintf("Loading %s", filename);
@@ -213,8 +245,9 @@ int initELFMemory(const char *filename, PageDirectory pd,
     #endif
   }
 
-  // Init stack
-  if (cloneMemoryWithPTERange(pd, 0 - (uint32_t)(PAGE_SIZE),
+  // Init stack, give it two page
+  // the bottom one will hold ArgPackage
+  if (cloneMemoryWithPTERange(pd, 0 - (uint32_t)(PAGE_SIZE * 2),
                               0,    // 0xffffffff + 1
                               0,
                               true) < 0) {
@@ -230,7 +263,7 @@ int initELFMemory(const char *filename, PageDirectory pd,
   // TODO not correct! e_bssstart may be 0!
   memMeta->heapLow = elfMetadata.e_bssstart + elfMetadata.e_bsslen;
   memMeta->heapSize = 0;
-  setupInitialStack(memMeta, esp);
+  setupInitialStack(argpkg, memMeta, esp);
   *eip = elfMetadata.e_entry;
   #ifdef VERBOSE_PRINT
     lprintf("Inited stack");

@@ -11,7 +11,7 @@
 
 pcb* SpawnProcess(tcb** firstThread);
 int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
-    uint32_t* eip, uint32_t* esp);
+    ArgPackage* argpkg, uint32_t* eip, uint32_t* esp);
 int forkProcess(tcb* currentThread);
 
 #endif

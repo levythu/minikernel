@@ -110,7 +110,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("exec_basic");
+    EmitInitProcess("exec_nonexist");
 
     while (1) {
         continue;

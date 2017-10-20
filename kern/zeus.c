@@ -192,6 +192,8 @@ int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
 }
 
 // NOTE: the current process *must* only have the current thread
+// argpkg can be null, or a smalloc'd array. If it success (no return), argpkg
+// will be disposed correctly; otherwise, the caller should dispose it
 int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
   uint32_t esp, eip;
   if (LoadELFToProcess(
@@ -199,6 +201,8 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
           argpkg, &eip, &esp) < 0) {
     return -1;
   }
+
+  if (argpkg) sfree(argpkg, sizeof(ArgPackage));
 
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;

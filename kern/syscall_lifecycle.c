@@ -117,6 +117,10 @@ int exec_Internal(SyscallParams params) {
   pkg->c[argvecLen+1][1] = -1;
 
   printArgPackage(pkg);
+
+  execProcess(currentThread, pkg->c[0], pkg);
+
+  // When we reach here, execProcess fail.
   sfree(pkg, sizeof(ArgPackage));
   return -1;
 }

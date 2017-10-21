@@ -47,5 +47,6 @@ bool checkpointTheWorld(ureg_t* savePlace,
 //
 // The function is interrupt-safe (it acquires local lock)
 void swtichToThread(tcb* thread);
+void swtichToThread_Prelocked(tcb* thread);
 
 #endif

@@ -48,6 +48,10 @@ static void switchToProcess(pcb* process) {
 // the entry should disown the former thread and LocalUnlockR
 void swtichToThread(tcb* thread) {
   LocalLockR();
+  swtichToThread_Prelocked(thread);
+}
+
+void swtichToThread_Prelocked(tcb* thread) {
   cpu* core = getLocalCPU();
   if (thread->process->id != core->runningPID) {
     switchToProcess(thread->process);

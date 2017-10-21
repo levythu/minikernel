@@ -35,11 +35,13 @@ pcb* SpawnProcess(tcb** firstThread) {
   npcb->parentPID = -1;
   npcb->numThread = 1;
 
+  LocalLockR();
   tcb* ntcb = newTCB();
-  // Only happens in multi-cpu
+  // Spinloop to get lock will only happens in multi-cpu
   while (!__sync_bool_compare_and_swap(
       &ntcb->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
     ;
+  LocalUnlockR();
   ntcb->process = npcb;
   ntcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
   if (!ntcb->kernelStackPage) {

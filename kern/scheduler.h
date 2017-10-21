@@ -7,6 +7,7 @@
 
 #include "process.h"
 
+void yieldToNext();
 tcb* pickNextRunnableThread(tcb* currentThread);
 
 #endif

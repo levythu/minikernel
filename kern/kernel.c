@@ -44,13 +44,7 @@ void _tickback(unsigned int tk) {
 
 void _keyboardback() {
   if (readchar() != 's') return;
-  int currentTID = getLocalCPU()->runningTID;
-  if (currentTID == -1) return;
-
-  tcb* nextThread = pickNextRunnableThread(findTCB(currentTID));
-  if (nextThread == NULL) return;
-  lprintf("Scheduling to thread #%d", nextThread->id);
-  swtichToThread(nextThread);
+  yieldToNext();
 }
 
 void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
@@ -106,7 +100,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("exec_nonexist");
+    EmitInitProcess("fork_test1");
 
     while (1) {
         continue;

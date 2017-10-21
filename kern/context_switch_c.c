@@ -69,7 +69,8 @@ void swtichToThread_Prelocked(tcb* thread) {
             core->runningTID);
     }
     currentUReg = &cThread->regs;
-    cThread->status = THREAD_RUNNABLE;
+    __sync_bool_compare_and_swap(
+        &cThread->status, THREAD_RUNNING, THREAD_RUNNABLE);
   }
   core->runningTID = thread->id;
   thread->status = THREAD_RUNNING;

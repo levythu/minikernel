@@ -123,6 +123,7 @@ KERNEL_OBJS += vm.o pm.o zeus.o mode_switch.o process.o
 KERNEL_OBJS += syscall.o syscall_handler.o syscall_lifecycle.o
 KERNEL_OBJS += scheduler.o context_switch.o context_switch_c.o scheduler.o vm_asm.o
 KERNEL_OBJS += source_untrusted.o
+KERNEL_OBJS += kmutex.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

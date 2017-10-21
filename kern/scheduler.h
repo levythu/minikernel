@@ -9,5 +9,6 @@
 
 void yieldToNext();
 tcb* pickNextRunnableThread(tcb* currentThread);
+void tryYieldTo(tcb* target);
 
 #endif

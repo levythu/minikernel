@@ -49,6 +49,8 @@ void initCPU();
 
 // Get the current CPU. Since now it's only single core machine, this will
 // always return that CPU.
+// NOTE: current implementation is definetely not correct. It should prevent
+// the thread to be scheduled to other cores when use cpu info
 cpu* getLocalCPU();
 
 // The Wrapper of DisableInterrupts and Enable. Be SURE to use it after init

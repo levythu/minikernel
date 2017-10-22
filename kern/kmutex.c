@@ -25,46 +25,88 @@
 
 void kmutexInit(kmutex* km) {
   initCrossCPULock(&km->spinMutex);
-  km->queue = NULL;
-  km->available = true;
+  km->readerWL = NULL;
+  km->writerWL = NULL;
+  km->status = 0;
 }
 
-// If not available, construct a waiterLinklist on local stack (the thread will
-// not terminate, so it's safe.)
-void kmutexLock(kmutex* km) {
+void kmutexRLock(kmutex* km) {
   GlobalLockR(&km->spinMutex);
-  if (!km->available) {
+  if (km->status >= 0) {
     // Got it!
-    km->available = false;
+    km->status++;
     GlobalUnlockR(&km->spinMutex);
     return;
   }
-  // put myself into wait list, then deschedule myself
+  // put myself into read wait list, then deschedule myself
   waiterLinklist wl;
   wl.thread = findTCB(getLocalCPU()->runningTID);
-  wl.next = km->queue;
-  km->queue = &wl;
-  wl.thread->status = THREAD_BLOCKED;
+  wl.next = km->readerWL;
+  km->readerWL = &wl;
+  ((tcb*)wl.thread)->status = THREAD_BLOCKED;
 
   GlobalUnlockR(&km->spinMutex);
   yieldToNext();
 }
 
-void kmutexUnlock(kmutex* km) {
+void kmutexRUnlock(kmutex* km) {
   GlobalLockR(&km->spinMutex);
-  if (!km->queue) {
-    km->available = true;
+  km->status--;
+  if (km->status > 0 || !km->writerWL) {
+    // noone else is waiting, or still some one is reading
     GlobalUnlockR(&km->spinMutex);
     return;
   }
   // make the next one in the wl runnable
-  waiterLinklist* wl = km->queue;
-  km->queue = wl->next;
+  waiterLinklist* wl = km->writerWL;
+  km->writerWL = wl->next;
 
-  assert(wl->thread->status == THREAD_BLOCKED);
-  wl->thread->status = THREAD_RUNNABLE;
+  assert(((tcb*)wl->thread)->status == THREAD_BLOCKED);
+  ((tcb*)wl->thread)->status = THREAD_RUNNABLE;
 
   GlobalUnlockR(&km->spinMutex);
+  tryYieldTo(((tcb*)wl->thread));
+}
 
-  tryYieldTo(wl->thread);
+// If not available, construct a waiterLinklist on local stack (the thread will
+// not terminate, so it's safe.)
+void kmutexWLock(kmutex* km) {
+  GlobalLockR(&km->spinMutex);
+  if (km->status == 0) {
+    // Got it!
+    km->status = -1;
+    GlobalUnlockR(&km->spinMutex);
+    return;
+  }
+  // put myself into write wait list, then deschedule myself
+  waiterLinklist wl;
+  wl.thread = findTCB(getLocalCPU()->runningTID);
+  wl.next = km->writerWL;
+  km->writerWL = &wl;
+  ((tcb*)wl.thread)->status = THREAD_BLOCKED;
+
+  GlobalUnlockR(&km->spinMutex);
+  yieldToNext();
+}
+
+void kmutexWUnlock(kmutex* km) {
+  GlobalLockR(&km->spinMutex);
+  km->status = 0;
+  if (!km->readerWL && !km->writerWL) {
+    // noone else is waiting
+    GlobalUnlockR(&km->spinMutex);
+    return;
+  }
+  // We honer reader!
+  waiterLinklist** nextWaiterList =
+      km->readerWL ? &km->readerWL : &km->writerWL;
+
+  waiterLinklist* wl = *nextWaiterList;
+  *nextWaiterList = wl->next;
+
+  assert(((tcb*)wl->thread)->status == THREAD_BLOCKED);
+  ((tcb*)wl->thread)->status = THREAD_RUNNABLE;
+
+  GlobalUnlockR(&km->spinMutex);
+  tryYieldTo(((tcb*)wl->thread));
 }

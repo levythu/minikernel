@@ -23,6 +23,7 @@
 #include "loader.h"
 #include "ureg.h"
 #include "cpu.h"
+#include "kmutex.h"
 
 typedef struct _pcb {
   int id;
@@ -34,7 +35,12 @@ typedef struct _pcb {
 
   // Changable
   int numThread;
-  // TODO access control
+
+  // used to protect member access below me
+  // Also, PageDirectory minor changes (new_pages) should be serial
+  // However, initializing phase, fork and exec don't need its protection, since
+  // they can only be called when the process only have one thread
+  kmutex mutex;
 } pcb;
 
 typedef enum ThreadStatus {

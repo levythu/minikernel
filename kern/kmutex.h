@@ -15,21 +15,23 @@
 #include "bool.h"
 #include "cpu.h"
 #include "sysconf.h"
-#include "process.h"
 
 typedef struct _waiterLinklist {
-  tcb* thread;
+  void* thread;   // tcb, but to avoid circlular dependancy
   struct _waiterLinklist* next;
 } waiterLinklist;
 
-typedef struct {
+typedef struct _kmutex {
   CrossCPULock spinMutex;
-  waiterLinklist* queue;
-  bool available;
+  waiterLinklist* readerWL;
+  waiterLinklist* writerWL;
+  int status;
 } kmutex;
 
 void kmutexInit(kmutex* km);
-void kmutexLock(kmutex* km);
-void kmutexUnlock(kmutex* km);
+void kmutexRLock(kmutex* km);
+void kmutexRUnlock(kmutex* km);
+void kmutexWLock(kmutex* km);
+void kmutexWUnlock(kmutex* km);
 
 #endif

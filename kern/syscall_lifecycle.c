@@ -32,13 +32,13 @@ int fork_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   // Precheck: the process has only one thread
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLock(&currentThread->process->mutex);
   if (currentThread->process->numThread > 1) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlock(&currentThread->process->mutex);
     // We reject a multithread process to fork
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlock(&currentThread->process->mutex);
   return forkProcess(currentThread);
 }
 
@@ -64,13 +64,13 @@ int exec_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   // Precheck: the process has only one thread
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLock(&currentThread->process->mutex);
   if (currentThread->process->numThread > 1) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlock(&currentThread->process->mutex);
     // We reject a multithread process to fork
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlock(&currentThread->process->mutex);
 
   // Then we needn't the lock, since we know that the process only have this
   // thread

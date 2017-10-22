@@ -38,6 +38,9 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(wait, WAIT_INT);
   MAKE_SYSCALL_IDT(vanish, VANISH_INT);
   MAKE_SYSCALL_IDT(exec, EXEC_INT);
+  
+  MAKE_SYSCALL_IDT(new_pages, NEW_PAGES_INT);
+  MAKE_SYSCALL_IDT(remove_pages, REMOVE_PAGES_INT);
 
   lprintf("Registered all system call handler.");
 }

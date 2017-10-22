@@ -26,8 +26,13 @@ DECLARE_SYSCALL_WRAPPER(wait);
 DECLARE_SYSCALL_WRAPPER(vanish);
 DECLARE_SYSCALL_WRAPPER(exec);
 
+DECLARE_SYSCALL_WRAPPER(new_pages);
+DECLARE_SYSCALL_WRAPPER(remove_pages);
+
 void initSyscall();
 
+// Parsing process is not atomic: some memory may be freed by other thread, so
+// memlock should be acquired, unless you know that there's only one thread
 bool parseSingleParam(SyscallParams params, int* result);
 bool parseMultiParam(SyscallParams params, int argnum, int* result);
 

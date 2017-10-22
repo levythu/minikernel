@@ -45,6 +45,9 @@ typedef PDE* PageDirectory;
 
 #define PT_GLOBAL_FLAG(flag) ((flag) << 8)
 
+#define PE_ENCODE_CUSTOM(threebit) ((threebit) << 9)
+#define PE_DECODE_CUSTOM(pe) (((pe) >> 9) & 7)
+
 #define PE_DECODE_ADDR(pt) ((pt) & 0xfffff000)
 #define PDE2PT(pde) ((PageTable)PE_DECODE_ADDR(pde))
 #define PDE_CLEAR_PT(pde) ((pde) & 0xfff)

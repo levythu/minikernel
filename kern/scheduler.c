@@ -51,10 +51,22 @@ void tryYieldTo(tcb* target) {
 // We must be super careful about this.
 void yieldToNext() {
   int currentTID = getLocalCPU()->runningTID;
-  if (currentTID == -1) return;
+  if (currentTID == -1) {
+    panic("yieldToNext: current TID = -1");
+  }
 
-  tcb* nextThread = pickNextRunnableThread(findTCB(currentTID));
-  if (nextThread == NULL) return;
+  // Don't have to acquire lock, pickNextRunnableThread will do it!
+  tcb* currentThread = findTCB(currentTID);
+  tcb* nextThread = pickNextRunnableThread(currentThread);
+  if (nextThread == NULL) {
+    // No other thread, run myself. If myself is not runnalbe (impossible if
+    // we have idle), panic
+    if (currentThread->status == THREAD_BLOCKED) {
+      panic("yieldToNext: current TID = -1");
+    }
+    LocalUnlockR();
+    return;
+  }
   lprintf("Scheduling to thread #%d", nextThread->id);
   swtichToThread_Prelocked(nextThread);
 }

@@ -61,7 +61,7 @@ void yieldToNext() {
   if (nextThread == NULL) {
     // No other thread, run myself. If myself is not runnalbe (impossible if
     // we have idle), panic
-    if (currentThread->status == THREAD_BLOCKED) {
+    if (!THREAD_STATUS_CAN_RUN(currentThread->status)) {
       panic("yieldToNext: current TID = -1");
     }
     LocalUnlockR();

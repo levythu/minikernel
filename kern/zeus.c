@@ -90,7 +90,6 @@ static uint32_t rebuildPD_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
 // If any failure, all page from parent pd will be discarded and newly allocated
 // will be kept, so that it's safe to free
 static bool rebuildPD(PageDirectory mypd) {
-        lprintf("build new PD!");
   uint32_t buffer = (uint32_t)smalloc(PAGE_SIZE);
   if (buffer == 0) {
     panic("rebuildPD: no kernel space to rebuild page table.");

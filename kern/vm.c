@@ -49,9 +49,9 @@ void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
     bool isUserMem, bool isWritable) {
   assert(PE_DECODE_ADDR(vaddr) == vaddr);
   assert(PE_DECODE_ADDR(paddr) == paddr);
-  #ifdef VERBOSE_PRINT
-    if (isUserMem) lprintf("Mapping 0x%08lx to 0x%08lx", vaddr, paddr);
-  #endif
+  // #ifdef VERBOSE_PRINT
+  //   if (isUserMem) lprintf("Mapping 0x%08lx to 0x%08lx", vaddr, paddr);
+  // #endif
 
   uint32_t pdIndex = STRIP_PD_INDEX(vaddr);
   uint32_t ptIndex = STRIP_PT_INDEX(vaddr);

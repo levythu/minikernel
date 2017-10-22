@@ -34,8 +34,9 @@
 // length len. base and len must page aligned
 // Maybe partial success, return value = endAddr, so that [base, endAddr) is
 // registered, and the caller may want to rollback
-static uint32_t _registerNewPage(PageDirectory pd, uint32_t base, uint32_t len) {
-  for (uint32_t currentPage = base; currentPage < base + len;
+static uint32_t _registerNewPage(PageDirectory pd, uint32_t base,
+    uint32_t len) {
+  for (uint32_t currentPage = base; currentPage != base + len;
       currentPage += PAGE_SIZE) {
     // overlap is okay!
     if (searchPTEntryPageDirectory(pd, currentPage)) {
@@ -75,6 +76,7 @@ static bool _unregisterNewPage(PageDirectory pd, uint32_t base) {
     *createdPTE = PE_PRESENT(0) | PE_WRITABLE(0) | PE_USERMODE(0) |
                   PE_WRITETHROUGH_CACHE(0) | PE_DISABLE_CACHE(0) |
                   PE_SIZE_FLAG(0);
+    invalidateTLB(currentPage);
   }
   // No we ain't gonna reach here
   return false;
@@ -109,6 +111,8 @@ int new_pages_Internal(SyscallParams params) {
   }
   // We are done!
   kmutexWUnlock(&currentThread->process->memlock);
+  // TODO: change to ZFOD in the future!!
+  memset((void*)base, 0, len);
   return 0;
 }
 
@@ -118,7 +122,7 @@ int remove_pages_Internal(SyscallParams params) {
 
   kmutexRLock(&currentThread->process->memlock);
   uint32_t base;
-  if (!parseMultiParam(params, 0, (int*)&base)) {
+  if (!parseSingleParam(params, (int*)&base)) {
     // Invalid param
     kmutexRUnlock(&currentThread->process->memlock);
     return -1;

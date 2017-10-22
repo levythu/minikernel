@@ -56,7 +56,6 @@ bool verifyUserSpaceAddr(
   return verifyUserSpaceAddrGivenPD(startAddr, endAddr, mustWritable, mypd);
 }
 
-// TODO: these things are not thread safe!
 // It is not atomic, another thread may use syscall to change the memory.
 // But since the memory can only grow, so it's safe
 bool sGetInt(uint32_t addr, int* target) {

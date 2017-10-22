@@ -2,6 +2,9 @@
  *
  *  @brief TODO
  *
+ *  NOTE: all are not thread safe, caller should have access control! (
+ *  implemented by pcb::memLock)
+ *
  *  @author Leiyu Zhao
  */
 

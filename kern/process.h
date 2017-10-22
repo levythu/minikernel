@@ -41,6 +41,8 @@ typedef struct _pcb {
   // However, initializing phase, fork and exec don't need its protection, since
   // they can only be called when the process only have one thread
   kmutex mutex;
+
+  kmutex memlock;
 } pcb;
 
 typedef enum ThreadStatus {

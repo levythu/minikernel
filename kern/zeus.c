@@ -34,6 +34,8 @@ pcb* SpawnProcess(tcb** firstThread) {
   setKernelMapping(npcb->pd);
   npcb->parentPID = -1;
   npcb->numThread = 1;
+  kmutexInit(&npcb->mutex);
+  kmutexInit(&npcb->memlock);
 
   LocalLockR();
   tcb* ntcb = newTCB();

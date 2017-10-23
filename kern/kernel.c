@@ -53,9 +53,9 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   // Fork an idle
   if (forkProcess(firstThread) == 0) {
     // new thread, Will go into ring3
-    char tmp[123];
-    getStringBlocking(tmp, 123);
-    
+    // char tmp[123];
+    // getStringBlocking(tmp, 123);
+
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     execProcess(currentThread, filename, NULL);
     panic("RunInit: fail to run the 1st process");
@@ -111,7 +111,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("fork_test1");
+    EmitInitProcess("remove_pages_test1");
 
     while (1) {
         continue;

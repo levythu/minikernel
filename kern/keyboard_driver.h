@@ -15,14 +15,14 @@
 #include "bool.h"
 
 // The type for kb callback
-typedef void (*KeyboardCallback)();
+typedef void (*KeyboardCallback)(int ch);
 
 // Install the keyboard driver. For any errors return negative integer;
 // otherwise return 0;
-extern int install_keyboard_driver(KeyboardCallback callback);
+extern int install_keyboard_driver(KeyboardCallback asyncCallback,
+    KeyboardCallback syncCallback);
+extern int fetchCharEvent();
 
-// Kayboard APIs
-
-int readchar();
+#define KEY_BUFFER_SIZE 4096
 
 #endif

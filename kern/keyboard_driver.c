@@ -23,7 +23,6 @@
 #include "x86/keyhelp.h"
 #include "cpu.h"
 
-#define KEY_BUFFER_SIZE 4096
 // keyPressBuffer is a cyclic array, with range [bufferStart, bufferEnd)
 // When bufferStart==bufferEnd, the buffer is actually empty.
 // When bufferStart==bufferEnd+1 (cyclic), the buffer is full, despite that
@@ -33,42 +32,54 @@ int bufferStart, bufferEnd;
 
 // Push a new key event (descripted by scanCode) to the end of the queue. If the
 // queue is full, discard it. NOTE: the function is not interleavable, so caller
-// MUST guarantee that only one instance of pushKeyEvent and fetchKeyEvent is
+// MUST guarantee that only one instance of pushCharEvent and fetchCharEvent is
 // running.
-static void pushKeyEvent(uint8_t scanCode) {
-  int bufferNext = (bufferEnd + 1) % KEY_BUFFER_SIZE;
-  if (bufferNext == bufferStart) {
-    // When the buffer is full, we discard any new event.
-    return;
+static int pushCharEvent(uint8_t scanCode) {
+  int ret = -1;
+  LocalLockR();
+  kh_type augmentedChar = process_scancode(scanCode);
+  if (KH_HASDATA(augmentedChar) && KH_ISMAKE(augmentedChar)) {
+    int bufferNext = (bufferEnd + 1) % KEY_BUFFER_SIZE;
+    if (bufferNext == bufferStart) {
+      // When the buffer is full, we discard any new event.
+      LocalUnlockR();
+      return ret;
+    }
+    keyPressBuffer[bufferEnd] = KH_GETCHAR(augmentedChar);
+    bufferEnd = bufferNext;
+    ret = KH_GETCHAR(augmentedChar);
   }
-  keyPressBuffer[bufferEnd] = scanCode;
-  bufferEnd = bufferNext;
+  LocalUnlockR();
+  return ret;
 }
 
-// return the earliest scancode in the queue. If there's nothing, return -1;
+// return the earliest char in the queue. If there's nothing, return -1;
 // NOTE: the function is not interleavable, so caller MUST guarantee that only
-// one instance of pushKeyEvent and fetchKeyEvent is running.
-static int fetchKeyEvent() {
-  DisableInterrupts();
+// one instance of pushCharEvent and fetchCharEvent is running.
+int fetchCharEvent() {
+  LocalLockR();
   if (bufferStart == bufferEnd) {
-    EnableInterrupts();
+    LocalUnlockR();
     return -1;
   }
   int ret = keyPressBuffer[bufferStart];
   bufferStart = (bufferStart + 1) % KEY_BUFFER_SIZE;
-  EnableInterrupts();
+  LocalUnlockR();
   return ret;
 }
 
 /******************************************************************************/
 
-static KeyboardCallback kbCallback = NULL;
+static KeyboardCallback kbCallbackAsync = NULL;
+static KeyboardCallback kbCallbackSync = NULL;
 
 // Install the keyboard driver. For any errors return negative integer;
 // otherwise return 0;
-int install_keyboard_driver(KeyboardCallback callback) {
+int install_keyboard_driver(KeyboardCallback asyncCallback,
+    KeyboardCallback syncCallback) {
   bufferStart = bufferEnd = 0;
-  kbCallback = callback;
+  kbCallbackAsync = asyncCallback;
+  kbCallbackSync = syncCallback;
 
   int32_t* idtBase = (int32_t*)idt_base();
   idtBase[KEY_IDT_ENTRY  << 1] = ENCRYPT_IDT_TRAPGATE_LSB(
@@ -82,22 +93,12 @@ int install_keyboard_driver(KeyboardCallback callback) {
 // It will also send ACK after pushing the scancode to buffer.
 void keyboardIntHandlerInternal() {
   uint8_t scanCode = inb(KEYBOARD_PORT);
-  pushKeyEvent(scanCode);
+  int ch = pushCharEvent(scanCode);
+  if (kbCallbackSync && ch >= 0) {
+    kbCallbackSync(ch);
+  }
   outb(INT_CTL_PORT, INT_ACK_CURRENT);
-  if (kbCallback) {
-    kbCallback();
+  if (kbCallbackAsync && ch >= 0) {
+    kbCallbackAsync(ch);
   }
-}
-
-// Returns the next character in the keyboard buffer; if there's no character
-// (no in buffer or not a character), return -1 instead.
-int readchar() {
-  int charCode;
-  while ((charCode = fetchKeyEvent()) >= 0) {
-    kh_type augmentedChar = process_scancode(charCode);
-    if (KH_HASDATA(augmentedChar) && KH_ISMAKE(augmentedChar)) {
-      return KH_GETCHAR(augmentedChar);
-    }
-  }
-  return -1;
 }

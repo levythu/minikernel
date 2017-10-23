@@ -12,12 +12,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <simics.h>
 #include <ctype.h>
 
 #include "console.h"
 #include "graphic_driver.h"
 #include "x86/video_defines.h"
 #include "x86/asm.h"
+#include "cpu.h"
+
+static CrossCPULock videoLock;
 
 static int16_t characterBuffer[CONSOLE_HEIGHT][CONSOLE_WIDTH];
 static int currentCursorX, currentCursorY;  // relative cursor position
@@ -103,6 +107,7 @@ static void syncCursor(bool toggling) {
 /******************************************************************************/
 
 int install_graphic_driver() {
+  initCrossCPULock(&videoLock);
   currentColor = defaultColor;
   showCursor = true;
   clear_console();
@@ -120,6 +125,7 @@ int install_graphic_driver() {
 // cursor is backed. If there is no character in the line, then nothing will
 // happen.
 int putbyte(char ch) {
+  GlobalLockR(&videoLock);
   if (ch == '\n') {
     moveCursorNewLine();
   } else if (ch == '\r') {
@@ -135,11 +141,13 @@ int putbyte(char ch) {
     draw_char(currentCursorX, currentCursorY, ch, currentColor);
     moveCursorNext();
   }
+  GlobalUnlockR(&videoLock);
   return ch;
 }
 
 // Print the string with length len on the screen by repeatedly calling
 // putbyte(). If s is NULL nothing will happen
+// putbytes is not atomic
 void putbytes(const char *s, int len) {
   if (len <= 0 || !s) return;
   int i;
@@ -152,13 +160,17 @@ void putbytes(const char *s, int len) {
 // negative integer
 int set_term_color(int color) {
   if (!checkValidColor(color)) return GRAPHIC_INVALID_COLOR;
+  GlobalLockR(&videoLock);
   currentColor = color;
+  GlobalUnlockR(&videoLock);
   return 0;
 }
 
 // Get the current terminal color
 void get_term_color(int *color) {
+  GlobalLockR(&videoLock);
   *color = currentColor;
+  GlobalUnlockR(&videoLock);
 }
 
 // Set the current cursor position, successful call will return 0, otherwise a
@@ -167,33 +179,42 @@ int set_cursor(int row, int col) {
   if (row<0 || row>=CONSOLE_HEIGHT || col<0 || col>=CONSOLE_WIDTH) {
     return GRAPHIC_INVALID_POSITION;
   }
+  GlobalLockR(&videoLock);
   currentCursorX = row;
   currentCursorY = col;
   syncCursor(false);
+  GlobalUnlockR(&videoLock);
   return 0;
 }
 
 // Get the current cursor position
 void get_cursor(int *row, int *col) {
+  GlobalLockR(&videoLock);
   *row = currentCursorX;
   *col = currentCursorY;
+  GlobalUnlockR(&videoLock);
 }
 
 // Hide the physical cursor on the screen
 void hide_cursor() {
+  GlobalLockR(&videoLock);
   showCursor = false;
   syncCursor(true);
+  GlobalUnlockR(&videoLock);
 }
 
 // Show the physical cursor on the screen
 void show_cursor() {
+  GlobalLockR(&videoLock);
   showCursor = true;
   syncCursor(true);
+  GlobalUnlockR(&videoLock);
 }
 
 // Clear the whole console with current background. Reset the cursor to the 1st
 // col in the 1st row.
 void clear_console() {
+  GlobalLockR(&videoLock);
   int i, j;
   for (i = 0; i < CONSOLE_HEIGHT; i++) {
     for (j = 0; j < CONSOLE_WIDTH; j++) {
@@ -204,6 +225,7 @@ void clear_console() {
   syncCursor(false);
   validStartX = 0;
   syncGraphicMemory(0, CONSOLE_HEIGHT);
+  GlobalUnlockR(&videoLock);
 }
 
 // Draw a character on given position with given color; if the position or color
@@ -217,9 +239,11 @@ void draw_char(int row, int col, int ch, int color) {
   if (!isprint(ch)) return;
   if (!checkValidColor(color)) return;
 
+  GlobalLockR(&videoLock);
   int absRow = (validStartX + row) % CONSOLE_HEIGHT;
   characterBuffer[absRow][col] = MAKE_CCHAR(ch, color);
   syncGraphicMemory(row, row+1);
+  GlobalUnlockR(&videoLock);
 }
 
 // Get the char on a given point of screen
@@ -229,6 +253,9 @@ char get_char(int row, int col) {
   if (row<0 || row>=CONSOLE_HEIGHT || col<0 || col>=CONSOLE_WIDTH) {
     return GRAPHIC_INVALID_POSITION;
   }
+  GlobalLockR(&videoLock);
   row = (validStartX + row) % CONSOLE_HEIGHT;
-  return CCHAR_TO_CHAR(characterBuffer[row][col]);
+  int16_t res = characterBuffer[row][col];
+  GlobalUnlockR(&videoLock);
+  return CCHAR_TO_CHAR(res);
 }

@@ -32,6 +32,7 @@
 #include "context_switch.h"
 #include "scheduler.h"
 #include "keyboard_driver.h"
+#include "keyboard_event.h"
 
 extern void initMemManagement();
 
@@ -40,11 +41,6 @@ void _tickback(unsigned int tk) {
     lprintf("tick");
   }
   return;
-}
-
-void _keyboardback() {
-  if (readchar() != 's') return;
-  yieldToNext();
 }
 
 void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
@@ -58,7 +54,7 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   panic("RunInit: fail to run the 1st process");
 }
 
-void EmitInitProcess(const char* filename) {
+void EmitInitProcess(const char* filename, bool runnable) {
   tcb* firstThread;
   pcb* firstProc = SpawnProcess(&firstThread);
   firstThread->regs.eip = (uint32_t)RunInit;
@@ -71,8 +67,13 @@ void EmitInitProcess(const char* filename) {
   futureStack[-4] = 0xdeadbeef;   // invalid ret address of root call frame
   firstThread->regs.esp = (uint32_t)&futureStack[-4];
 
-  // This is a one way trip!
-  swtichToThread(firstThread);
+  if (runnable) {
+    // This is a one way trip!
+    swtichToThread(firstThread);
+  } else {
+    firstThread->status = THREAD_RUNNABLE;
+    firstThread->owned = THREAD_NOT_OWNED;
+  }
 }
 
 /** @brief Kernel entrypoint.
@@ -87,7 +88,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     initCPU();
     initMemManagement();
 
-    if (handler_install(_tickback, _keyboardback) != 0) {
+    initKeyboardEvent();
+    if (handler_install(_tickback, onKeyboardSync, onKeyboardAsync) != 0) {
       panic("Fail to install all drivers");
     }
     lprintf("Drivers installed");
@@ -100,7 +102,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("fork_test1");
+    EmitInitProcess("idle", false);
+    EmitInitProcess("fork_test1", true);
 
     while (1) {
         continue;

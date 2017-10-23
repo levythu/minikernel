@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include "bool.h"
+#include "cpu.h"
 
 #define GRAPHIC_INVALID_COLOR -1
 #define GRAPHIC_INVALID_POSITION -2

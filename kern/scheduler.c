@@ -61,10 +61,9 @@ void yieldToNext() {
   if (nextThread == NULL) {
     // No other thread, run myself. If myself is not runnalbe (impossible if
     // we have idle), panic
-    if (!THREAD_STATUS_CAN_RUN(currentThread->status)) {
+    if (currentThread->status != THREAD_RUNNING) {
       panic("yieldToNext: current TID = -1");
     }
-    LocalUnlockR();
     return;
   }
   lprintf("Scheduling to thread #%d", nextThread->id);

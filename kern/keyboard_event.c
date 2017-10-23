@@ -76,6 +76,7 @@ int getcharBlocking() {
 int getStringBlocking(char* space, int maxlen) {
   int currentLen = 0;
   while (true) {
+    sim_breakpoint();
     GlobalLockR(&latch);
     while (true) {
       int ch = fetchCharEvent();
@@ -84,6 +85,7 @@ int getStringBlocking(char* space, int maxlen) {
       } else if (ch == '\n') {
         space[currentLen++] = ch;
         GlobalUnlockR(&latch);
+        // TODO add trailing zero
         return currentLen;
       } else if (ch >= 0) {
         space[currentLen++] = ch;

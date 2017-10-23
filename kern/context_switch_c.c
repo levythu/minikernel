@@ -57,6 +57,8 @@ void swtichToThread_Prelocked(tcb* thread) {
     switchToProcess(thread->process);
   }
 
+  lprintf("Kernel stack switch to [0x%08lx, 0x%08lx]",
+      thread->kernelStackPage, thread->kernelStackPage + PAGE_SIZE - 1);
   set_esp0(thread->kernelStackPage + PAGE_SIZE - 1);
 
   ureg_t dummyUReg;

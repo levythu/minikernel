@@ -53,6 +53,13 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   // Fork an idle
   if (forkProcess(firstThread) == 0) {
     // new thread, Will go into ring3
+    lprintf("1: 0x%08lx, 0x%08lx", (uint32_t)filename, (uint32_t)(&filename));
+    char tmp[123];
+    lprintf("2: 0x%08lx, 0x%08lx, 0x%08lx", (uint32_t)filename, (uint32_t)(&filename), (uint32_t)tmp);
+    sim_breakpoint();
+    getStringBlocking(tmp, 123);
+    lprintf("2: %s", tmp);
+    lprintf("4: 0x%08lx, 0x%08lx, 0x%08lx", (uint32_t)filename, (uint32_t)(&filename), (uint32_t)tmp);
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     execProcess(currentThread, filename, NULL);
     panic("RunInit: fail to run the 1st process");

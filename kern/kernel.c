@@ -45,16 +45,26 @@ void _tickback(unsigned int tk) {
 
 void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   // From swtichToThread, so we must unlock.
+  // But since it switches from -1, so no need to disown anything
   LocalUnlockR();
 
   lprintf("Hello from the 1st thread! The init program is: %s", filename);
 
-  // Will go into ring3
-  execProcess(firstThread, filename, NULL);
-  panic("RunInit: fail to run the 1st process");
+  // Fork an idle
+  if (forkProcess(firstThread) == 0) {
+    // new thread, Will go into ring3
+    tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+    execProcess(currentThread, filename, NULL);
+    panic("RunInit: fail to run the 1st process");
+  } else {
+    // parent thread, Will go into ring3
+    tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+    execProcess(currentThread, "idle", NULL);
+    panic("RunInit: fail to run the 1st process");
+  }
 }
 
-void EmitInitProcess(const char* filename, bool runnable) {
+void EmitInitProcess(const char* filename) {
   tcb* firstThread;
   pcb* firstProc = SpawnProcess(&firstThread);
   firstThread->regs.eip = (uint32_t)RunInit;
@@ -67,13 +77,8 @@ void EmitInitProcess(const char* filename, bool runnable) {
   futureStack[-4] = 0xdeadbeef;   // invalid ret address of root call frame
   firstThread->regs.esp = (uint32_t)&futureStack[-4];
 
-  if (runnable) {
-    // This is a one way trip!
-    swtichToThread(firstThread);
-  } else {
-    firstThread->status = THREAD_RUNNABLE;
-    firstThread->owned = THREAD_NOT_OWNED;
-  }
+  // This is a one way trip!
+  swtichToThread(firstThread);
 }
 
 /** @brief Kernel entrypoint.
@@ -102,8 +107,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("idle", false);
-    EmitInitProcess("fork_test1", true);
+    EmitInitProcess("fork_test1");
 
     while (1) {
         continue;

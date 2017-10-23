@@ -10,6 +10,7 @@ timerIntHandler:
     mov $SEGSEL_KERNEL_DS, %eax
     mov %ax, %ds
     mov %ax, %es
+    mov $0, %ebp
     call timerIntHandlerInternal
     pop %es
     pop %ds
@@ -23,6 +24,7 @@ keyboardIntHandler:
     mov $SEGSEL_KERNEL_DS, %eax
     mov %ax, %ds
     mov %ax, %es
+    mov $0, %ebp
     call keyboardIntHandlerInternal
     pop %es
     pop %ds

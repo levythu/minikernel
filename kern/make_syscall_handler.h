@@ -29,6 +29,7 @@
       mov $SEGSEL_KERNEL_DS, %eax;     \
       mov %ax, %ds;                    \
       mov %ax, %es;                    \
+      mov $0, %ebp;                   \
       push %esi;                       \
       call syscallName ## _Internal;                        \
       pop %esi;                       \

@@ -108,6 +108,25 @@ static bool rebuildPD(PageDirectory mypd) {
   return true;
 }
 
+// Apply delta to all saved %esp on the stack
+// Since the initial ebp is all set to zero, it stops at zero
+// [kernelStackStart, kernelStackEnd] is just for verification
+void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
+    uint32_t kernelStackStart, uint32_t kernelStackEnd) {
+  if (ebpStartChain == 0) return;
+  uint32_t ebp = ebpStartChain;
+  while (true) {
+    if (ebp < kernelStackStart || ebp > kernelStackEnd) {
+      panic("%%ebp=0x%08lx does not fall into kernel stack [0x%08lx, 0x%08lx]",
+            kernelStackStart, kernelStackEnd);
+    }
+    uint32_t* pNextEBP = (uint32_t*)ebp;
+    if (*pNextEBP == 0) return;
+    *pNextEBP += delta;
+    ebp = *pNextEBP;
+  }
+}
+
 // Fork a new process, based on the process of current thread.
 // NOTE: the current process *must* only have the current thread
 // and of course, currentThread must be owned by the CPU
@@ -141,6 +160,10 @@ int forkProcess(tcb* currentThread) {
         newThread->kernelStackPage - currentThread->kernelStackPage;
     newThread->regs.esp +=
         newThread->kernelStackPage - currentThread->kernelStackPage;
+    rebuildKernelStack(newThread->regs.ebp,
+        newThread->kernelStackPage - currentThread->kernelStackPage,
+        newThread->kernelStackPage,
+        newThread->kernelStackPage + PAGE_SIZE - 1);
 
     // Yield to the new thread now!
     swtichToThread(newThread);

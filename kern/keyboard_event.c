@@ -76,7 +76,6 @@ int getcharBlocking() {
 int getStringBlocking(char* space, int maxlen) {
   int currentLen = 0;
   while (true) {
-    sim_breakpoint();
     GlobalLockR(&latch);
     while (true) {
       int ch = fetchCharEvent();

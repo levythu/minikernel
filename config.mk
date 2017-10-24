@@ -60,7 +60,7 @@ UPDATE_METHOD = afs
 # 410TESTS = loader_test1 loader_test2 getpid_test1 ck1
 # 410TESTS = getpid_test1 ck1 fork_test1 exec_basic exec_basic_helper exec_nonexist
 # 410TESTS = new_pages remove_pages_test1 remove_pages_test2
-410TESTS = fork_test1 readline_basic
+410TESTS = fork_test1 readline_basic print_basic
 
 ###########################################################################
 # Test programs you have written which you wish to run

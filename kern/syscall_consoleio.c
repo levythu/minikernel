@@ -24,9 +24,12 @@
 #include "zeus.h"
 #include "loader.h"
 #include "source_untrusted.h"
+#include "kmutex.h"
+#include "console.h"
 #include "keyboard_event.h"
 
-#define MAX_READLINE_BUFFER_SIZE (CONSOLE_WIDTH * CONSOLE_HEIGHT)
+#define MAX_READWRITE_BUFFER_SIZE (CONSOLE_WIDTH * CONSOLE_HEIGHT)
+
 int readline_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
@@ -37,7 +40,7 @@ int readline_Internal(SyscallParams params) {
     kmutexRUnlock(&currentThread->process->mutex);
     return -1;
   }
-  if (len > MAX_READLINE_BUFFER_SIZE) {
+  if (len > MAX_READWRITE_BUFFER_SIZE) {
     kmutexRUnlock(&currentThread->process->mutex);
     return -1;
   }
@@ -78,4 +81,118 @@ int readline_Internal(SyscallParams params) {
   kmutexRUnlock(&currentThread->process->mutex);
 
   return actualLen;
+}
+
+int getchar_Internal(SyscallParams params) {
+  occupyKeyboard();
+  int actualLen = getcharBlocking();
+  releaseKeyboard();
+
+  return actualLen;
+}
+
+int print_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+
+  int len;
+  uint32_t bufAddr;
+  kmutexRLock(&currentThread->process->mutex);
+  if (!parseMultiParam(params, 0, &len)) {
+    // invalid len
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  if (len > MAX_READWRITE_BUFFER_SIZE) {
+    // too long len
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  if (!parseMultiParam(params, 1, (int*)(&bufAddr))) {
+    // invalid bufaddr
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+
+  char* source = smalloc(len);
+  if (!source) {
+    // kernel runs out of memory
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+
+  int actualLen = sGetString(bufAddr, source, len);
+  if (actualLen == -1) {
+    // invalid string
+    sfree(source, len);
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  kmutexRUnlock(&currentThread->process->mutex);
+
+  putbytes(source, actualLen);
+  sfree(source, len);
+  return 0;
+}
+
+int set_term_color_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  int color;
+  kmutexRLock(&currentThread->process->mutex);
+  if (!parseSingleParam(params, &color)) {
+    // invalid color
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  kmutexRUnlock(&currentThread->process->mutex);
+
+  return set_term_color(color);
+}
+
+int set_cursor_pos_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  int row, col;
+  kmutexRLock(&currentThread->process->mutex);
+  if (!parseMultiParam(params, 0, &row)) {
+    // invalid row
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  if (!parseMultiParam(params, 0, &col)) {
+    // invalid col
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  kmutexRUnlock(&currentThread->process->mutex);
+
+  return set_cursor(row, col);
+}
+
+int get_cursor_pos_Internal(SyscallParams params) {
+  int row, col;
+  get_cursor(&row, &col);
+
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  int rowAddr, colAddr;
+  kmutexRLock(&currentThread->process->mutex);
+  if (!parseMultiParam(params, 0, &rowAddr)) {
+    // invalid row address
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  if (!parseMultiParam(params, 0, &colAddr)) {
+    // invalid col address
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  if (!verifyUserSpaceAddr(rowAddr, rowAddr, true) ||
+      !verifyUserSpaceAddr(colAddr, colAddr, true)) {
+    // row/col destination is not writable
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  *((int*)rowAddr) = row;
+  *((int*)colAddr) = col;
+  kmutexRUnlock(&currentThread->process->mutex);
+
+  return 0;
 }

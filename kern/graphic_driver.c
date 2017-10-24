@@ -20,8 +20,10 @@
 #include "x86/video_defines.h"
 #include "x86/asm.h"
 #include "cpu.h"
+#include "kmutex.h"
 
 static CrossCPULock videoLock;
+static kmutex longPrintLock;
 
 static int16_t characterBuffer[CONSOLE_HEIGHT][CONSOLE_WIDTH];
 static int currentCursorX, currentCursorY;  // relative cursor position
@@ -108,6 +110,7 @@ static void syncCursor(bool toggling) {
 
 int install_graphic_driver() {
   initCrossCPULock(&videoLock);
+  kmutexInit(&longPrintLock);
   currentColor = defaultColor;
   showCursor = true;
   clear_console();
@@ -147,13 +150,17 @@ int putbyte(char ch) {
 
 // Print the string with length len on the screen by repeatedly calling
 // putbyte(). If s is NULL nothing will happen
-// putbytes is not atomic
+// Unlike putbyte, which use global spinlock for atomicity, putbytes use kmutex
+// that is, it can be interleaved by some putbyte. (Imagine putbytes put long
+// string, so we allow context switch!)
 void putbytes(const char *s, int len) {
   if (len <= 0 || !s) return;
   int i;
+  kmutexWLock(&longPrintLock);
   for (i = 0; i < len; i++) {
     putbyte(s[i]);
   }
+  kmutexWUnlock(&longPrintLock);
 }
 
 // Set the current terminal color, successful call will return 0, otherwise a

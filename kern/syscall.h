@@ -30,6 +30,11 @@ DECLARE_SYSCALL_WRAPPER(new_pages);
 DECLARE_SYSCALL_WRAPPER(remove_pages);
 
 DECLARE_SYSCALL_WRAPPER(readline);
+DECLARE_SYSCALL_WRAPPER(getchar);
+DECLARE_SYSCALL_WRAPPER(print);
+DECLARE_SYSCALL_WRAPPER(set_term_color);
+DECLARE_SYSCALL_WRAPPER(set_cursor_pos);
+DECLARE_SYSCALL_WRAPPER(get_cursor_pos);
 
 void initSyscall();
 

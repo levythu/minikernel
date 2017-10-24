@@ -43,6 +43,11 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(remove_pages, REMOVE_PAGES_INT);
 
   MAKE_SYSCALL_IDT(readline, READLINE_INT);
+  MAKE_SYSCALL_IDT(getchar, GETCHAR_INT);
+  MAKE_SYSCALL_IDT(print, PRINT_INT);
+  MAKE_SYSCALL_IDT(set_term_color, SET_TERM_COLOR_INT);
+  MAKE_SYSCALL_IDT(set_cursor_pos, SET_CURSOR_POS_INT);
+  MAKE_SYSCALL_IDT(get_cursor_pos, GET_CURSOR_POS_INT);
 
   lprintf("Registered all system call handler.");
 }

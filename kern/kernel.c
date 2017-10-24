@@ -53,8 +53,17 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   // Fork an idle
   if (forkProcess(firstThread) == 0) {
     // new thread, Will go into ring3
-    // char tmp[123];
-    // getStringBlocking(tmp, 123);
+
+        // TODO remove it
+        // tcb* c2 = findTCB(getLocalCPU()->runningTID);
+        // int myRes = forkProcess(c2);
+        // char tmp[123];
+        // lprintf("Fork %d, entering c.s", myRes);
+        // occupyKeyboard();
+        // lprintf("Fork %d, entered", myRes);
+        // getStringBlocking(tmp, 123);
+        // releaseKeyboard();
+        // lprintf("Fork %d, %s", myRes, tmp);
 
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     execProcess(currentThread, filename, NULL);

@@ -111,7 +111,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("remove_pages_test1");
+    EmitInitProcess("readline_basic");
 
     while (1) {
         continue;

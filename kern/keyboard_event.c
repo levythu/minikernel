@@ -73,18 +73,25 @@ int getcharBlocking() {
 
 // Must be called when occupying keyboard
 // maxlen cannot be zero
+// TODO: remove non-printable char
 int getStringBlocking(char* space, int maxlen) {
   int currentLen = 0;
+  bool preexist = true;
   while (true) {
     GlobalLockR(&latch);
     while (true) {
       int ch = fetchCharEvent();
+      if (ch >= 0 && preexist) {
+        putbyte(ch);
+      }
       if (ch == '\b') {
         if (currentLen > 0) currentLen--;
       } else if (ch == '\n') {
         space[currentLen++] = ch;
+        if (currentLen < maxlen) {
+          space[currentLen++] = 0;
+        }
         GlobalUnlockR(&latch);
-        // TODO add trailing zero
         return currentLen;
       } else if (ch >= 0) {
         space[currentLen++] = ch;
@@ -96,7 +103,7 @@ int getStringBlocking(char* space, int maxlen) {
         break;
       }
     }
-
+    preexist = false;
     assert(eventWaiter == NULL);
 
     // okay, it's time to sleep
@@ -114,6 +121,7 @@ int getStringBlocking(char* space, int maxlen) {
   return -1;
 }
 
+// TODO: remove non-printable char
 void onKeyboardSync(int ch) {
   GlobalLockR(&latch);
   if (eventWaiter && !waitingForAnyChar) {

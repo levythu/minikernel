@@ -11,6 +11,7 @@
 #ifndef SOURCE_UNTRUSTED_H
 #define SOURCE_UNTRUSTED_H
 
+// TODO: change after ZFOD
 bool verifyUserSpaceAddr(
     uint32_t startAddr, uint32_t endAddr, bool mustWritable);
 

@@ -29,6 +29,8 @@ DECLARE_SYSCALL_WRAPPER(exec);
 DECLARE_SYSCALL_WRAPPER(new_pages);
 DECLARE_SYSCALL_WRAPPER(remove_pages);
 
+DECLARE_SYSCALL_WRAPPER(readline);
+
 void initSyscall();
 
 // Parsing process is not atomic: some memory may be freed by other thread, so

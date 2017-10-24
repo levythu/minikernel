@@ -58,8 +58,9 @@ UPDATE_METHOD = afs
 # directory.
 #
 # 410TESTS = loader_test1 loader_test2 getpid_test1 ck1
-410TESTS = getpid_test1 ck1 fork_test1 exec_basic exec_basic_helper exec_nonexist
+# 410TESTS = getpid_test1 ck1 fork_test1 exec_basic exec_basic_helper exec_nonexist
 # 410TESTS = new_pages remove_pages_test1 remove_pages_test2
+410TESTS = fork_test1 readline_basic
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -125,7 +126,7 @@ KERNEL_OBJS += syscall.o syscall_handler.o syscall_lifecycle.o syscall_memory.o
 KERNEL_OBJS += scheduler.o context_switch.o context_switch_c.o scheduler.o vm_asm.o
 KERNEL_OBJS += source_untrusted.o
 KERNEL_OBJS += kmutex.o
-KERNEL_OBJS += keyboard_event.o
+KERNEL_OBJS += keyboard_event.o syscall_consoleio.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

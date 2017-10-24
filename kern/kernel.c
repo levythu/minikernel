@@ -61,7 +61,7 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   if (forkProcess(firstThread) == 0) {
     // new thread, Will go into ring3
 
-        // TODO remove it
+        // TODO remove it when convenient
         // tcb* c2 = findTCB(getLocalCPU()->runningTID);
         // int myRes = forkProcess(c2);
         // char tmp[123];

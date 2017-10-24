@@ -36,6 +36,7 @@
 
 extern void initMemManagement();
 
+// Dummy timer event, can visualize whether the interrupt is on.
 void _tickback(unsigned int tk) {
   if (tk % 1000 == 0) {
     lprintf("tick");
@@ -43,6 +44,12 @@ void _tickback(unsigned int tk) {
   return;
 }
 
+// The init function that runs inside first kernel stack.
+// It is a special entry after swtichTheWorld, so it will do conventional
+// clean-ups (turn on interrupt, disown last thread)
+// Also it will do a fork, one for running specified program and another one
+// running idle.
+// It runs program by standard execProcess() (the same with exec() syscall)
 void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   // From swtichToThread, so we must unlock.
   // But since it switches from -1, so no need to disown anything
@@ -76,6 +83,9 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   }
 }
 
+// Emit the first process, construct its initial kernel stack so that scheduler
+// can control it. Filename is the first process to launch. However, another
+// idle will be forked too, to keep scheduler always have sth. to schedule.
 void EmitInitProcess(const char* filename) {
   tcb* firstThread;
   pcb* firstProc = SpawnProcess(&firstThread);

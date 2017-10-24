@@ -1,7 +1,10 @@
 /** @file zeus.c
  *
- *  @brief TODO
-
+ *  @brief Zeus control every life (process and thread)
+ *
+ *  This module is used for higher level process and thread lifecycle control.
+ *  It contains the spawn, fork, exec, death for process and thread. Also it
+ *  coordinate different modules to achieve those functionalities
  *
  *  @author Leiyu Zhao
  */
@@ -27,7 +30,11 @@
 #include "context_switch.h"
 #include "mode_switch.h"
 
-// Will own the thread
+// High level process creation, and will also spawn one thread for that process
+// Initiating every field for the pcb and tcb. Also, it will own the thread, for
+// further initial stack setting and context switching.
+// NOTE: the thread returned here is not ready for running, so the caller should
+// set up everything (precisely, the running stack / registers) before disown it
 pcb* SpawnProcess(tcb** firstThread) {
   pcb* npcb = newPCB();
   npcb->pd = newPageDirectory();
@@ -55,6 +62,12 @@ pcb* SpawnProcess(tcb** firstThread) {
   return npcb;
 }
 
+// The callback function for forking a memory layout.
+// It will try to create a new physical page, copy the old one to the new page
+// and adjust page table to refer to new page.
+// For any failure (no memory available) the subsequent rebuild will turn to
+// "destory": i.e., simply tear the old page off the current page table, so that
+// when the page table is revoked, all physical pages are dedicated
 static uint32_t rebuildPD_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
     uint32_t buffer) {
   if (!buffer) {
@@ -108,7 +121,8 @@ static bool rebuildPD(PageDirectory mypd) {
   return true;
 }
 
-// Apply delta to all saved %esp on the stack
+// Apply delta to all saved %ebp on the stack, which happens in adjustion phase
+// of fork()
 // Since the initial ebp is all set to zero, it stops at zero
 // [kernelStackStart, kernelStackEnd] is just for verification
 void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
@@ -127,7 +141,21 @@ void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
   }
 }
 
-// Fork a new process, based on the process of current thread.
+// Fork a new process, based on the process of current thread. Return zero for
+// new process and child tid for old process.
+// Fork is completed in two phase:
+// 1. Fork phase: fork everything:
+//    1.1. Copy all primary members of tcb and pcb
+//    1.2. Shallow copy memory directory
+//    1.3. Copy register set and kernel stack (use atomic snapshot)
+//    1.4. Adjustion: adjust %esp %ebp and the stack-saved %ebps for the new
+//         kernel stack.
+// Then it freezes the parent process (to avoid memory change), and switch to
+// child process to finish phase 2
+// 2. Rebuild phase: deep copy page directory, this phase is when two process
+//    will have two set of memories. (If COW is implemented, this phase is
+//    scattered in subsequent memory access)
+// After phase two, the parent process is re-enable.
 // NOTE: the current process *must* only have the current thread
 // and of course, currentThread must be owned by the CPU
 int forkProcess(tcb* currentThread) {
@@ -208,7 +236,7 @@ int forkProcess(tcb* currentThread) {
   }
 }
 
-
+// A simple wrapper of ELF loader
 int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
     ArgPackage* argpkg, uint32_t* eip, uint32_t* esp) {
   if (initELFMemory(fileName, proc->pd, argpkg, &proc->memMeta, eip, esp) < 0) {
@@ -217,6 +245,10 @@ int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
   return 0;
 }
 
+// Internal implementation of exec(), load a new elf to the current process
+// space. It's idempotent, i.e. can be safely called multiple times on a single
+// process, while the excessive memory will be kept (TODO: maybe a bug? need to
+// fix it)
 // NOTE: the current process *must* only have the current thread
 // argpkg can be null, or a smalloc'd array. If it success (no return), argpkg
 // will be disposed correctly; otherwise, the caller should dispose it

@@ -53,7 +53,8 @@ typedef enum ThreadStatus {
   THREAD_INITIALIZED = 1,
   THREAD_RUNNABLE = 2,
   THREAD_BLOCKED = 3,
-  THREAD_RUNNING = 4
+  THREAD_RUNNING = 4,
+  THREAD_DEAD = 5,
 } ThreadStatus;
 
 #define THREAD_STATUS_CAN_RUN(status) \
@@ -71,6 +72,11 @@ typedef struct _tcb {
   ureg_t regs;
   uint32_t kernelStackPage;
   int owned;
+
+  // After this line all members should never be used by modules other than
+  // process.c
+  bool _hasAbandoned;
+  int _ephemeralRefCount;
 } tcb;
 
 #define THREAD_NOT_OWNED -1
@@ -82,9 +88,25 @@ void initProcess();
 pcb* findPCB(int pid);
 pcb* newPCB();
 
+// Ephemeral access is a hint for process module to defer removing.
+// Consider the case: the owner of some thread is vanishing, and removing the
+// tcb, however, some other cores are getting the TCB pointer and test-and-set
+// its owner bit. It's unsafe to free the data structure now.
+// As the solution, ephemeral access is introduced for those who are just
+// shortly testing the tcb (now the only case is scheduler) but may not really
+// own it.
+// As soon as the test complete (either test fail, or successfully own it),
+// the ephemeral access should be released
 tcb* newTCB();
 tcb* findTCB(int tid);
+/*
+tcb* findTCBWithEphemeralAccess(int tid); // not needed for now
+*/
+void removeTCB(tcb* thread);
 tcb* roundRobinNextTCBID(int tid);
 tcb* roundRobinNextTCB(tcb* thread);
+tcb* roundRobinNextTCBWithEphemeralAccess(tcb* thread,
+    bool needToReleaseFormer);
+void releaseEphemeralAccess(tcb* thread);
 
 #endif

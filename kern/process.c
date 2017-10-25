@@ -86,8 +86,56 @@ tcb* newTCB() {
   ntcb->id = tidNext++;
   ntcb->next = tcbList;
   tcbList = ntcb;
+
+  ntcb->_ephemeralRefCount = 0;
+  ntcb->_hasAbandoned = false;
   GlobalUnlockR(&latch);
   return ntcb;
+}
+
+tcb* roundRobinNextTCBWithEphemeralAccess(tcb* thread,
+    bool needToReleaseFormer) {
+  GlobalLockR(&latch);
+  tcb* retTCB = roundRobinNextTCB(thread);
+  if (retTCB != thread) {
+    // ephemeral refer to this thread
+    retTCB->_ephemeralRefCount++;
+    if (needToReleaseFormer) {
+      releaseEphemeralAccess(thread);
+    }
+  }
+  GlobalUnlockR(&latch);
+  return retTCB;
+}
+
+// Must work with latch aquired
+// Process module is not responsible for freeing kernel stack, relevant process
+// etc. Refer to Zeus for those jobs
+static void _removeTCB(tcb* thread) {
+  tcb** ptrToThreadToDelete = _findTCB(thread->id);
+  assert(*ptrToThreadToDelete != NULL); // Must find it
+  *ptrToThreadToDelete = thread->next;
+  // Goodbye, my thread
+  sfree(thread, sizeof(tcb));
+}
+
+void releaseEphemeralAccess(tcb* thread) {
+  GlobalLockR(&latch);
+  assert(thread->_ephemeralRefCount > 0);
+  thread->_ephemeralRefCount--;
+  if (thread->_ephemeralRefCount == 0 && thread->_hasAbandoned) {
+    _removeTCB(thread);
+  }
+  GlobalUnlockR(&latch);
+}
+
+void removeTCB(tcb* thread) {
+  GlobalLockR(&latch);
+  thread->_hasAbandoned = true;
+  if (thread->_ephemeralRefCount == 0) {
+    _removeTCB(thread);
+  }
+  GlobalUnlockR(&latch);
 }
 
 tcb* roundRobinNextTCB(tcb* thread) {

@@ -78,10 +78,14 @@ void yieldToNext() {
 // Caller should release it after swtich
 tcb* pickNextRunnableThread(tcb* currentThread) {
   tcb* nextThread = currentThread;
+  bool needToReleaseFormer = false;
   while (true) {
-    nextThread = roundRobinNextTCB(nextThread);
+    nextThread = roundRobinNextTCBWithEphemeralAccess(
+        nextThread, needToReleaseFormer);
     if (nextThread == currentThread) {
       // We've gone through everything, no one else is good to go.
+      // No need to release ephemeral access, it will not acquire when the next
+      // is itself
       return NULL;
     }
     LocalLockR();
@@ -93,8 +97,12 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
         lprintf("thrad #%d is owned by the others, skip", nextThread->id);
       #endif
       // someone else is using this, skip.
+      needToReleaseFormer = true;
       continue;
     }
+    // successfully own the thread, release ephemeral access
+    releaseEphemeralAccess(nextThread);
+    // TODO time to reap
     if (!THREAD_STATUS_CAN_RUN(nextThread->status)) {
       LocalUnlockR();
       #ifdef SCHEDULER_DECISION_PRINT
@@ -102,6 +110,7 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
       #endif
       // Not runnable. Put it back sir.
       nextThread->owned = THREAD_NOT_OWNED;
+      needToReleaseFormer = false;
       continue;
     }
 

@@ -22,6 +22,7 @@
 #include "graphic_driver.h"
 #include "console.h"
 #include "scheduler.h"
+#include "dbgconf.h"
 
 static kmutex keyboardHolder;
 
@@ -131,10 +132,12 @@ void onKeyboardSync(int ch) {
 }
 
 void onKeyboardAsync(int ch) {
-  if (ch == KHE_ARROW_RIGHT) {
-    yieldToNext();
-    return;
-  }
+  #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
+    if (ch == KHE_ARROW_RIGHT) {
+      yieldToNext();
+      return;
+    }
+  #endif
   GlobalLockR(&latch);
   if (eventWaiter) {
     if (waitingForAnyChar || ch == '\n') {

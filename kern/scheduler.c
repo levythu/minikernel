@@ -52,7 +52,7 @@ void tryYieldTo(tcb* target) {
 void yieldToNext() {
   int currentTID = getLocalCPU()->runningTID;
   if (currentTID == -1) {
-    panic("yieldToNext: current TID = -1");
+    return;
   }
 
   // Don't have to acquire lock, pickNextRunnableThread will do it!

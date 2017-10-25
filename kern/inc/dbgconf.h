@@ -16,4 +16,8 @@
 
 // #define CPULOCK_PRINT
 
+// When defined, auto context switch happens on pressing RIGHT_KEY, instead of
+// timer ticks
+// #define CONTEXT_SWTICH_ON_RIGHT_KEY
+
 #endif

@@ -43,6 +43,6 @@ int install_timer_driver(TimerCallback callback) {
 // It will also send ACK after the callback returns
 void timerIntHandlerInternal() {
   epoch++;
-  cb(epoch);
   outb(INT_CTL_PORT, INT_ACK_CURRENT);
+  cb(epoch);
 }

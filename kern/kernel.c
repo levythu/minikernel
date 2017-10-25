@@ -33,15 +33,19 @@
 #include "scheduler.h"
 #include "keyboard_driver.h"
 #include "keyboard_event.h"
+#include "dbgconf.h"
 
 extern void initMemManagement();
 
 // Dummy timer event, can visualize whether the interrupt is on.
 void _tickback(unsigned int tk) {
-  if (tk % 1000 == 0) {
-    lprintf("tick");
-  }
-  return;
+  #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
+    if (tk % 1000 == 0) {
+      lprintf("tick");
+    }
+  #else
+    yieldToNext();
+  #endif
 }
 
 // The init function that runs inside first kernel stack.

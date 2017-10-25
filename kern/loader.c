@@ -133,7 +133,7 @@ static void setupInitialStack(ArgPackage* argpkg,
       if (i == argc) {
         strAddr = 0;  // NULL terminator
       } else {
-        strAddr = (uint32_t)(&pkgOnStack[i]);
+        strAddr = (uint32_t)(pkgOnStack->c[i]);
       }
       *esp -= sizeof(uint32_t);
       *(uint32_t*)(*esp) = strAddr;

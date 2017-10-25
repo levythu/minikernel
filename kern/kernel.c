@@ -130,7 +130,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("fork_test1");
+    EmitInitProcess("coolness");
 
     while (1) {
         continue;

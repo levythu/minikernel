@@ -33,15 +33,18 @@ typedef struct _pcb {
   PageDirectory pd;
   int parentPID;
 
-  // Changable
-  int numThread;
-
   // used to protect member access below me
   // Also, PageDirectory minor changes (new_pages) should be serial
   // However, initializing phase, fork and exec don't need its protection, since
   // they can only be called when the process only have one thread
   kmutex mutex;
+  int numThread;
 
+  // Use to protect page table access, including accessing user space memory,
+  // because kernel never knows when another thread of the process remove the
+  // mem mapping without locking it.
+  // It's used as a read-write lock, with all memory access as reading, and page
+  // directoy modification as writing (actually, R/W on page table)
   kmutex memlock;
 } pcb;
 

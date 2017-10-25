@@ -103,16 +103,17 @@ int exec_Internal(SyscallParams params) {
   }
   int argvecLen = sGeUIntArray(
       (uint32_t)argvec, NULL, ARGPKG_MAX_ARG_COUNT - 1);
-  if (argvecLen == ARGPKG_MAX_ARG_COUNT - 1 || argvecLen == -1) {
-    // too many args or invalid array, abort
+  if (argvecLen == ARGPKG_MAX_ARG_COUNT - 1 || argvecLen == -1 ||
+      argvecLen == 0) {
+    // too many args or invalid array or no args (even the 1st one), abort
     sfree(pkg, sizeof(ArgPackage));
     return -1;
   }
-  // Fetch every string to arg pakage
-  for (int i = 0; i < argvecLen; i++) {
-    memset(pkg->c[i+1], 0, ARGPKG_MAX_ARG_LEN);
+  // Fetch every string to arg pakage, skip the first one
+  for (int i = 1; i < argvecLen; i++) {
+    memset(pkg->c[i], 0, ARGPKG_MAX_ARG_LEN);
     int argstrLen = sGetString(
-        ((uint32_t*)(argvec))[i] , pkg->c[i+1], ARGPKG_MAX_ARG_LEN);
+        ((uint32_t*)(argvec))[i] , pkg->c[i], ARGPKG_MAX_ARG_LEN);
     if (argstrLen == ARGPKG_MAX_ARG_LEN || argstrLen == -1) {
       // some argument is too long or invalid
       sfree(pkg, sizeof(ArgPackage));
@@ -120,8 +121,8 @@ int exec_Internal(SyscallParams params) {
     }
   }
   // Add terminator
-  pkg->c[argvecLen+1][0] = 0;
-  pkg->c[argvecLen+1][1] = -1;
+  pkg->c[argvecLen][0] = 0;
+  pkg->c[argvecLen][1] = -1;
 
   printArgPackage(pkg);
 

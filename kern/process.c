@@ -48,6 +48,32 @@ pcb* findPCB(int pid) {
   return *_findPCB(pid);
 }
 
+static void _removePCB(pcb* proc) {
+  pcb** ptrToProcToDelete = _findPCB(proc->id);
+  assert(*ptrToProcToDelete != NULL); // Must find it
+  *ptrToProcToDelete = proc->next;
+  // Goodbye, my process
+  sfree(proc, sizeof(pcb));
+}
+
+pcb* findPCBWithEphemeralAccess(int pid) {
+  GlobalLockR(&latch);
+  pcb* ret = findPCB(pid);
+  ret->_ephemeralRefCount++;
+  GlobalUnlockR(&latch);
+  return ret;
+}
+
+void releaseEphemeralAccessProcess(pcb* proc) {
+  GlobalLockR(&latch);
+  assert(proc->_ephemeralRefCount > 0);
+  proc->_ephemeralRefCount--;
+  if (proc->_ephemeralRefCount == 0 && proc->_hasAbandoned) {
+    _removePCB(proc);
+  }
+  GlobalUnlockR(&latch);
+}
+
 pcb* newPCB() {
   GlobalLockR(&latch);
   pcb* npcb = (pcb*)smalloc(sizeof(pcb));
@@ -57,6 +83,9 @@ pcb* newPCB() {
   npcb->id = pidNext++;
   npcb->next = pcbList;
   pcbList = npcb;
+
+  npcb->_ephemeralRefCount = 0;
+  npcb->_hasAbandoned = false;
   GlobalUnlockR(&latch);
   return npcb;
 }

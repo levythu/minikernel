@@ -50,10 +50,11 @@ int wait_Internal(SyscallParams params) {
 }
 
 int vanish_Internal(SyscallParams params) {
-  // TODO dummy
-  lprintf("Dummy vanish() is called. It loops");
-  while (true)
-    ;
+  // We own currentThread
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  // one way trip
+  terminateThread(currentThread);
+  return 0;
 }
 
 int set_status_Internal(SyscallParams params) {

@@ -3,8 +3,9 @@
  *  @brief Zeus control every life (process and thread)
  *
  *  This module is used for higher level process and thread lifecycle control.
- *  It contains the spawn, fork, exec, death for process and thread. Also it
- *  coordinate different modules to achieve those functionalities
+ *  It contains the spawn, fork, exec, death (a great part for death is
+ *  deligated to reaper, see reaper.c) for process and thread. Also it
+ *  coordinates different modules to achieve those functionalities
  *
  *  @author Leiyu Zhao
  */
@@ -29,6 +30,7 @@
 #include "loader.h"
 #include "context_switch.h"
 #include "mode_switch.h"
+#include "scheduler.h"
 
 // High level process creation, and will also spawn one thread for that process
 // Initiating every field for the pcb and tcb. Also, it will own the thread, for
@@ -41,6 +43,10 @@ pcb* SpawnProcess(tcb** firstThread) {
   setKernelMapping(npcb->pd);
   npcb->parentPID = -1;
   npcb->numThread = 1;
+  npcb->retStatus = -2;
+  npcb->zombieChain = NULL;
+  npcb->waiterThread = NULL;
+  npcb->status = PROCESS_INITIALIZED;
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
 
@@ -169,6 +175,7 @@ int forkProcess(tcb* currentThread) {
                      STRIP_PD_INDEX(0xffffffff));
   newProc->memMeta = currentProc->memMeta;
   newProc->parentPID = currentProc->id;
+  newProc->retStatus = currentProc->retStatus;
 
   // thread-related
   newThread->regs = currentThread->regs;
@@ -269,4 +276,11 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
   // Will never return!
   switchToRing3(esp, neweflags, eip);
   return 0;
+}
+
+// This does nothing but just mark myself as dead.
+// All actual work is done by reaper
+void terminateThread(tcb* currentThread) {
+  currentThread->status = THREAD_DEAD;
+  yieldToNext();
 }

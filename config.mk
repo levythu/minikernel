@@ -128,6 +128,7 @@ KERNEL_OBJS += scheduler.o context_switch.o context_switch_c.o scheduler.o vm_as
 KERNEL_OBJS += source_untrusted.o
 KERNEL_OBJS += kmutex.o
 KERNEL_OBJS += keyboard_event.o syscall_consoleio.o
+KERNEL_OBJS += reaper.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

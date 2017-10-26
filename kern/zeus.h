@@ -18,4 +18,6 @@ int forkProcess(tcb* currentThread);
 
 int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg);
 
+void terminateThread(tcb* currentThread);
+
 #endif

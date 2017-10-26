@@ -25,6 +25,14 @@
 #include "cpu.h"
 #include "kmutex.h"
 
+typedef enum ProcessStatus {
+  PROCESS_INITIALIZED = 1,
+  PROCESS_ZOMBIE = 2,
+  PROCESS_DEAD = 3
+} ProcessStatus;
+
+typedef struct _tcb tcb;
+
 typedef struct _pcb {
   int id;
   struct _pcb* next;
@@ -39,6 +47,14 @@ typedef struct _pcb {
   // they can only be called when the process only have one thread
   kmutex mutex;
   int numThread;
+  int retStatus;
+
+  // When states = ZOMBIE, it points to the next zombie sibling.
+  // Otherwise, it points to the first zombie child
+  struct _pcb* zombieChain;
+  tcb* waiterThread; // actually a tcb*
+
+  ProcessStatus status;
 
   // Use to protect page table access, including accessing user space memory,
   // because kernel never knows when another thread of the process remove the
@@ -46,6 +62,11 @@ typedef struct _pcb {
   // It's used as a read-write lock, with all memory access as reading, and page
   // directoy modification as writing (actually, R/W on page table)
   kmutex memlock;
+
+  // After this line all members should never be used by modules other than
+  // process.c
+  bool _hasAbandoned;
+  int _ephemeralRefCount;
 } pcb;
 
 typedef enum ThreadStatus {
@@ -62,7 +83,7 @@ typedef enum ThreadStatus {
 
 // TCB is the kernel presentation of a thread, and is also the unit for
 // scheduler
-typedef struct _tcb {
+struct _tcb {
   int id;
   struct _tcb* next;
 
@@ -77,7 +98,7 @@ typedef struct _tcb {
   // process.c
   bool _hasAbandoned;
   int _ephemeralRefCount;
-} tcb;
+};
 
 #define THREAD_NOT_OWNED -1
 #define THREAD_OWNED_BY_CPU 1
@@ -87,6 +108,8 @@ void initProcess();
 
 pcb* findPCB(int pid);
 pcb* newPCB();
+pcb* findPCBWithEphemeralAccess(int pid);
+void releaseEphemeralAccessProcess(pcb* proc);
 
 // Ephemeral access is a hint for process module to defer removing.
 // Consider the case: the owner of some thread is vanishing, and removing the

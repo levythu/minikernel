@@ -10,7 +10,8 @@
 /* libc includes. */
 #include <stdio.h>
 #include <stdlib.h>
-#include <simics.h>                 /* lprintf() */
+#include <simics.h>
+#include <assert.h>
 
 /* multiboot header file */
 #include <multiboot.h>              /* boot_info */
@@ -34,6 +35,7 @@
 #include "keyboard_driver.h"
 #include "keyboard_event.h"
 #include "dbgconf.h"
+#include "sysconf.h"
 
 extern void initMemManagement();
 
@@ -77,6 +79,9 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
         // lprintf("Fork %d, %s", myRes, tmp);
 
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+
+    // This is INIT thread, assert it
+    assert(currentThread->process->id == INIT_PID);
     execProcess(currentThread, filename, NULL);
     panic("RunInit: fail to run the 1st process");
   } else {
@@ -134,7 +139,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("fork_wait_bomb");
+    EmitInitProcess("init");
 
     while (1) {
         continue;

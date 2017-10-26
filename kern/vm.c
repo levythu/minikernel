@@ -32,6 +32,15 @@ PageDirectory newPageDirectory() {
   return newPD;
 }
 
+void freePageDirectory(PageDirectory pd) {
+  for (int i = 0; i < PD_SIZE; i++) {
+    if (PE_IS_PRESENT(pd[i])) {
+      sfree(PDE2PT(pd[i]), sizeof(PTE) * PT_SIZE);
+    }
+  }
+  sfree((void*)pd, sizeof(PDE) * PD_SIZE);
+}
+
 static PageTable newPageTable() {
   PageTable newPT = (PTE*)smemalign(PAGE_SIZE, sizeof(PTE) * PT_SIZE);
   if (!newPT) {

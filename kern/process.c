@@ -51,9 +51,19 @@ pcb* findPCB(int pid) {
 static void _removePCB(pcb* proc) {
   pcb** ptrToProcToDelete = _findPCB(proc->id);
   assert(*ptrToProcToDelete != NULL); // Must find it
+  lprintf("Removing process #%d", proc->id);
   *ptrToProcToDelete = proc->next;
   // Goodbye, my process
   sfree(proc, sizeof(pcb));
+}
+
+void removePCB(pcb* proc) {
+  GlobalLockR(&latch);
+  proc->_hasAbandoned = true;
+  if (proc->_ephemeralRefCount == 0) {
+    _removePCB(proc);
+  }
+  GlobalUnlockR(&latch);
 }
 
 pcb* findPCBWithEphemeralAccess(int pid) {
@@ -144,6 +154,7 @@ static void _removeTCB(tcb* thread) {
   tcb** ptrToThreadToDelete = _findTCB(thread->id);
   assert(*ptrToThreadToDelete != NULL); // Must find it
   *ptrToThreadToDelete = thread->next;
+  lprintf("Removing thread #%d", thread->id);
   // Goodbye, my thread
   sfree(thread, sizeof(tcb));
 }

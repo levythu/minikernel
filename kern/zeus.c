@@ -182,7 +182,6 @@ int forkProcess(tcb* currentThread) {
   newThread->regs = currentThread->regs;
   // block the current thread, forbid it run until the new finish copying the
   // pages.
-  currentThread->status = THREAD_BLOCKED;
 
   // Use this to let child access parent's stack
   int retValueForParentCall;
@@ -201,8 +200,10 @@ int forkProcess(tcb* currentThread) {
         newThread->kernelStackPage,
         newThread->kernelStackPage + PAGE_SIZE - 1);
 
-    // Yield to the new thread now!
-    swtichToThread(newThread);
+    // Yield to the new thread now! Should be atomic deschedule
+    LocalLockR();
+    currentThread->status = THREAD_BLOCKED;
+    swtichToThread_Prelocked(newThread);
     // We have recover, we know that the new process is forked and finishes copy
     // But we cannot access thread (it may have already ends!)
     // However, newProc is good to access! It's my child, and it cannot die
@@ -293,11 +294,13 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
     if (currentProc->zombieChain) {
       pcb* zombie = currentProc->zombieChain;
       currentProc->zombieChain = currentProc->zombieChain->zombieChain;
+      kmutexWUnlock(&currentProc->mutex);
       // no one will access zombie, so I own the process
       int zombieTID = zombie->firstTID;
       *returnCodeAddr = zombie->retStatus;
-      // TODO remove PCB!
-      kmutexWUnlock(&currentProc->mutex);
+
+      removePCB(zombie);
+
       return zombieTID;
     } else {
       waiterLinklist wl;

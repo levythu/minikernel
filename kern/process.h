@@ -110,6 +110,7 @@ void initProcess();
 
 pcb* findPCB(int pid);
 pcb* newPCB();
+void removePCB(pcb* proc);
 pcb* findPCBWithEphemeralAccess(int pid);
 void releaseEphemeralAccessProcess(pcb* proc);
 

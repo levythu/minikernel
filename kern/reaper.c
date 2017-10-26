@@ -29,6 +29,23 @@
 #include "mode_switch.h"
 #include "sysconf.h"
 
+static uint32_t freeUserspace_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
+    uint32_t _) {
+  uint32_t physicalPage = PE_DECODE_ADDR(*ptentry);
+  *ptentry &= ~PE_PRESENT(1);
+  freeUserMemPage(physicalPage);
+
+  return 0;
+}
+
+void freeUserspace(PageDirectory pd) {
+  traverseEntryPageDirectory(pd,
+                             STRIP_PD_INDEX(USER_MEM_START),
+                             STRIP_PD_INDEX(0xffffffff),
+                             freeUserspace_EachPage,
+                             0);
+}
+
 static pcb** followZombieChain(pcb* proc) {
   pcb** ret;
   for (ret = &proc->zombieChain; *ret != NULL; ret = &(*ret)->zombieChain)
@@ -100,7 +117,8 @@ void turnToZombie(pcb* targetProc) {
 // Must work under the process's mutex, must guarantee there's no thread alive
 // anymore
 void reapProcess(pcb* targetProc) {
-  // TODO free process-local resouces
+  freeUserspace(targetProc->pd);
+  freePageDirectory(targetProc->pd);
   turnToZombie(targetProc);
 }
 
@@ -120,7 +138,6 @@ void reapThread(tcb* targetThread) {
   }
   kmutexWUnlock(&targetProc->mutex);
 
-  // TODO free thread-local resources!
-  // TODO remove the thread from tcb list
-
+  sfree((void*)targetThread->kernelStackPage, PAGE_SIZE);
+  removeTCB(targetThread);
 }

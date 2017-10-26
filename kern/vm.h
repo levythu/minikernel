@@ -61,6 +61,9 @@ void enablePaging();
 
 PageDirectory newPageDirectory();
 
+// Only free the pd, not any physical page associated
+void freePageDirectory(PageDirectory pd);
+
 void setKernelMapping(PageDirectory pd);
 
 void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,

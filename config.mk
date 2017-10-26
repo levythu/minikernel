@@ -128,7 +128,7 @@ KERNEL_OBJS += syscall.o syscall_handler.o syscall_lifecycle.o syscall_memory.o
 KERNEL_OBJS += scheduler.o context_switch.o context_switch_c.o scheduler.o vm_asm.o
 KERNEL_OBJS += source_untrusted.o
 KERNEL_OBJS += kmutex.o
-KERNEL_OBJS += keyboard_event.o syscall_consoleio.o
+KERNEL_OBJS += keyboard_event.o syscall_consoleio.o syscall_fileio.o
 KERNEL_OBJS += reaper.o
 
 ###########################################################################

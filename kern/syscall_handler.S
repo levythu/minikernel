@@ -16,3 +16,5 @@ MAKE_SYSCALL_WRAPPER(print)
 MAKE_SYSCALL_WRAPPER(set_term_color)
 MAKE_SYSCALL_WRAPPER(set_cursor_pos)
 MAKE_SYSCALL_WRAPPER(get_cursor_pos)
+
+MAKE_SYSCALL_WRAPPER(readfile)

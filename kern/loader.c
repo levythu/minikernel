@@ -292,7 +292,8 @@ int getbytes(const char *filename, int offset, int size, char *buf) {
     if (exec2obj_userapp_TOC[i].execlen - offset < size) {
       size = exec2obj_userapp_TOC[i].execlen - offset;
     }
-    if (size <= 0) return 0;
+    if (size < 0) return -1;
+    if (size == 0) return 0;
     memcpy(buf, &exec2obj_userapp_TOC[i].execbytes[offset], size);
     return size;
   }

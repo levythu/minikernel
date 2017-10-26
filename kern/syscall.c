@@ -49,6 +49,8 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(set_cursor_pos, SET_CURSOR_POS_INT);
   MAKE_SYSCALL_IDT(get_cursor_pos, GET_CURSOR_POS_INT);
 
+  MAKE_SYSCALL_IDT(readfile, READFILE_INT);
+
   lprintf("Registered all system call handler.");
 }
 

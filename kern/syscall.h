@@ -36,6 +36,8 @@ DECLARE_SYSCALL_WRAPPER(set_term_color);
 DECLARE_SYSCALL_WRAPPER(set_cursor_pos);
 DECLARE_SYSCALL_WRAPPER(get_cursor_pos);
 
+DECLARE_SYSCALL_WRAPPER(readfile);
+
 void initSyscall();
 
 // Parsing process is not atomic: some memory may be freed by other thread, so

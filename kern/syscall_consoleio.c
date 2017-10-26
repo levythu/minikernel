@@ -35,25 +35,25 @@ int readline_Internal(SyscallParams params) {
 
   int len;
   uint32_t bufAddr;
-  kmutexRLock(&currentThread->process->mutex);
+  kmutexRLock(&currentThread->process->memlock);
   if (!parseMultiParam(params, 0, &len)) {
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (len > MAX_READWRITE_BUFFER_SIZE) {
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (!parseMultiParam(params, 1, (int*)(&bufAddr))) {
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (!verifyUserSpaceAddr(bufAddr, bufAddr + len - 1, true)) {
     // The buffer itself is not writable or has problems
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->mutex);
+  kmutexRUnlock(&currentThread->process->memlock);
 
   // allocate a kernekl mem to get the chars first, because we don't want
   // memlock to be held when waiting keyboard
@@ -68,17 +68,17 @@ int readline_Internal(SyscallParams params) {
   int actualLen = getStringBlocking(buf, len);
   releaseKeyboard();
 
-  kmutexRLock(&currentThread->process->mutex);
+  kmutexRLock(&currentThread->process->memlock);
   // Revalidate, the page table may be removed when waiting for keyboard
   if (!verifyUserSpaceAddr(bufAddr, bufAddr + len - 1, true)) {
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     sfree(buf, len);
     return -1;
   }
 
   memcpy((void*)bufAddr, buf, actualLen);
   sfree(buf, len);
-  kmutexRUnlock(&currentThread->process->mutex);
+  kmutexRUnlock(&currentThread->process->memlock);
 
   return actualLen;
 }
@@ -97,27 +97,27 @@ int print_Internal(SyscallParams params) {
 
   int len;
   uint32_t bufAddr;
-  kmutexRLock(&currentThread->process->mutex);
+  kmutexRLock(&currentThread->process->memlock);
   if (!parseMultiParam(params, 0, &len)) {
     // invalid len
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (len > MAX_READWRITE_BUFFER_SIZE) {
     // too long len
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (!parseMultiParam(params, 1, (int*)(&bufAddr))) {
     // invalid bufaddr
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
 
   char* source = smalloc(len);
   if (!source) {
     // kernel runs out of memory
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
 
@@ -125,10 +125,10 @@ int print_Internal(SyscallParams params) {
   if (actualLen == -1) {
     // invalid string
     sfree(source, len);
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->mutex);
+  kmutexRUnlock(&currentThread->process->memlock);
 
   putbytes(source, actualLen);
   sfree(source, len);
@@ -139,13 +139,13 @@ int print_Internal(SyscallParams params) {
 int set_term_color_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int color;
-  kmutexRLock(&currentThread->process->mutex);
+  kmutexRLock(&currentThread->process->memlock);
   if (!parseSingleParam(params, &color)) {
     // invalid color
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->mutex);
+  kmutexRUnlock(&currentThread->process->memlock);
 
   return set_term_color(color);
 }
@@ -154,18 +154,18 @@ int set_term_color_Internal(SyscallParams params) {
 int set_cursor_pos_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int row, col;
-  kmutexRLock(&currentThread->process->mutex);
+  kmutexRLock(&currentThread->process->memlock);
   if (!parseMultiParam(params, 0, &row)) {
     // invalid row
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (!parseMultiParam(params, 0, &col)) {
     // invalid col
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->mutex);
+  kmutexRUnlock(&currentThread->process->memlock);
 
   return set_cursor(row, col);
 }
@@ -177,26 +177,26 @@ int get_cursor_pos_Internal(SyscallParams params) {
 
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int rowAddr, colAddr;
-  kmutexRLock(&currentThread->process->mutex);
+  kmutexRLock(&currentThread->process->memlock);
   if (!parseMultiParam(params, 0, &rowAddr)) {
     // invalid row address
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (!parseMultiParam(params, 0, &colAddr)) {
     // invalid col address
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   if (!verifyUserSpaceAddr(rowAddr, rowAddr, true) ||
       !verifyUserSpaceAddr(colAddr, colAddr, true)) {
     // row/col destination is not writable
-    kmutexRUnlock(&currentThread->process->mutex);
+    kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
   *((int*)rowAddr) = row;
   *((int*)colAddr) = col;
-  kmutexRUnlock(&currentThread->process->mutex);
+  kmutexRUnlock(&currentThread->process->memlock);
 
   return 0;
 }

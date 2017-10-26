@@ -134,7 +134,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     // TODO set more exception handler!
     initSyscall();
 
-    EmitInitProcess("fork_test1");
+    EmitInitProcess("fork_wait_bomb");
 
     while (1) {
         continue;

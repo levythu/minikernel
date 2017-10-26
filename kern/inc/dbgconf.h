@@ -12,7 +12,7 @@
 // When defined, print more information to simics console.
 #define VERBOSE_PRINT
 
-#define SCHEDULER_DECISION_PRINT
+// #define SCHEDULER_DECISION_PRINT
 
 // #define CPULOCK_PRINT
 

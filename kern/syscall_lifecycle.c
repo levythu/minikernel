@@ -87,17 +87,20 @@ int vanish_Internal(SyscallParams params) {
 }
 
 int set_status_Internal(SyscallParams params) {
-  // tcb* currentThread = findTCB(getLocalCPU()->runningTID);
-  //
-  // int status;
-  // kmutexRLock(&currentThread->process->memlock);
-  // if (!parseSingleParam(params, (int*)(&status))) {
-  //   // invalid ptr
-  //   kmutexRUnlock(&currentThread->process->memlock);
-  //   return -1;
-  // }
-  // kmutexRUnlock(&currentThread->process->memlock);
-  //
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+
+  int status;
+  kmutexRLock(&currentThread->process->memlock);
+  if (!parseSingleParam(params, (int*)(&status))) {
+    // invalid ptr
+    kmutexRUnlock(&currentThread->process->memlock);
+    return -1;
+  }
+  kmutexRUnlock(&currentThread->process->memlock);
+
+  kmutexWLock(&currentThread->process->mutex);
+  currentThread->process->retStatus = status;
+  kmutexWUnlock(&currentThread->process->mutex);
   return 0;
 }
 

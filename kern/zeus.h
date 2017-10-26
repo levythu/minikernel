@@ -20,4 +20,6 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg);
 
 void terminateThread(tcb* currentThread);
 
+int waitThread(tcb* currentThread, int* returnCodeAddr);
+
 #endif

@@ -40,6 +40,7 @@ typedef struct _pcb {
   ProcessMemoryMeta memMeta;
   PageDirectory pd;
   int parentPID;
+  int firstTID;
 
   // used to protect member access below me
   // Also, PageDirectory minor changes (new_pages) should be serial
@@ -52,7 +53,7 @@ typedef struct _pcb {
   // When states = ZOMBIE, it points to the next zombie sibling.
   // Otherwise, it points to the first zombie child
   struct _pcb* zombieChain;
-  tcb* waiterThread; // actually a tcb*
+  waiterLinklist* waiter;
 
   ProcessStatus status;
 
@@ -76,6 +77,7 @@ typedef enum ThreadStatus {
   THREAD_BLOCKED = 3,
   THREAD_RUNNING = 4,
   THREAD_DEAD = 5,
+  THREAD_REAPED = 5,
 } ThreadStatus;
 
 #define THREAD_STATUS_CAN_RUN(status) \

@@ -22,6 +22,7 @@
 #include "dbgconf.h"
 #include "scheduler.h"
 #include "context_switch.h"
+#include "reaper.h"
 
 // Try to schedule to the target thread (of course, it should be runnable or
 // running)
@@ -102,11 +103,21 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
     }
     // successfully own the thread, release ephemeral access
     releaseEphemeralAccess(nextThread);
-    // TODO time to reap
+    if (nextThread->status == THREAD_DEAD) {
+      // time to reap
+      #ifdef SCHEDULER_DECISION_PRINT
+        lprintf("Reaping thread #%d", nextThread->id);
+      #endif
+      reapThread(nextThread);
+      // nextThread may be cleared, it's not proper to refer to it anymore
+      // Go back to where we are
+      nextThread = currentThread;
+      needToReleaseFormer = false;
+    }
     if (!THREAD_STATUS_CAN_RUN(nextThread->status)) {
       LocalUnlockR();
       #ifdef SCHEDULER_DECISION_PRINT
-        lprintf("thrad #%d cannot run, skip", nextThread->id);
+        lprintf("thread #%d cannot run, skip", nextThread->id);
       #endif
       // Not runnable. Put it back sir.
       nextThread->owned = THREAD_NOT_OWNED;

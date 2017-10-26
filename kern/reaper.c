@@ -37,11 +37,12 @@ static pcb** followZombieChain(pcb* proc) {
 }
 
 static void notifyWaiter(pcb* proc) {
-  if (proc->waiterThread) {
-    // wake up any waiter, need not to own it
-    assert(proc->waiterThread->status == THREAD_BLOCKED);
-    proc->waiterThread->status = THREAD_RUNNABLE;
-    proc->waiterThread = NULL;
+  if (proc->waiter) {
+    // wake up one waiter, need not to own it
+    tcb* wThread = (tcb*)proc->waiter->thread;
+    assert(wThread->status == THREAD_BLOCKED);
+    wThread->status = THREAD_RUNNABLE;
+    proc->waiter = proc->waiter->next;
   }
 }
 
@@ -100,7 +101,6 @@ void turnToZombie(pcb* targetProc) {
 // anymore
 void reapProcess(pcb* targetProc) {
   // TODO free process-local resouces
-  // TODO remove the process from pcb list
   turnToZombie(targetProc);
 }
 
@@ -109,6 +109,7 @@ void reapProcess(pcb* targetProc) {
 // does not have to be acquried: reaper is free be interrupted
 void reapThread(tcb* targetThread) {
   assert(targetThread->status == THREAD_DEAD);
+  targetThread->status = THREAD_REAPED;
 
   // Deregister it self from the process
   pcb* targetProc = targetThread->process;

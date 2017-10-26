@@ -45,7 +45,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   npcb->numThread = 1;
   npcb->retStatus = -2;
   npcb->zombieChain = NULL;
-  npcb->waiterThread = NULL;
+  npcb->waiter = NULL;
   npcb->status = PROCESS_INITIALIZED;
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
@@ -65,6 +65,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   ntcb->status = THREAD_INITIALIZED;
 
   *firstThread = ntcb;
+  npcb->firstTID = ntcb->id;
   return npcb;
 }
 
@@ -283,4 +284,31 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
 void terminateThread(tcb* currentThread) {
   currentThread->status = THREAD_DEAD;
   yieldToNext();
+}
+
+int waitThread(tcb* currentThread, int* returnCodeAddr) {
+  pcb* currentProc = currentThread->process;
+  while (true) {
+    kmutexWLock(&currentProc->mutex);
+    if (currentProc->zombieChain) {
+      pcb* zombie = currentProc->zombieChain;
+      currentProc->zombieChain = currentProc->zombieChain->zombieChain;
+      // no one will access zombie, so I own the process
+      int zombieTID = zombie->firstTID;
+      *returnCodeAddr = zombie->retStatus;
+      // TODO remove PCB!
+      kmutexWUnlock(&currentProc->mutex);
+      return zombieTID;
+    } else {
+      waiterLinklist wl;
+      wl.thread = currentThread;
+      wl.next = currentProc->waiter;
+      currentProc->waiter = &wl;
+      currentThread->status = THREAD_BLOCKED;
+      kmutexWUnlock(&currentProc->mutex);
+      // Deschedule
+      yieldToNext();
+    }
+  }
+  return -1;
 }

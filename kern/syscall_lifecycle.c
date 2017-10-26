@@ -43,10 +43,39 @@ int fork_Internal(SyscallParams params) {
 }
 
 int wait_Internal(SyscallParams params) {
-  // TODO dummy
-  lprintf("Dummy wait() is called. It loops");
-  while (true)
-    ;
+  // We own currentThread
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+
+  uint32_t statusPtr;
+  kmutexRLock(&currentThread->process->mutex);
+  if (!parseSingleParam(params, (int*)(&statusPtr))) {
+    // invalid ptr
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  if (statusPtr != 0 && !verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
+    // the address is not writable
+    kmutexRUnlock(&currentThread->process->mutex);
+    return -1;
+  }
+  kmutexRUnlock(&currentThread->process->mutex);
+
+  int retAddr;
+  int zombieTID = waitThread(currentThread, &retAddr);
+
+  if (zombieTID >= 0 && statusPtr != 0) {
+    // We need to double check, we dont know what happened when we sleep
+    kmutexRLock(&currentThread->process->mutex);
+    if (!verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
+      // the address is not writable
+      kmutexRUnlock(&currentThread->process->mutex);
+      return -1;
+    }
+    *((int*)statusPtr) = retAddr;
+    kmutexRUnlock(&currentThread->process->mutex);
+  }
+
+  return zombieTID;
 }
 
 int vanish_Internal(SyscallParams params) {

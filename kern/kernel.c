@@ -36,6 +36,7 @@
 #include "keyboard_event.h"
 #include "dbgconf.h"
 #include "sysconf.h"
+#include "fault.h"
 
 extern void initMemManagement();
 
@@ -136,7 +137,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
 
     initProcess();
 
-    // TODO set more exception handler!
+    registerFaultHandler();
     initSyscall();
 
     EmitInitProcess("init");

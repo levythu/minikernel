@@ -23,6 +23,7 @@
 #include "console.h"
 #include "scheduler.h"
 #include "dbgconf.h"
+#include "context_switch.h"
 
 static kmutex keyboardHolder;
 
@@ -141,12 +142,20 @@ void onKeyboardAsync(int ch) {
   GlobalLockR(&latch);
   if (eventWaiter) {
     if (waitingForAnyChar || ch == '\n') {
-      assert(eventWaiter->status == THREAD_BLOCKED);
-      eventWaiter->status = THREAD_RUNNABLE;
       tcb* local = eventWaiter;
       eventWaiter = NULL;
       GlobalUnlockR(&latch);
-      tryYieldTo(local);
+
+      LocalLockR();
+      assert(local->status == THREAD_BLOCKED);
+      // Own the target thread for context switch. Since it's blocked, no one
+      // should really own it, other cores may be accessing it temprorarily.
+      // Should never loop on single core
+      while (!__sync_bool_compare_and_swap(
+          &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
+        ;
+      local->status = THREAD_RUNNABLE;
+      swtichToThread_Prelocked(local);
     }
   } else {
     GlobalUnlockR(&latch);

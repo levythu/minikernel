@@ -24,26 +24,6 @@
 #include "context_switch.h"
 #include "reaper.h"
 
-// Try to schedule to the target thread (of course, it should be runnable or
-// running)
-// DO NOT own the target thread, and the function will try to own it. If cannot
-// own it, it's fine -- someone else is trying to own it and it's running soon
-void tryYieldTo(tcb* target) {
-  LocalLockR();
-  bool owned = __sync_bool_compare_and_swap(
-      &target->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
-  if (!owned) {
-    // fine, others going to make it
-    LocalUnlockR();
-    return;
-  }
-  if (!THREAD_STATUS_CAN_RUN(target->status)) {
-    panic("tryYieldTo: hey, don't try to yield to a non-runnable thread!");
-  }
-  lprintf("Scheduling to thread #%d", target->id);
-  swtichToThread_Prelocked(target);
-}
-
 // Scheduler is special enough:
 // It's the ONLY place that one RUNNING thread trying to own another RUNNABLE
 // or even RUNNING thread (exclude bootstrap the 1st)

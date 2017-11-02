@@ -60,6 +60,7 @@ static void notifyWaiter(pcb* proc) {
     assert(wThread->status == THREAD_BLOCKED);
     wThread->status = THREAD_RUNNABLE;
     proc->waiter = proc->waiter->next;
+    // TODO: want to swtich to target?
   }
 }
 

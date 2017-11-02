@@ -64,7 +64,7 @@ static void moveCursorNewLine() {
     for (j = 0; j < CONSOLE_WIDTH; j++) {
       characterBuffer[validStartX][j] = MAKE_CCHAR(blankChar, defaultColor);
     }
-    validStartX++;
+    validStartX = (validStartX + 1) % CONSOLE_HEIGHT;
     // Since scroll happens, everything in the graphic memory may have to be
     // re-synced
     syncGraphicMemory(0, CONSOLE_HEIGHT);

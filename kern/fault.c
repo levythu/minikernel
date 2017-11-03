@@ -19,6 +19,7 @@
 #include "bool.h"
 #include "cpu.h"
 #include "fault_handler_internal.h"
+#include "asm_wrapper.h"
 #include "int_handler.h"
 
 DECLARE_FAULT_ENTRANCE(IDT_DE);  // SWEXN_CAUSE_DIVIDE
@@ -58,14 +59,14 @@ void registerFaultHandler() {
 }
 
 #define FAULT_ACTION(_name) \
-  bool _name(int es, int ds, int edi, int esi, int ebp, int _, \
+  bool _name(int es, int ds, int edi, int esi, int ebp, \
       int ebx, int edx, int ecx, int eax, int faultNumber, int errCode, \
       int eip, int cs, int eflags, int esp, int ss, int cr2)
 
 #define ON(_cond, _name) \
   if (_cond) {  \
-    if (_name(es, ds, edi, esi, ebp, _, ebx, edx, ecx, eax, faultNumber,\
-      errCode, eip, cs, eflags, esp, ss, cr2)) return;  \
+    if (_name(es, ds, edi, esi, ebp, ebx, edx, ecx, eax, faultNumber,\
+      errCode, eip, cs, eflags, trueESP, trueSS, cr2)) return;  \
   }
 
 FAULT_ACTION(printError) {
@@ -82,9 +83,12 @@ FAULT_ACTION(printError) {
   return false;
 }
 
-void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp, int _,
+void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
+    int espOnCurrentStack,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
     int eip, int cs, int eflags, int esp, int ss) {
+  int trueESP = eip >= USER_MEM_START ? esp : espOnCurrentStack;
+  int trueSS = eip >= USER_MEM_START ? ss : get_ss();
   int cr2 = get_cr2();
 
   ON(true, printError);

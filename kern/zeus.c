@@ -165,6 +165,8 @@ void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
 // After phase two, the parent process is re-enable.
 // NOTE: the current process *must* only have the current thread
 // and of course, currentThread must be owned by the CPU
+// NOTE: never use it on a kernel-to-kernel interrupt stack. This will lead to
+// partial state copied.
 int forkProcess(tcb* currentThread) {
   tcb* newThread;
   pcb* newProc = SpawnProcess(&newThread);

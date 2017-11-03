@@ -57,9 +57,18 @@ void registerFaultHandler() {
   MAKE_FAULT_IDT(IDT_XF);
 }
 
-void printError(int es, int ds, int edi, int esi, int ebp, int _,
-    int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
-    int eip, int cs, int eflags, int esp, int ss, int cr2) {
+#define FAULT_ACTION(_name) \
+  bool _name(int es, int ds, int edi, int esi, int ebp, int _, \
+      int ebx, int edx, int ecx, int eax, int faultNumber, int errCode, \
+      int eip, int cs, int eflags, int esp, int ss, int cr2)
+
+#define ON(_cond, _name) \
+  if (_cond) {  \
+    if (_name(es, ds, edi, esi, ebp, _, ebx, edx, ecx, eax, faultNumber,\
+      errCode, eip, cs, eflags, esp, ss, cr2)) return;  \
+  }
+
+FAULT_ACTION(printError) {
   lprintf("Exception, IDT-number=%d. Core Dump:============================",
       faultNumber);
   lprintf("%%cs=%d\t%%ss=%d\t%%ds=%d\t%%es=%d", cs, ss, ds, es);
@@ -70,12 +79,13 @@ void printError(int es, int ds, int edi, int esi, int ebp, int _,
   lprintf("%%eip=0x%08X", eip);
   lprintf("EFLAGS=0x%08X\t%%cr2=0x%08X", eflags, cr2);
   lprintf("================================================================");
+  return false;
 }
 
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp, int _,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
     int eip, int cs, int eflags, int esp, int ss) {
   int cr2 = get_cr2();
-  printError(es, ds, edi, esi, ebp, _, ebx, edx, ecx, eax, faultNumber, errCode,
-      eip, cs, eflags, esp, ss, cr2);
+
+  ON(true, printError);
 }

@@ -88,7 +88,12 @@ static uint32_t rebuildPD_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
     // Move things into buffer, change mapping, flush TLB, put things back
     memcpy((void*)buffer, (void*)pageAddr, PAGE_SIZE);
 
-    uint32_t newPage = getUserMemPage();
+    uint32_t newPage;
+    if (isZFOD(PE_DECODE_ADDR(*ptentry))) {
+      newPage = getUserMemPageZFOD();
+    } else {
+      newPage = getUserMemPage();
+    }
     if (newPage == 0) {
       // no enough user space, abort
       *ptentry = PTE_CLEAR_ADDR(*ptentry);
@@ -98,14 +103,18 @@ static uint32_t rebuildPD_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
 
     *ptentry = PTE_CLEAR_ADDR(*ptentry) | newPage;
 
-    // Temporary allow write
-    PTE savedPTE = *ptentry;
-    *ptentry |= PE_WRITABLE(1);
-    invalidateTLB(pageAddr);
+    // only writeback when it's a non ZFOD data
+    if (!isZFOD(PE_DECODE_ADDR(*ptentry))) {
+      // Temporary allow write
+      PTE savedPTE = *ptentry;
+      *ptentry |= PE_WRITABLE(1);
+      invalidateTLB(pageAddr);
 
-    memcpy((void*)pageAddr, (void*)buffer, PAGE_SIZE);
-    *ptentry = savedPTE;
-    invalidateTLB(pageAddr);
+      memcpy((void*)pageAddr, (void*)buffer, PAGE_SIZE);
+      *ptentry = savedPTE;
+      invalidateTLB(pageAddr);
+    }
+
     // Done! Passing in the buffer address to go further
     return buffer;
   }

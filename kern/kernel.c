@@ -132,8 +132,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     }
     lprintf("Drivers installed");
 
-    enablePaging();
     claimUserMem();
+    enablePaging();
 
     initProcess();
 

@@ -12,6 +12,7 @@
 #include <simics.h>
 #include <malloc.h>
 #include <assert.h>
+#include <string.h>
 
 #include "x86/asm.h"
 #include "x86/cr.h"
@@ -26,8 +27,15 @@ static int userPhysicalFrames;
 
 static uint32_t* availableFrameStack;
 static int stackSize;
+static int reservedSize;
 
 static CrossCPULock latch;
+
+static uint32_t ZFODBlock;
+
+bool isZFOD(uint32_t addr) {
+  return addr == ZFODBlock;
+}
 
 void claimUserMem() {
   initCrossCPULock(&latch);
@@ -41,25 +49,56 @@ void claimUserMem() {
     basicUserAddr += PAGE_SIZE;
   }
   stackSize = userPhysicalFrames;
+  reservedSize = 0;
+
+  ZFODBlock = getUserMemPage();
+  assert(ZFODBlock != 0);
+  memset((void*)ZFODBlock, 0, PAGE_SIZE);
 
   lprintf("Claim all user space frames, %d available", userPhysicalFrames);
 }
 
-// zero for out-of-memory
-// TODO ZFOD!!!!
-uint32_t getUserMemPage() {
+uint32_t getUserMemPageZFOD() {
   GlobalLockR(&latch);
-  if (stackSize == 0) {
+  if (stackSize == reservedSize) {
     GlobalUnlockR(&latch);
     return 0;
   }
+  reservedSize++;
   GlobalUnlockR(&latch);
-  return availableFrameStack[--stackSize];
+  return ZFODBlock;
+}
+
+uint32_t upgradeUserMemPageZFOD(uint32_t mem) {
+  // There must be at lease one reserved for me!
+  GlobalLockR(&latch);
+  assert(reservedSize > 0);
+  uint32_t res = availableFrameStack[--reservedSize];
+  GlobalUnlockR(&latch);
+  return res;
+}
+
+// zero for out-of-memory
+uint32_t getUserMemPage() {
+  GlobalLockR(&latch);
+  if (stackSize == reservedSize) {
+    GlobalUnlockR(&latch);
+    return 0;
+  }
+  uint32_t res = availableFrameStack[--stackSize];
+  GlobalUnlockR(&latch);
+  return res;
 }
 
 void freeUserMemPage(uint32_t mem) {
   assert(IS_PAGE_ALIGNED(mem));
   GlobalLockR(&latch);
-  availableFrameStack[stackSize++] = mem;
+  if (ZFODBlock == mem) {
+    // return a ZFOD blocked, just de-reserve
+    assert(reservedSize > 0);
+    reservedSize--;
+  } else {
+    availableFrameStack[stackSize++] = mem;
+  }
   GlobalUnlockR(&latch);
 }

@@ -43,13 +43,13 @@ static uint32_t _registerNewPage(PageDirectory pd, uint32_t base,
       // current address is presented, abort!
       return currentPage;
     }
-    uint32_t pm = getUserMemPage();
+    uint32_t pm = getUserMemPageZFOD();
     if (!pm) {
       // Huh, no free memory available, abort!
       return currentPage;
     }
     // We are good to go
-    createMapPageDirectory(pd, currentPage, pm, true, true);
+    createMapPageDirectory(pd, currentPage, pm, true, false);
     PTE* createdPTE = searchPTEntryPageDirectory(pd, currentPage);
     // stamp the page table (use bit 9/10/11)
     *createdPTE |= PE_ENCODE_CUSTOM(currentPage == base ?
@@ -111,8 +111,6 @@ int new_pages_Internal(SyscallParams params) {
   }
   // We are done!
   kmutexWUnlock(&currentThread->process->memlock);
-  // TODO: change to ZFOD in the future!!
-  memset((void*)base, 0, len);
   return 0;
 }
 

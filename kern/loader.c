@@ -257,6 +257,7 @@ int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
 
   // Init stack, give it two page
   // the bottom one will hold ArgPackage
+  // Since it gets written immediately, we don't use ZFOD here
   if (cloneMemoryWithPTERange(pd, 0 - (uint32_t)(PAGE_SIZE * 2),
                               0,    // 0xffffffff + 1
                               0,

@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <x86/page.h>
 
+#include "bool.h"
+
 // Init code, should be called in bootstrap
 void claimUserMem();
 
@@ -23,8 +25,15 @@ void claimUserMem();
 // or 0 if there's no free space available
 uint32_t getUserMemPage();
 
-// Free one user page that is previously got by calling getUserMemPage.
-// After that you cannot use the memory anymore
+uint32_t getUserMemPageZFOD();
+
+// Upgrade never fail
+uint32_t upgradeUserMemPageZFOD(uint32_t mem);
+
+bool isZFOD(uint32_t addr);
+
+// Free one user page that is previously got by calling getUserMemPage or
+// getUserMemPageZFOD. After that you cannot use the memory anymore
 void freeUserMemPage(uint32_t mem);
 
 #endif

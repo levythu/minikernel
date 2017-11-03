@@ -36,7 +36,7 @@ static bool verifyUserSpaceAddrGivenPD(uint32_t startAddr, uint32_t endAddr,
         return false;
       }
 
-      if (mustWritable && !PE_IS_WRITABLE(*targetPTE)) {
+      if (mustWritable && !PE_IS_WRITABLE(*targetPTE) && !isZFOD(PE_DECODE_ADDR(*targetPTE))) {
         // We want a writable page, but it's not writable for user
         return false;
       }

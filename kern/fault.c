@@ -68,6 +68,10 @@ void registerFaultHandler() {
       errCode, eip, cs, eflags, esp, ss, cr2)) return;  \
   }
 
+/*****************************************************************************/
+// Now it's all about fault handlers
+
+// Print the fault out
 FAULT_ACTION(printError) {
   lprintf("Exception, IDT-number=%d. Core Dump:============================",
       faultNumber);
@@ -80,6 +84,18 @@ FAULT_ACTION(printError) {
   lprintf("EFLAGS=0x%08X\t%%cr2=0x%08X", eflags, cr2);
   lprintf("================================================================");
   return false;
+}
+
+// This handler is used for upgrade an readonly ZFOD block to RW All zero block
+FAULT_ACTION(ZFODUpgrader) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  if (!currentThread) return false;
+  if (eip >= USER_MEM_START) {
+    // When happens inside user access, we need to 
+  }
+  kmutexWLock(&currentThread->process->memlock);
+
+  kmutexWUnlock(&currentThread->process->memlock);
 }
 
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp, int _,

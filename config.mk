@@ -130,7 +130,7 @@ KERNEL_OBJS += source_untrusted.o
 KERNEL_OBJS += kmutex.o
 KERNEL_OBJS += keyboard_event.o syscall_consoleio.o syscall_fileio.o
 KERNEL_OBJS += reaper.o
-KERNEL_OBJS += fault.o fault_handler.o
+KERNEL_OBJS += fault.o fault_handler.o asm_wrapper.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

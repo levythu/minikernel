@@ -37,6 +37,7 @@ DECLARE_SYSCALL_WRAPPER(set_cursor_pos);
 DECLARE_SYSCALL_WRAPPER(get_cursor_pos);
 
 DECLARE_SYSCALL_WRAPPER(readfile);
+DECLARE_SYSCALL_WRAPPER(halt);
 
 void initSyscall();
 

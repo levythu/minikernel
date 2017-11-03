@@ -1,0 +1,33 @@
+#include "fault_handler_internal.h"
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_DE, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_DB, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_NMI, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_BP, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_OF, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_BR, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_UD, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_NM, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_CSO, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_WITH_ERRCODE(IDT_NP, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_WITH_ERRCODE(IDT_SS, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_WITH_ERRCODE(IDT_GP, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_WITH_ERRCODE(IDT_PF, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_MF, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_WITH_ERRCODE(IDT_AC, unifiedErrorHandler)
+
+MAKE_FAULT_HANDLER_NO_ERRCODE(IDT_XF, unifiedErrorHandler)

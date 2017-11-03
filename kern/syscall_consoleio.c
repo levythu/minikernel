@@ -160,7 +160,7 @@ int set_cursor_pos_Internal(SyscallParams params) {
     kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
-  if (!parseMultiParam(params, 0, &col)) {
+  if (!parseMultiParam(params, 1, &col)) {
     // invalid col
     kmutexRUnlock(&currentThread->process->memlock);
     return -1;
@@ -183,7 +183,7 @@ int get_cursor_pos_Internal(SyscallParams params) {
     kmutexRUnlock(&currentThread->process->memlock);
     return -1;
   }
-  if (!parseMultiParam(params, 0, &colAddr)) {
+  if (!parseMultiParam(params, 1, &colAddr)) {
     // invalid col address
     kmutexRUnlock(&currentThread->process->memlock);
     return -1;

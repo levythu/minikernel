@@ -32,22 +32,24 @@ void kmutexInit(kmutex* km) {
 }
 
 void kmutexRLock(kmutex* km) {
-  GlobalLockR(&km->spinMutex);
-  if (km->status >= 0) {
-    // Got it!
-    km->status++;
-    GlobalUnlockR(&km->spinMutex);
-    return;
-  }
-  // put myself into read wait list, then deschedule myself
-  waiterLinklist wl;
-  wl.thread = findTCB(getLocalCPU()->runningTID);
-  wl.next = km->readerWL;
-  km->readerWL = &wl;
-  ((tcb*)wl.thread)->status = THREAD_BLOCKED;
+  while (true) {
+    GlobalLockR(&km->spinMutex);
+    if (km->status >= 0) {
+      // Got it!
+      km->status++;
+      GlobalUnlockR(&km->spinMutex);
+      return;
+    }
+    // put myself into read wait list, then deschedule myself
+    waiterLinklist wl;
+    wl.thread = findTCB(getLocalCPU()->runningTID);
+    wl.next = km->readerWL;
+    km->readerWL = &wl;
+    ((tcb*)wl.thread)->status = THREAD_BLOCKED;
 
-  GlobalUnlockR(&km->spinMutex);
-  yieldToNext();
+    GlobalUnlockR(&km->spinMutex);
+    yieldToNext();
+  }
 }
 
 void kmutexRUnlock(kmutex* km) {
@@ -83,22 +85,24 @@ void kmutexRUnlock(kmutex* km) {
 // If not available, construct a waiterLinklist on local stack (the thread will
 // not terminate, so it's safe.)
 void kmutexWLock(kmutex* km) {
-  GlobalLockR(&km->spinMutex);
-  if (km->status == 0) {
-    // Got it!
-    km->status = -1;
-    GlobalUnlockR(&km->spinMutex);
-    return;
-  }
-  // put myself into write wait list, then deschedule myself
-  waiterLinklist wl;
-  wl.thread = findTCB(getLocalCPU()->runningTID);
-  wl.next = km->writerWL;
-  km->writerWL = &wl;
-  ((tcb*)wl.thread)->status = THREAD_BLOCKED;
+  while (true) {
+    GlobalLockR(&km->spinMutex);
+    if (km->status == 0) {
+      // Got it!
+      km->status = -1;
+      GlobalUnlockR(&km->spinMutex);
+      return;
+    }
+    // put myself into write wait list, then deschedule myself
+    waiterLinklist wl;
+    wl.thread = findTCB(getLocalCPU()->runningTID);
+    wl.next = km->writerWL;
+    km->writerWL = &wl;
+    ((tcb*)wl.thread)->status = THREAD_BLOCKED;
 
-  GlobalUnlockR(&km->spinMutex);
-  yieldToNext();
+    GlobalUnlockR(&km->spinMutex);
+    yieldToNext();
+  }
 }
 
 void kmutexWUnlock(kmutex* km) {

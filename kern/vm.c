@@ -153,6 +153,6 @@ void enablePaging() {
   initPD = newPageDirectory();
   setKernelMapping(initPD);
   activatePageDirectory(initPD);
-  set_cr0(get_cr0() | CR0_PG);
+  set_cr0(get_cr0() | CR0_PG | CR0_WP);
   lprintf("Initial page directory established.");
 }

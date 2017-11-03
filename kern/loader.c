@@ -81,7 +81,6 @@ static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
       createMapPageDirectory(pd, i, newPA, true, isWritable);
       pte = searchPTEntryPageDirectory(pd, i);
       assert(pte != NULL);
-      memset((void*)i, 0, PAGE_SIZE);
     }
 
     *pte |= PE_WRITABLE(isWritable);
@@ -92,6 +91,11 @@ static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
     uint32_t pgEnd = i - 1 + PAGE_SIZE;
     if (pgEnd > endAddr) pgEnd = endAddr;
     assert(pgStart <= pgEnd);
+
+    // Temporary allow write
+    PTE savedPTE = *pte;
+    *pte |= PE_WRITABLE(1);
+    invalidateTLB(i);
 
     if (sourceStartAddr != 0) {
       // copy contents from source memory
@@ -104,6 +108,8 @@ static int cloneMemoryWithPTERange(PageDirectory pd, uint32_t startAddr,
              0,
              pgEnd - pgStart + 1);
     }
+    *pte = savedPTE;
+    invalidateTLB(i);
 
     // We must check here instead of for-loop header, for overflow concerns
     if (i == endPageAddr) break;

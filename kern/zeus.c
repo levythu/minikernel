@@ -97,9 +97,15 @@ static uint32_t rebuildPD_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
     }
 
     *ptentry = PTE_CLEAR_ADDR(*ptentry) | newPage;
+
+    // Temporary allow write
+    PTE savedPTE = *ptentry;
+    *ptentry |= PE_WRITABLE(1);
     invalidateTLB(pageAddr);
 
     memcpy((void*)pageAddr, (void*)buffer, PAGE_SIZE);
+    *ptentry = savedPTE;
+    invalidateTLB(pageAddr);
     // Done! Passing in the buffer address to go further
     return buffer;
   }

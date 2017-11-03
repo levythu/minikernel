@@ -92,7 +92,7 @@ FAULT_ACTION(ZFODUpgrader) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   if (!currentThread) return false;
   if (eip >= USER_MEM_START) {
-    // When happens inside user access, we need to
+    // When happens inside user access, we need to protect the 
   }
   kmutexWLock(&currentThread->process->memlock);
 

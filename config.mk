@@ -62,7 +62,7 @@ UPDATE_METHOD = afs
 # 410TESTS = new_pages remove_pages_test1 remove_pages_test2
 # 410TESTS = fork_test1 readline_basic print_basic
 # 410TESTS = exec_basic exec_basic_helper exec_nonexist coolness peon merchant
-410TESTS = fork_test1 wait_getpid fork_wait fork_wait_bomb fork_exit_bomb stack_test1
+410TESTS = fork_test1 wait_getpid fork_wait fork_wait_bomb fork_exit_bomb stack_test1 halt_test
 
 ###########################################################################
 # Test programs you have written which you wish to run

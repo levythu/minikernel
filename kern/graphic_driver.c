@@ -9,6 +9,8 @@
  *  @author Leiyu Zhao (leiyuz)
  */
 
+// TODO make it two phase printing: one pushing things into queue, another
+// make movement
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>

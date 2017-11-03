@@ -28,6 +28,13 @@ int gettid_Internal(SyscallParams params) {
   return getLocalCPU()->runningTID;
 }
 
+int halt_Internal(SyscallParams params) {
+  // Good bye!
+  sim_halt();
+  panic("The OS should've been ceased.");
+  return -1;
+}
+
 int fork_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);

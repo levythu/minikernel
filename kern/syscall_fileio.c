@@ -37,17 +37,20 @@ int readfile_Internal(SyscallParams params) {
 
   int len, offset;
   uint32_t filename, buf;
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   // Validate & get filename
   if (!parseMultiParam(params, 0, (int*)(&filename))) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     // invalid filename address
     return -1;
   }
   char* filenameKernel = smalloc(MAX_ACCEPTABLE_FILENAME_LEN);
   if (!filenameKernel) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     // no free kernel space
     return -1;
   }
@@ -56,13 +59,15 @@ int readfile_Internal(SyscallParams params) {
   if (actualLengthForFilename < 0 ||
       actualLengthForFilename == MAX_ACCEPTABLE_FILENAME_LEN) {
     // filename not valid or too long
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
   }
 
   // validate buffer, but the write permission check is delayed to write time
   if (!parseMultiParam(params, 1, (int*)(&buf))) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
     // invalid buffer address
     return -1;
@@ -70,13 +75,15 @@ int readfile_Internal(SyscallParams params) {
 
   // validate len
   if (!parseMultiParam(params, 2, &len)) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
     // invalid len
     return -1;
   }
   if (len < 0) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
     // invalid len
     return -1;
@@ -84,18 +91,21 @@ int readfile_Internal(SyscallParams params) {
 
   // validate offset
   if (!parseMultiParam(params, 3, &offset)) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
     // invalid offset
     return -1;
   }
   if (offset < 0) {
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
     // invalid offset
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   // start reading files chunk by chunk
   int byteRead = 0;
@@ -120,19 +130,22 @@ int readfile_Internal(SyscallParams params) {
       break;
     } else {
       // lock the memlock, copy data
-      kmutexRLock(&currentThread->process->memlock);
+      kmutexRLockRecord(&currentThread->process->memlock,
+          &currentThread->memLockStatus);
       // use byteToRead as check length instead of byteRead. Since this is what
       // user thinks it should be valid
       if (!verifyUserSpaceAddr(buf + offset,
                                buf + offset + byteToRead - 1, true)) {
         // user space is not available to write
-        kmutexRUnlock(&currentThread->process->memlock);
+        kmutexRUnlockRecord(&currentThread->process->memlock,
+            &currentThread->memLockStatus);
         sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
         sfree(bufferKernel, FILE_IO_BUFFER);
         return -1;
       }
       memcpy((void*)(buf + offset), bufferKernel, actualRead);
-      kmutexRUnlock(&currentThread->process->memlock);
+      kmutexRUnlockRecord(&currentThread->process->memlock,
+          &currentThread->memLockStatus);
 
       byteRead += actualRead;
       offset += actualRead;

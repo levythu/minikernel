@@ -54,32 +54,39 @@ int wait_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
   uint32_t statusPtr;
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   if (!parseSingleParam(params, (int*)(&statusPtr))) {
     // invalid ptr
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     return -1;
   }
   if (statusPtr != 0 && !verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
     // the address is not writable
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   int retAddr;
   int zombieTID = waitThread(currentThread, &retAddr);
 
   if (zombieTID >= 0 && statusPtr != 0) {
     // We need to double check, we dont know what happened when we sleep
-    kmutexRLock(&currentThread->process->memlock);
+    kmutexRLockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     if (!verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
       // the address is not writable
-      kmutexRUnlock(&currentThread->process->memlock);
+      kmutexRUnlockRecord(&currentThread->process->memlock,
+          &currentThread->memLockStatus);
       return -1;
     }
     *((int*)statusPtr) = retAddr;
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
   }
 
   return zombieTID;
@@ -97,13 +104,16 @@ int set_status_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
   int status;
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   if (!parseSingleParam(params, (int*)(&status))) {
     // invalid ptr
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   kmutexWLock(&currentThread->process->mutex);
   currentThread->process->retStatus = status;

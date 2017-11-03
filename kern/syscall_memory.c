@@ -86,31 +86,37 @@ int new_pages_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   uint32_t base, len;
   if (!parseMultiParam(params, 0, (int*)&base) ||
       !parseMultiParam(params, 1, (int*)&len)) {
     // Invalid param
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   if (len == 0 || !IS_PAGE_ALIGNED(base) || !IS_PAGE_ALIGNED(len)) {
     // invalid length or base
     return -1;
   }
 
-  kmutexWLock(&currentThread->process->memlock);
+  kmutexWLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   uint32_t end = _registerNewPage(currentThread->process->pd, base, len);
   if (end != base + len) {
     // partial success, we roll back
     if (end != base) _unregisterNewPage(currentThread->process->pd, base);
-    kmutexWUnlock(&currentThread->process->memlock);
+    kmutexWUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     return -1;
   }
   // We are done!
-  kmutexWUnlock(&currentThread->process->memlock);
+  kmutexWUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   return 0;
 }
 
@@ -118,23 +124,28 @@ int remove_pages_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
-  kmutexRLock(&currentThread->process->memlock);
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   uint32_t base;
   if (!parseSingleParam(params, (int*)&base)) {
     // Invalid param
-    kmutexRUnlock(&currentThread->process->memlock);
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
     return -1;
   }
-  kmutexRUnlock(&currentThread->process->memlock);
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   if (!IS_PAGE_ALIGNED(base)) {
     // invalid length or base
     return -1;
   }
 
-  kmutexWLock(&currentThread->process->memlock);
+  kmutexWLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
   bool result = _unregisterNewPage(currentThread->process->pd, base);
-  kmutexWUnlock(&currentThread->process->memlock);
+  kmutexWUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
 
   return result ? 0 : -1;
 }

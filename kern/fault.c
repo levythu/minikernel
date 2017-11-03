@@ -89,14 +89,15 @@ FAULT_ACTION(printError) {
 
 // This handler is used for upgrade an readonly ZFOD block to RW All zero block
 FAULT_ACTION(ZFODUpgrader) {
-  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
-  if (!currentThread) return false;
-  if (eip >= USER_MEM_START) {
-    // When happens inside user access, we need to protect the 
-  }
-  kmutexWLock(&currentThread->process->memlock);
-
-  kmutexWUnlock(&currentThread->process->memlock);
+  // tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  // if (!currentThread) return false;
+  // if (eip >= USER_MEM_START) {
+  //   // When happens inside user access, we need to protect the
+  // }
+  // kmutexWLockRecord(&currentThread->process->memlock, &currentThread->memLockStatus);
+  //
+  // kmutexWUnlockRecord(&currentThread->process->memlock, &currentThread->memLockStatus);
+  return true;
 }
 
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,

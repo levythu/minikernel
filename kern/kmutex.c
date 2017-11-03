@@ -31,12 +31,40 @@ void kmutexInit(kmutex* km) {
   km->status = 0;
 }
 
-void kmutexRLock(kmutex* km) {
+void kmutexWLockForce(kmutex* km, kmutexStatus* status,
+    kmutexStatus* statusToRestore) {
+  // TODO
+}
+void kmutexWUnlockForce(kmutex* km, kmutexStatus* status,
+    kmutexStatus statusToRestore) {
+  // TODO
+}
+
+void kmutexRLock(kmutex* km){
+  kmutexRLockRecord(km, NULL);
+}
+
+void kmutexRUnlock(kmutex* km){
+  kmutexRUnlockRecord(km, NULL);
+}
+
+void kmutexWLock(kmutex* km){
+  kmutexWLockRecord(km, NULL);
+}
+
+void kmutexWUnlock(kmutex* km){
+  kmutexWUnlockRecord(km, NULL);
+}
+
+
+void kmutexRLockRecord(kmutex* km, kmutexStatus* status) {
   while (true) {
     GlobalLockR(&km->spinMutex);
+    if (status) assert(*status == KMUTEX_NOT_ACQUIRED);
     if (km->status >= 0) {
       // Got it!
       km->status++;
+      if (status) *status = KMUTEX_HAVE_RLOCK;
       GlobalUnlockR(&km->spinMutex);
       return;
     }
@@ -52,8 +80,12 @@ void kmutexRLock(kmutex* km) {
   }
 }
 
-void kmutexRUnlock(kmutex* km) {
+void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
   GlobalLockR(&km->spinMutex);
+  if (status) {
+    assert(*status == KMUTEX_HAVE_RLOCK);
+    *status = KMUTEX_NOT_ACQUIRED;
+  }
   km->status--;
   if (km->status > 0 || !km->writerWL) {
     // noone else is waiting, or still some one is reading
@@ -84,12 +116,14 @@ void kmutexRUnlock(kmutex* km) {
 
 // If not available, construct a waiterLinklist on local stack (the thread will
 // not terminate, so it's safe.)
-void kmutexWLock(kmutex* km) {
+void kmutexWLockRecord(kmutex* km, kmutexStatus* status) {
   while (true) {
     GlobalLockR(&km->spinMutex);
+    if (status) assert(*status == KMUTEX_NOT_ACQUIRED);
     if (km->status == 0) {
       // Got it!
       km->status = -1;
+      if (status) *status = KMUTEX_HAVE_WLOCK;
       GlobalUnlockR(&km->spinMutex);
       return;
     }
@@ -105,8 +139,12 @@ void kmutexWLock(kmutex* km) {
   }
 }
 
-void kmutexWUnlock(kmutex* km) {
+void kmutexWUnlockRecord(kmutex* km, kmutexStatus* status) {
   GlobalLockR(&km->spinMutex);
+  if (status) {
+    assert(*status == KMUTEX_HAVE_WLOCK);
+    *status = KMUTEX_NOT_ACQUIRED;
+  }
   km->status = 0;
   if (!km->readerWL && !km->writerWL) {
     // noone else is waiting

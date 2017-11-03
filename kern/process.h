@@ -89,12 +89,12 @@ struct _tcb {
   int id;
   struct _tcb* next;
 
-  // This member is only interested by context switch
   ThreadStatus status;
   pcb* process;
   ureg_t regs;
   uint32_t kernelStackPage;
   int owned;
+  kmutexStatus memLockStatus;
 
   // After this line all members should never be used by modules other than
   // process.c

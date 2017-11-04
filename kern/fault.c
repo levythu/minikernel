@@ -92,7 +92,7 @@ FAULT_ACTION(printError) {
 
 // This handler is used for upgrade an readonly ZFOD block to RW All zero block
 FAULT_ACTION(ZFODUpgrader) {
-  if (cr2 < USER_MEM_START) {
+  if ((uint32_t)cr2 < USER_MEM_START) {
     // Easy, access kernel memory, not ZFOD'd
     return false;
   }

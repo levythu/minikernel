@@ -78,10 +78,10 @@ bool makeRegisterHandlerStackAndGo(tcb* thread, ureg_t* uregs) {
   uint32_t uregLoc = esp;
 
   esp -= 4;
-  *(uint32_t*)esp = thread->customArg;
+  *(uint32_t*)esp = uregLoc;
 
   esp -= 4;
-  *(uint32_t*)esp = uregLoc;
+  *(uint32_t*)esp = thread->customArg;
 
   esp -= 4;
   *(uint32_t*)esp = 0xdeadbeef; // return addr

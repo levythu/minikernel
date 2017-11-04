@@ -9,6 +9,7 @@
 #include <simics.h>
 #include <malloc.h>
 #include <assert.h>
+#include <string.h>
 #include <x86/asm.h>
 #include <x86/cr.h>
 #include <x86/idt.h>
@@ -18,6 +19,7 @@
 #include "vm.h"
 #include "bool.h"
 #include "cpu.h"
+#include "process.h"
 #include "fault_handler_internal.h"
 #include "asm_wrapper.h"
 #include "int_handler.h"
@@ -89,14 +91,53 @@ FAULT_ACTION(printError) {
 
 // This handler is used for upgrade an readonly ZFOD block to RW All zero block
 FAULT_ACTION(ZFODUpgrader) {
-  // tcb* currentThread = findTCB(getLocalCPU()->runningTID);
-  // if (!currentThread) return false;
-  // if (eip >= USER_MEM_START) {
-  //   // When happens inside user access, we need to protect the
-  // }
-  // kmutexWLockRecord(&currentThread->process->memlock, &currentThread->memLockStatus);
-  //
-  // kmutexWUnlockRecord(&currentThread->process->memlock, &currentThread->memLockStatus);
+  if (cr2 < USER_MEM_START) {
+    // Easy, access kernel memory, not ZFOD'd
+    return false;
+  }
+
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  if (!currentThread) {
+    return false; // non-running thread then pass on
+  }
+
+  // Use kmutexWLockForce to get the lock recursively and adaptively.
+  // Since when write happens RLock cannot be acquired, it's safe to call so
+  kmutexStatus oldMemLockStatus;
+  kmutexWLockForce(&currentThread->process->memlock,
+      &currentThread->memLockStatus, &oldMemLockStatus);
+
+  PTE* pteEntry = searchPTEntryPageDirectory(currentThread->process->pd,
+      PE_DECODE_ADDR(cr2));
+  if (!pteEntry) {
+    // This is a out-of-address access, not ZFOD
+    kmutexWUnlockForce(&currentThread->process->memlock,
+        &currentThread->memLockStatus, oldMemLockStatus);
+    return false;
+  }
+  if (!isZFOD(PE_DECODE_ADDR(*pteEntry))) {
+    if (PE_IS_WRITABLE(*pteEntry)) {
+      // looks like a good address, maybe it's due to other threads have fix the
+      // ZFOD. Give another chance, try again
+      kmutexWUnlockForce(&currentThread->process->memlock,
+          &currentThread->memLockStatus, oldMemLockStatus);
+      return true;
+    }
+    // accessing a readonly addr, leave it to others
+    kmutexWUnlockForce(&currentThread->process->memlock,
+        &currentThread->memLockStatus, oldMemLockStatus);
+    return false;
+  }
+  // Handle ZFOD!
+  uint32_t newPage = upgradeUserMemPageZFOD(PE_DECODE_ADDR(*pteEntry));
+  *pteEntry = PTE_CLEAR_ADDR(*pteEntry) | PE_WRITABLE(1) | newPage;
+  invalidateTLB(cr2);
+  memset((void*)PE_DECODE_ADDR(cr2), 0, PAGE_SIZE);
+
+  kmutexWUnlockForce(&currentThread->process->memlock,
+      &currentThread->memLockStatus, oldMemLockStatus);
+
+  // Good! Retry and everything should be fine!
   return true;
 }
 
@@ -109,4 +150,7 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
   int cr2 = get_cr2();
 
   ON(true, printError);
+
+  ON(faultNumber == IDT_PF, ZFODUpgrader);
+  // TODO: kill user thread!
 }

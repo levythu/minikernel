@@ -45,6 +45,9 @@ void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status);
 void kmutexWLockRecord(kmutex* km, kmutexStatus* status);
 void kmutexWUnlockRecord(kmutex* km, kmutexStatus* status);
 
+// Special API, it's recursive: one thread can call this even if getting WLock
+// It's adaptive: one can call it with either NoLock or WLock (RLock is not
+// permitted!) and unlock force can recover it.
 void kmutexWLockForce(kmutex* km, kmutexStatus* status,
     kmutexStatus* statusToRestore);
 void kmutexWUnlockForce(kmutex* km, kmutexStatus* status,

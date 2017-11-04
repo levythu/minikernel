@@ -74,11 +74,11 @@ int readline_Internal(SyscallParams params) {
   int actualLen = getStringBlocking(buf, len);
   releaseKeyboard();
 
-  kmutexRLockRecord(&currentThread->process->memlock,
+  kmutexWLockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
   // Revalidate, the page table may be removed when waiting for keyboard
   if (!verifyUserSpaceAddr(bufAddr, bufAddr + len - 1, true)) {
-    kmutexRUnlockRecord(&currentThread->process->memlock,
+    kmutexWUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
     sfree(buf, len);
     return -1;
@@ -86,7 +86,7 @@ int readline_Internal(SyscallParams params) {
 
   memcpy((void*)bufAddr, buf, actualLen);
   sfree(buf, len);
-  kmutexRUnlockRecord(&currentThread->process->memlock,
+  kmutexWUnlockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
 
   return actualLen;
@@ -200,30 +200,30 @@ int get_cursor_pos_Internal(SyscallParams params) {
 
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int rowAddr, colAddr;
-  kmutexRLockRecord(&currentThread->process->memlock,
+  kmutexWLockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
   if (!parseMultiParam(params, 0, &rowAddr)) {
     // invalid row address
-    kmutexRUnlockRecord(&currentThread->process->memlock,
+    kmutexWUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
     return -1;
   }
   if (!parseMultiParam(params, 1, &colAddr)) {
     // invalid col address
-    kmutexRUnlockRecord(&currentThread->process->memlock,
+    kmutexWUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
     return -1;
   }
   if (!verifyUserSpaceAddr(rowAddr, rowAddr, true) ||
       !verifyUserSpaceAddr(colAddr, colAddr, true)) {
     // row/col destination is not writable
-    kmutexRUnlockRecord(&currentThread->process->memlock,
+    kmutexWUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
     return -1;
   }
   *((int*)rowAddr) = row;
   *((int*)colAddr) = col;
-  kmutexRUnlockRecord(&currentThread->process->memlock,
+  kmutexWUnlockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
 
   return 0;

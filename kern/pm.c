@@ -74,6 +74,12 @@ uint32_t upgradeUserMemPageZFOD(uint32_t mem) {
   GlobalLockR(&latch);
   assert(reservedSize > 0);
   uint32_t res = availableFrameStack[--reservedSize];
+  // Put swap it with the stack top, so that the stack top can be valid, and
+  // upgraded block gets outside stack
+
+  availableFrameStack[reservedSize] = availableFrameStack[--stackSize];
+  availableFrameStack[stackSize] = res;
+
   GlobalUnlockR(&latch);
   return res;
 }

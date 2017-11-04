@@ -33,11 +33,16 @@ void kmutexInit(kmutex* km) {
 
 void kmutexWLockForce(kmutex* km, kmutexStatus* status,
     kmutexStatus* statusToRestore) {
-  // TODO
+  assert(*status != KMUTEX_HAVE_RLOCK);
+  *statusToRestore = *status;
+  // If current WLock is acquired, do nothing
+  if (*status == KMUTEX_HAVE_WLOCK) return;
+  kmutexWLockRecord(km, status);
 }
 void kmutexWUnlockForce(kmutex* km, kmutexStatus* status,
     kmutexStatus statusToRestore) {
-  // TODO
+  if (statusToRestore == KMUTEX_HAVE_WLOCK) return;
+  kmutexWUnlockRecord(km, status);
 }
 
 void kmutexRLock(kmutex* km){

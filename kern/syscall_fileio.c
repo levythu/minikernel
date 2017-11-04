@@ -130,21 +130,21 @@ int readfile_Internal(SyscallParams params) {
       break;
     } else {
       // lock the memlock, copy data
-      kmutexRLockRecord(&currentThread->process->memlock,
+      kmutexWLockRecord(&currentThread->process->memlock,
           &currentThread->memLockStatus);
       // use byteToRead as check length instead of byteRead. Since this is what
       // user thinks it should be valid
       if (!verifyUserSpaceAddr(buf + offset,
                                buf + offset + byteToRead - 1, true)) {
         // user space is not available to write
-        kmutexRUnlockRecord(&currentThread->process->memlock,
+        kmutexWUnlockRecord(&currentThread->process->memlock,
             &currentThread->memLockStatus);
         sfree(filenameKernel, MAX_ACCEPTABLE_FILENAME_LEN);
         sfree(bufferKernel, FILE_IO_BUFFER);
         return -1;
       }
       memcpy((void*)(buf + offset), bufferKernel, actualRead);
-      kmutexRUnlockRecord(&currentThread->process->memlock,
+      kmutexWUnlockRecord(&currentThread->process->memlock,
           &currentThread->memLockStatus);
 
       byteRead += actualRead;

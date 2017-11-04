@@ -76,16 +76,16 @@ int wait_Internal(SyscallParams params) {
 
   if (zombieTID >= 0 && statusPtr != 0) {
     // We need to double check, we dont know what happened when we sleep
-    kmutexRLockRecord(&currentThread->process->memlock,
+    kmutexWLockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
     if (!verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
       // the address is not writable
-      kmutexRUnlockRecord(&currentThread->process->memlock,
+      kmutexWUnlockRecord(&currentThread->process->memlock,
           &currentThread->memLockStatus);
       return -1;
     }
     *((int*)statusPtr) = retAddr;
-    kmutexRUnlockRecord(&currentThread->process->memlock,
+    kmutexWUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
   }
 

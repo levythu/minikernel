@@ -21,6 +21,7 @@
 #include "cpu.h"
 #include "process.h"
 #include "fault_handler_internal.h"
+#include "fault_handler_user.h"
 #include "asm_wrapper.h"
 #include "int_handler.h"
 
@@ -141,6 +142,32 @@ FAULT_ACTION(ZFODUpgrader) {
   return true;
 }
 
+FAULT_ACTION(UserModeError) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  assert(currentThread);
+
+  ureg_t uregs;
+  uregs.cause = translateIDTNumToCause(faultNumber);
+  uregs.cr2 = cr2;
+  uregs.ds = ds;
+  uregs.es = es;
+  uregs.edi = edi;
+  uregs.esi = esi;
+  uregs.ebp = ebp;
+  uregs.ebx = ebx;
+  uregs.edx = edx;
+  uregs.ecx = ecx;
+  uregs.eax = eax;
+  uregs.error_code = errCode;
+  uregs.eip = eip;
+  uregs.cs = cs;
+  uregs.eflags = eflags;
+  uregs.esp = esp;
+  uregs.ss = ss;
+  // It should never return on succ
+  return makeRegisterHandlerStackAndGo(currentThread, &uregs);
+}
+
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
     int espOnCurrentStack,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
@@ -152,5 +179,5 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
   ON(true, printError);
 
   ON(faultNumber == IDT_PF, ZFODUpgrader);
-  // TODO: kill user thread!
+  ON(eip >= USER_MEM_START, UserModeError);
 }

@@ -96,6 +96,10 @@ struct _tcb {
   int owned;
   kmutexStatus memLockStatus;
 
+  uint32_t faultHandler;
+  uint32_t customArg;
+  uint32_t faultStack;
+
   // After this line all members should never be used by modules other than
   // process.c
   bool _hasAbandoned;

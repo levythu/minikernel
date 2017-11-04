@@ -13,10 +13,19 @@
 #define MODE_SWITCH_H
 
 #include <stdint.h>
+#include <ureg.h>
+
+#include "bool.h"
 
 // Switch to ring3, given the user-space esp, eip and eflags. This function
 // NEVER returns!
 // It will set segment registers accordingly
 void switchToRing3(uint32_t esp, uint32_t eflags, uint32_t eip);
+
+void switchToRing3X(uint32_t esp, uint32_t eflags, uint32_t eip, uint32_t edi,
+                    uint32_t esi, uint32_t ebp, uint32_t ebx, uint32_t edx,
+                    uint32_t ecx, uint32_t eax);
+
+bool validateUregs(ureg_t* uregs);
 
 #endif

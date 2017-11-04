@@ -60,6 +60,9 @@ pcb* SpawnProcess(tcb** firstThread) {
   ntcb->process = npcb;
   ntcb->memLockStatus = KMUTEX_NOT_ACQUIRED;
   ntcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
+  ntcb->faultHandler = 0;
+  ntcb->customArg = 0;
+  ntcb->faultStack = 0;
   if (!ntcb->kernelStackPage) {
     panic("SpawnProcess: fail to create kernel stack for new process.");
   }

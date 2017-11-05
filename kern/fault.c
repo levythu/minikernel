@@ -24,6 +24,8 @@
 #include "fault_handler_user.h"
 #include "asm_wrapper.h"
 #include "int_handler.h"
+#include "zeus.h"
+#include "console.h"
 
 DECLARE_FAULT_ENTRANCE(IDT_DE);  // SWEXN_CAUSE_DIVIDE
 DECLARE_FAULT_ENTRANCE(IDT_DB);  // SWEXN_CAUSE_DEBUG
@@ -42,6 +44,7 @@ DECLARE_FAULT_ENTRANCE(IDT_MF);  // SWEXN_CAUSE_FPUFAULT
 DECLARE_FAULT_ENTRANCE(IDT_AC);  // SWEXN_CAUSE_ALIGNFAULT
 DECLARE_FAULT_ENTRANCE(IDT_XF);  // SWEXN_CAUSE_SIMDFAULT
 
+// TODO handle mesterious fault!
 void registerFaultHandler() {
   MAKE_FAULT_IDT(IDT_DE);
   MAKE_FAULT_IDT(IDT_DB);
@@ -142,7 +145,7 @@ FAULT_ACTION(ZFODUpgrader) {
   return true;
 }
 
-FAULT_ACTION(UserModeError) {
+FAULT_ACTION(UserModeErrorSWE) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   assert(currentThread);
 
@@ -168,6 +171,23 @@ FAULT_ACTION(UserModeError) {
   return makeRegisterHandlerStackAndGo(currentThread, &uregs);
 }
 
+FAULT_ACTION(UserModeErrorCrash) {
+  // Crash! It's equal to vanish
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  lprintf("Thread #%d of process #%d aborts for exception.\n",
+      getLocalCPU()->runningTID, getLocalCPU()->runningPID);
+  // one way trip
+  terminateThread(currentThread);
+  panic("What.... I should've terminated");
+  return true;
+}
+
+FAULT_ACTION(CatchAllHandler) {
+  panic("Uncaught exception. See descriptions above.");
+  return true;
+}
+
+
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
     int espOnCurrentStack,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
@@ -176,8 +196,16 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
   int trueSS = eip >= USER_MEM_START ? ss : get_ss();
   int cr2 = get_cr2();
 
+  // General info for debugger
   ON(true, printError);
 
+  // Area for OS tricks that's hidden from anyone else
   ON(faultNumber == IDT_PF, ZFODUpgrader);
-  ON(eip >= USER_MEM_START, UserModeError);
+
+  // Huh, user code! What are you doing!
+  ON(eip >= USER_MEM_START, UserModeErrorSWE);
+  ON(eip >= USER_MEM_START, UserModeErrorCrash);
+
+  // Hmmmmmm it's me that screwed up. Let's panic and let Levy debug it
+  ON(true, CatchAllHandler);
 }

@@ -50,6 +50,7 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(get_cursor_pos, GET_CURSOR_POS_INT);
 
   MAKE_SYSCALL_IDT(swexn, SWEXN_INT);
+  MAKE_SYSCALL_IDT(sleep, SLEEP_INT);
 
   MAKE_SYSCALL_IDT(readfile, READFILE_INT);
   MAKE_SYSCALL_IDT(halt, HALT_INT);

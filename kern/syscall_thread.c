@@ -30,6 +30,28 @@
 #include "fault_handler_user.h"
 #include "mode_switch.h"
 #include "page.h"
+#include "timeout.h"
+
+int sleep_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  int ticks;
+
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+  if (!parseSingleParam(params, &ticks)) {
+    // Invalid ticks
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
+    return -1;
+  }
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+
+  if (ticks < 0) return -1;
+  if (ticks == 0) return 0;
+  sleepFor(ticks);
+  return 0;
+}
 
 int swexn_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);

@@ -65,8 +65,8 @@ UPDATE_METHOD = afs
 # 410TESTS = fork_test1 wait_getpid fork_wait fork_wait_bomb fork_exit_bomb stack_test1 halt_test
 # 410TESTS = swexn_basic_test swexn_cookie_monster swexn_regs swexn_dispatch stack_test1 remove_pages_test2
 410TESTS += wait_getpid fork_wait fork_wait_bomb fork_exit_bomb stack_test1 halt_test
-410TESTS += swexn_basic_test swexn_cookie_monster swexn_regs swexn_dispatch 
-410TESTS += make_crash make_crash_helper
+410TESTS += swexn_basic_test swexn_cookie_monster swexn_regs swexn_dispatch
+410TESTS += make_crash make_crash_helper sleep_test1
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -136,6 +136,7 @@ KERNEL_OBJS += keyboard_event.o syscall_consoleio.o syscall_fileio.o
 KERNEL_OBJS += reaper.o
 KERNEL_OBJS += fault.o fault_handler.o asm_wrapper.o
 KERNEL_OBJS += mode_switch_c.o fault_handler_user.o syscall_thread.o
+KERNEL_OBJS += timeout.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

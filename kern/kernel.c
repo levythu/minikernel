@@ -37,11 +37,13 @@
 #include "dbgconf.h"
 #include "sysconf.h"
 #include "fault.h"
+#include "timeout.h"
 
 extern void initMemManagement();
 
 // Dummy timer event, can visualize whether the interrupt is on.
 void _tickback(unsigned int tk) {
+  onTickEvent();
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
     if (tk % 1000 == 0) {
       lprintf("tick");
@@ -127,6 +129,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     initMemManagement();
 
     initKeyboardEvent();
+    initTimeout();
     if (handler_install(_tickback, onKeyboardSync, onKeyboardAsync) != 0) {
       panic("Fail to install all drivers");
     }

@@ -80,12 +80,13 @@ void turnToZombie(pcb* targetProc) {
     int zombieCount;
     followZombieChain(targetProc, &zombieCount);
     pcb** chainEnds = followZombieChain(initPCB, NULL);
-    // if (zombieCount > 0) {
-      lprintf("Handling %d zombie children to INIT...", zombieCount);
-    // }
     *chainEnds = targetProc->zombieChain;
 
     initPCB->unwaitedChildProc += zombieCount;
+    if (zombieCount > 0) {
+      lprintf("Handling %d zombie children to INIT.., now it's %d",
+          zombieCount, initPCB->unwaitedChildProc);
+    }
     notifyWaiter(initPCB, zombieCount);
     kmutexWUnlock(&initPCB->mutex);
     releaseEphemeralAccessProcess(initPCB);
@@ -107,6 +108,7 @@ void turnToZombie(pcb* targetProc) {
       releaseEphemeralAccessProcess(directParentPCB);
       directParentPCB = findPCBWithEphemeralAccess(INIT_PID);
       kmutexWLock(&directParentPCB->mutex);
+      notMyFather = true;
     }
   } else {
     // my parent is reaped, use init
@@ -123,6 +125,8 @@ void turnToZombie(pcb* targetProc) {
   if (notMyFather) {
     // this is not the child of INIT, so we need to add unwaitedChildProc
     directParentPCB->unwaitedChildProc += 1;
+    lprintf("I'm orphan... contacting INIT, now it's %d",
+        directParentPCB->unwaitedChildProc);
   }
   notifyWaiter(directParentPCB, 1);
   kmutexWUnlock(&directParentPCB->mutex);

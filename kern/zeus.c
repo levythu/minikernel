@@ -313,20 +313,25 @@ void terminateThread(tcb* currentThread) {
 
 int waitThread(tcb* currentThread, int* returnCodeAddr) {
   pcb* currentProc = currentThread->process;
+  bool firstTime = true;
   while (true) {
     kmutexWLock(&currentProc->mutex);
-    if (currentProc->unwaitedChildProc == 0) {
-      // Bad, nothing can be waited
-      kmutexWUnlock(&currentProc->mutex);
-      return -1;
-    }
-    if (currentProc->unwaitedChildProc < 0) {
-      panic("waitThread: unexpected unwaitedChildProc");
+    if (firstTime) {
+      firstTime = false;
+      if (currentProc->unwaitedChildProc == 0) {
+        // Bad, nothing can be waited
+        lprintf("Bad things since nothing to be wait");
+        kmutexWUnlock(&currentProc->mutex);
+        return -1;
+      }
+      if (currentProc->unwaitedChildProc < 0) {
+        panic("waitThread: unexpected unwaitedChildProc");
+      }
+      currentProc->unwaitedChildProc--;
     }
     if (currentProc->zombieChain) {
       pcb* zombie = currentProc->zombieChain;
       currentProc->zombieChain = currentProc->zombieChain->zombieChain;
-      currentProc->unwaitedChildProc--;
       kmutexWUnlock(&currentProc->mutex);
       // no one will access zombie, so I own the process
       int zombieTID = zombie->firstTID;

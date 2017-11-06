@@ -85,6 +85,7 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
     releaseEphemeralAccess(nextThread);
     if (nextThread->status == THREAD_DEAD) {
       // time to reap
+      LocalUnlockR();
       #ifdef SCHEDULER_DECISION_PRINT
         lprintf("Reaping thread #%d", nextThread->id);
       #endif
@@ -93,6 +94,7 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
       // Go back to where we are
       nextThread = currentThread;
       needToReleaseFormer = false;
+      continue;
     }
     if (!THREAD_STATUS_CAN_RUN(nextThread->status)) {
       LocalUnlockR();

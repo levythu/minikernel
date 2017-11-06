@@ -40,6 +40,8 @@
 
 #include <autostack_thread.h>
 
+#define MAX_STACK_SIZE 0x400000   // 4MB
+
 static uint32_t currentStackHigh;
 static uint32_t currentStackLow;
 
@@ -196,6 +198,10 @@ static void singleThreadHandler(void *arg, ureg_t *ureg) {
   if (ureg->cr2 < currentStackLow) {
     // try to claim all the space
     uint32_t alignedStart = ALIGN_PAGE(ureg->cr2);
+    if (currentStackHigh - alignedStart + 1 > MAX_STACK_SIZE) {
+      lprintf("Exceed max stack size, abort auto-scaling");
+      vanish();
+    }
     if (new_pages((void*)alignedStart, currentStackLow - alignedStart) < 0) {
       lprintf(
         "Failed to claim all space from 0x%08lx to 0x%08lx.",

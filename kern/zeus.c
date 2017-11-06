@@ -320,6 +320,9 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
       kmutexWUnlock(&currentProc->mutex);
       return -1;
     }
+    if (currentProc->unwaitedChildProc < 0) {
+      panic("waitThread: unexpected unwaitedChildProc");
+    }
     if (currentProc->zombieChain) {
       pcb* zombie = currentProc->zombieChain;
       currentProc->zombieChain = currentProc->zombieChain->zombieChain;

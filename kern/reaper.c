@@ -46,21 +46,24 @@ void freeUserspace(PageDirectory pd) {
                              0);
 }
 
-static pcb** followZombieChain(pcb* proc) {
+static pcb** followZombieChain(pcb* proc, int* len) {
   pcb** ret;
-  for (ret = &proc->zombieChain; *ret != NULL; ret = &(*ret)->zombieChain)
-    ;
+  if (len) *len = 0;
+  for (ret = &proc->zombieChain; *ret != NULL; ret = &(*ret)->zombieChain) {
+    if (len) (*len)++;
+  }
   return ret;
 }
 
-static void notifyWaiter(pcb* proc) {
-  if (proc->waiter) {
+// Must Lock proc
+static void notifyWaiter(pcb* proc, int num) {
+  while (proc->waiter && num > 0) {
     // wake up one waiter, need not to own it
     tcb* wThread = (tcb*)proc->waiter->thread;
     assert(wThread->status == THREAD_BLOCKED);
     wThread->status = THREAD_RUNNABLE;
     proc->waiter = proc->waiter->next;
-    // TODO: want to swtich to target?
+    num--;
   }
 }
 
@@ -74,9 +77,16 @@ void turnToZombie(pcb* targetProc) {
     pcb* initPCB = findPCBWithEphemeralAccess(INIT_PID);
 
     kmutexWLock(&initPCB->mutex);
-    pcb** chainEnds = followZombieChain(initPCB);
+    int zombieCount;
+    followZombieChain(targetProc, &zombieCount);
+    pcb** chainEnds = followZombieChain(initPCB, NULL);
+    // if (zombieCount > 0) {
+      lprintf("Handling %d zombie children to INIT...", zombieCount);
+    // }
     *chainEnds = targetProc->zombieChain;
-    notifyWaiter(initPCB);
+
+    initPCB->unwaitedChildProc += zombieCount;
+    notifyWaiter(initPCB, zombieCount);
     kmutexWUnlock(&initPCB->mutex);
     releaseEphemeralAccessProcess(initPCB);
 
@@ -85,6 +95,7 @@ void turnToZombie(pcb* targetProc) {
 
   // Tell my father!
   pcb* directParentPCB = findPCBWithEphemeralAccess(targetProc->parentPID);
+  bool notMyFather = false;
   if (directParentPCB) {
     kmutexWLock(&directParentPCB->mutex);
     if (directParentPCB->status == PROCESS_INITIALIZED) {
@@ -100,6 +111,7 @@ void turnToZombie(pcb* targetProc) {
   } else {
     // my parent is reaped, use init
     directParentPCB = findPCBWithEphemeralAccess(INIT_PID);
+    notMyFather = true;
     kmutexWLock(&directParentPCB->mutex);
   }
   // Now directParentPCB is a valid one, and the mutex is acquired
@@ -108,7 +120,11 @@ void turnToZombie(pcb* targetProc) {
   assert(directParentPCB->status == PROCESS_INITIALIZED);
   targetProc->zombieChain = directParentPCB->zombieChain;
   directParentPCB->zombieChain = targetProc;
-  notifyWaiter(directParentPCB);
+  if (notMyFather) {
+    // this is not the child of INIT, so we need to add unwaitedChildProc
+    directParentPCB->unwaitedChildProc += 1;
+  }
+  notifyWaiter(directParentPCB, 1);
   kmutexWUnlock(&directParentPCB->mutex);
   releaseEphemeralAccessProcess(directParentPCB);
 

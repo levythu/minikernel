@@ -130,9 +130,7 @@ void releaseEphemeralAccessProcess(pcb* proc);
 // the ephemeral access should be released
 tcb* newTCB();
 tcb* findTCB(int tid);
-/*
-tcb* findTCBWithEphemeralAccess(int tid); // not needed for now
-*/
+tcb* findTCBWithEphemeralAccess(int tid);
 void removeTCB(tcb* thread);
 tcb* roundRobinNextTCBID(int tid);
 tcb* roundRobinNextTCB(tcb* thread);

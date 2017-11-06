@@ -31,6 +31,50 @@
 #include "mode_switch.h"
 #include "page.h"
 #include "timeout.h"
+#include "scheduler.h"
+#include "context_switch.h"
+
+int yield_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  int tid;
+
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+  if (!parseSingleParam(params, &tid)) {
+    // Invalid tid
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
+    return -1;
+  }
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+
+  if (tid == -1) {
+    // pick the next to run
+    yieldToNext();
+    return 0;
+  }
+  tcb* targetThread = findTCBWithEphemeralAccess(tid);
+  if (!targetThread) {
+    return -1;
+  }
+  if (!THREAD_STATUS_CAN_RUN(targetThread->status)) {
+    releaseEphemeralAccess(targetThread);
+    return -1;
+  }
+  // Try to run it by acquiring the lock. If can acquire, it's fine. Otherwise
+  // someone else is trying to run it, just return succ
+  LocalLockR();
+  bool owned = __sync_bool_compare_and_swap(
+      &targetThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
+  releaseEphemeralAccess(targetThread);
+  if (!owned) {
+    LocalUnlockR();
+    return 0;
+  }
+  swtichToThread_Prelocked(targetThread);
+  return 0;
+}
 
 int sleep_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);

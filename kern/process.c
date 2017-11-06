@@ -69,7 +69,7 @@ void removePCB(pcb* proc) {
 pcb* findPCBWithEphemeralAccess(int pid) {
   GlobalLockR(&latch);
   pcb* ret = findPCB(pid);
-  ret->_ephemeralRefCount++;
+  if (ret) ret->_ephemeralRefCount++;
   GlobalUnlockR(&latch);
   return ret;
 }
@@ -112,6 +112,14 @@ static tcb** _findTCB(int tid) {
 
 tcb* findTCB(int tid) {
   return *_findTCB(tid);
+}
+
+tcb* findTCBWithEphemeralAccess(int tid) {
+  GlobalLockR(&latch);
+  tcb* ret = findTCB(tid);
+  if (ret) ret->_ephemeralRefCount++;
+  GlobalUnlockR(&latch);
+  return ret;
 }
 
 tcb* newTCB() {

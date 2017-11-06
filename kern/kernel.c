@@ -70,17 +70,6 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
   if (forkProcess(firstThread) == 0) {
     // new thread, Will go into ring3
 
-        // TODO remove it when convenient
-        // tcb* c2 = findTCB(getLocalCPU()->runningTID);
-        // int myRes = forkProcess(c2);
-        // char tmp[123];
-        // lprintf("Fork %d, entering c.s", myRes);
-        // occupyKeyboard();
-        // lprintf("Fork %d, entered", myRes);
-        // getStringBlocking(tmp, 123);
-        // releaseKeyboard();
-        // lprintf("Fork %d, %s", myRes, tmp);
-
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
     // This is INIT thread, assert it

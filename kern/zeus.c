@@ -31,6 +31,7 @@
 #include "context_switch.h"
 #include "mode_switch.h"
 #include "scheduler.h"
+#include "zeus.h"
 
 // High level process creation, and will also spawn one thread for that process
 // Initiating every field for the pcb and tcb. Also, it will own the thread, for
@@ -247,10 +248,17 @@ int forkProcess(tcb* currentThread) {
 
     // Now it's time to rebuild my page directory
     if (!rebuildPD(newProc->pd)) {
-      // TODO kill the process
-      // TODO unblock parent
+      // Due to not enough kernel memory, the Page table fails to be rebuilt
+      // And newProc's page directory is in clean state (i.e. share nothing)
+      // with parent, and is good to go dead
+      lprintf("Fork fail due to insufficient memory");
       *ptr_retValueForParentCall = -1;  // Fork fail
-      return 0;
+
+      currentThread->status = THREAD_RUNNABLE;
+      currentThread->owned = THREAD_NOT_OWNED;
+      terminateThread(newThread);
+      panic("Hmmmm I shouldn't get here");
+      return -1;
     }
 
     // On single core machine it's nothing

@@ -67,8 +67,10 @@ UPDATE_METHOD = afs
 410TESTS += wait_getpid fork_wait fork_wait_bomb fork_exit_bomb stack_test1 halt_test
 410TESTS += swexn_basic_test swexn_cookie_monster swexn_regs swexn_dispatch
 410TESTS += make_crash make_crash_helper sleep_test1 mem_permissions cho cho2
-410TESTS += wild_test1 exec_basic print_basic
+410TESTS += wild_test1 exec_basic print_basic exec_basic_helper
 410TESTS += actual_wait yield_desc_mkrun
+410TESTS += getpid_test1 loader_test1
+410TESTS += cho_variant loader_test2
 
 ###########################################################################
 # Test programs you have written which you wish to run

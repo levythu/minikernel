@@ -53,6 +53,8 @@ int make_runnable_Internal(SyscallParams params) {
   if (!targetThread) {
     return -1;
   }
+  // TODO: the target thread may not even finish init!, so dmlock is not
+  // prepared yet
   bool succ = false;
   GlobalLockR(&targetThread->dmlock);
   if (targetThread->status == THREAD_BLOCKED_USER) {

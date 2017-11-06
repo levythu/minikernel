@@ -196,11 +196,11 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
   int trueSS = eip >= USER_MEM_START ? ss : get_ss();
   int cr2 = get_cr2();
 
-  // General info for debugger
-  ON(true, printError);
-
   // Area for OS tricks that's hidden from anyone else
   ON(faultNumber == IDT_PF, ZFODUpgrader);
+
+  // General info for debugger
+  ON(true, printError);
 
   // Huh, user code! What are you doing!
   ON(eip >= USER_MEM_START, UserModeErrorSWE);

@@ -34,6 +34,87 @@
 #include "scheduler.h"
 #include "context_switch.h"
 
+int make_runnable_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  int tid;
+
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+  if (!parseSingleParam(params, &tid)) {
+    // Invalid tid
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
+    return -1;
+  }
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+
+  tcb* targetThread = findTCBWithEphemeralAccess(tid);
+  if (!targetThread) {
+    return -1;
+  }
+  bool succ = false;
+  GlobalLockR(&targetThread->dmlock);
+  if (targetThread->status == THREAD_BLOCKED_USER) {
+    targetThread->status = THREAD_RUNNABLE;
+    succ = true;
+  }
+  GlobalUnlockR(&targetThread->dmlock);
+
+  if (succ) {
+    // try to own target and switch
+    LocalLockR();
+    bool owned = __sync_bool_compare_and_swap(
+        &targetThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
+    if (!owned) {
+      // someone else is scheduling, nvm
+      LocalUnlockR();
+      return 0;
+    }
+    swtichToThread_Prelocked(targetThread);
+    return 0;
+  }
+  return -1;
+}
+
+int deschedule_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  uint32_t rejectAddr;
+
+  // Use wlock to exclude make runnable
+  kmutexRLockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+  if (!parseSingleParam(params, (int*)&rejectAddr)) {
+    // Invalid rejectAddr
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
+    return -1;
+  }
+  // TODO: check the other verifyUserSpaceAddr calls about size
+  if (!verifyUserSpaceAddr(rejectAddr, rejectAddr + sizeof(int) - 1, false)) {
+    // the address is not valid
+    kmutexRUnlockRecord(&currentThread->process->memlock,
+        &currentThread->memLockStatus);
+    return -1;
+  }
+
+  GlobalLockR(&currentThread->dmlock);
+  bool goingAway = false;
+  if (*((int*)rejectAddr) == 0) {
+    currentThread->status = THREAD_BLOCKED_USER;
+    goingAway = true;
+  }
+  GlobalUnlockR(&currentThread->dmlock);
+
+  kmutexRUnlockRecord(&currentThread->process->memlock,
+      &currentThread->memLockStatus);
+
+  if (goingAway) {
+    yieldToNext();
+  }
+  return 0;
+}
+
 int yield_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int tid;

@@ -64,6 +64,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   ntcb->faultHandler = 0;
   ntcb->customArg = 0;
   ntcb->faultStack = 0;
+  initCrossCPULock(&ntcb->dmlock);
   if (!ntcb->kernelStackPage) {
     panic("SpawnProcess: fail to create kernel stack for new process.");
   }

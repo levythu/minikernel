@@ -78,7 +78,8 @@ typedef enum ThreadStatus {
   THREAD_BLOCKED = 3,
   THREAD_RUNNING = 4,
   THREAD_DEAD = 5,
-  THREAD_REAPED = 5,
+  THREAD_REAPED = 6,
+  THREAD_BLOCKED_USER = 7
 } ThreadStatus;
 
 #define THREAD_STATUS_CAN_RUN(status) \
@@ -100,6 +101,8 @@ struct _tcb {
   uint32_t faultHandler;
   uint32_t customArg;
   uint32_t faultStack;
+
+  CrossCPULock dmlock;    // lock used for makerunnable & deschedule
 
   // After this line all members should never be used by modules other than
   // process.c

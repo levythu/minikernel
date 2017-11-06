@@ -24,11 +24,15 @@ static bool verifyUserSpaceAddrGivenPD(uint32_t startAddr, uint32_t endAddr,
     // Part of the space is in kernel, invalid
     return false;
   }
-  int lastVerifiedPageNum = 0;
+  uint32_t lastVerifiedPageNum = 0;
   for (uint32_t i = startAddr; ; i++) {
-    int myPageNum = PE_DECODE_ADDR(i);
+    uint32_t myPageNum = PE_DECODE_ADDR(i);
     if (myPageNum != lastVerifiedPageNum) {
       lastVerifiedPageNum = myPageNum;
+
+      if (myPageNum < USER_MEM_START) {
+        return false;
+      }
 
       PTE* targetPTE = searchPTEntryPageDirectory(mypd, lastVerifiedPageNum);
       if (!targetPTE) {

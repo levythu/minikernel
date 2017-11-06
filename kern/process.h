@@ -49,6 +49,7 @@ typedef struct _pcb {
   kmutex mutex;
   int numThread;
   int retStatus;
+  int unwaitedChildProc;
 
   // When states = ZOMBIE, it points to the next zombie sibling.
   // Otherwise, it points to the first zombie child

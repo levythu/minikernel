@@ -47,6 +47,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   npcb->zombieChain = NULL;
   npcb->waiter = NULL;
   npcb->status = PROCESS_INITIALIZED;
+  npcb->unwaitedChildProc = 0;
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
 
@@ -191,6 +192,8 @@ int forkProcess(tcb* currentThread) {
   pcb* newProc = SpawnProcess(&newThread);
   pcb* currentProc = currentThread->process;
 
+  currentProc->unwaitedChildProc++;
+
   // proc-related
   clonePageDirectory(currentProc->pd, newProc->pd,
                      STRIP_PD_INDEX(USER_MEM_START),
@@ -312,9 +315,15 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
   pcb* currentProc = currentThread->process;
   while (true) {
     kmutexWLock(&currentProc->mutex);
+    if (currentProc->unwaitedChildProc == 0) {
+      // Bad, nothing can be waited
+      kmutexWUnlock(&currentProc->mutex);
+      return -1;
+    }
     if (currentProc->zombieChain) {
       pcb* zombie = currentProc->zombieChain;
       currentProc->zombieChain = currentProc->zombieChain->zombieChain;
+      currentProc->unwaitedChildProc--;
       kmutexWUnlock(&currentProc->mutex);
       // no one will access zombie, so I own the process
       int zombieTID = zombie->firstTID;

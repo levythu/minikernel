@@ -140,7 +140,7 @@ KERNEL_OBJS += keyboard_event.o syscall_consoleio.o syscall_fileio.o
 KERNEL_OBJS += reaper.o
 KERNEL_OBJS += fault.o fault_handler.o asm_wrapper.o
 KERNEL_OBJS += mode_switch_c.o fault_handler_user.o syscall_thread.o
-KERNEL_OBJS += timeout.o
+KERNEL_OBJS += timeout.o syscall_debug.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

@@ -45,6 +45,7 @@ DECLARE_SYSCALL_WRAPPER(thread_fork);
 
 DECLARE_SYSCALL_WRAPPER(readfile);
 DECLARE_SYSCALL_WRAPPER(halt);
+DECLARE_SYSCALL_WRAPPER(misbehave);
 
 void initSyscall();
 

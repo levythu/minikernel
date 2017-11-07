@@ -58,6 +58,7 @@ void initSyscall() {
 
   MAKE_SYSCALL_IDT(readfile, READFILE_INT);
   MAKE_SYSCALL_IDT(halt, HALT_INT);
+  MAKE_SYSCALL_IDT(misbehave, MISBEHAVE_INT);
 
   lprintf("Registered all system call handler.");
 }

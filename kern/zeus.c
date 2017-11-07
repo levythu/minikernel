@@ -394,6 +394,7 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
       currentProc->zombieChain = currentProc->zombieChain->zombieChain;
       kmutexWUnlock(&currentProc->mutex);
       // no one will access zombie, so I own the process
+      zombie->status = PROCESS_DEAD;
       int zombieTID = zombie->firstTID;
       *returnCodeAddr = zombie->retStatus;
 

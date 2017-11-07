@@ -54,6 +54,7 @@ int misbehave_Internal(SyscallParams params) {
     reportProcessAndThread();
     reportCPU();
     lprintf("└─────────────────────────────────────────────────────");
+    LocalUnlockR();
   }
 
 

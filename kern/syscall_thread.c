@@ -73,6 +73,7 @@ int make_runnable_Internal(SyscallParams params) {
     LocalLockR();
     bool owned = __sync_bool_compare_and_swap(
         &targetThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
+    releaseEphemeralAccess(targetThread);
     if (!owned) {
       // someone else is scheduling, nvm
       LocalUnlockR();
@@ -81,6 +82,7 @@ int make_runnable_Internal(SyscallParams params) {
     swtichToThread_Prelocked(targetThread);
     return 0;
   }
+  releaseEphemeralAccess(targetThread);
   return -1;
 }
 

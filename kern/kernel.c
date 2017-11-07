@@ -49,7 +49,10 @@ void _tickback(unsigned int tk) {
       lprintf("tick");
     }
   #else
-    yieldToNext();
+    tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+    if (currentThread && !currentThread->descheduling) {
+      yieldToNext();
+    }
   #endif
 }
 

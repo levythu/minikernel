@@ -83,7 +83,7 @@ tcb* pickNextRunnableThread(tcb* currentThread) {
     }
     // successfully own the thread, release ephemeral access
     releaseEphemeralAccess(nextThread);
-    if (nextThread->status == THREAD_DEAD) {
+    if (nextThread->status == THREAD_DEAD && !currentThread->descheduling) {
       // time to reap
       LocalUnlockR();
       #ifdef SCHEDULER_DECISION_PRINT

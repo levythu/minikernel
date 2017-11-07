@@ -110,6 +110,7 @@ int deschedule_Internal(SyscallParams params) {
   GlobalLockR(&currentThread->dmlock);
   bool goingAway = false;
   if (*((int*)rejectAddr) == 0) {
+    currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED_USER;
     goingAway = true;
   }

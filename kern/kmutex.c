@@ -78,6 +78,7 @@ void kmutexRLockRecord(kmutex* km, kmutexStatus* status) {
     wl.thread = findTCB(getLocalCPU()->runningTID);
     wl.next = km->readerWL;
     km->readerWL = &wl;
+    ((tcb*)wl.thread)->descheduling = true;
     ((tcb*)wl.thread)->status = THREAD_BLOCKED;
 
     GlobalUnlockR(&km->spinMutex);
@@ -86,6 +87,7 @@ void kmutexRLockRecord(kmutex* km, kmutexStatus* status) {
 }
 
 void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   GlobalLockR(&km->spinMutex);
   if (status) {
     assert(*status == KMUTEX_HAVE_RLOCK);
@@ -116,7 +118,11 @@ void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
       &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
     ;
   local->status = THREAD_RUNNABLE;
-  swtichToThread_Prelocked(local);
+  if (!currentThread->descheduling) {
+    swtichToThread_Prelocked(local);
+  } else {
+    local->owned = THREAD_NOT_OWNED;
+  }
 }
 
 // If not available, construct a waiterLinklist on local stack (the thread will
@@ -137,6 +143,7 @@ void kmutexWLockRecord(kmutex* km, kmutexStatus* status) {
     wl.thread = findTCB(getLocalCPU()->runningTID);
     wl.next = km->writerWL;
     km->writerWL = &wl;
+    ((tcb*)wl.thread)->descheduling = true;
     ((tcb*)wl.thread)->status = THREAD_BLOCKED;
 
     GlobalUnlockR(&km->spinMutex);
@@ -145,6 +152,7 @@ void kmutexWLockRecord(kmutex* km, kmutexStatus* status) {
 }
 
 void kmutexWUnlockRecord(kmutex* km, kmutexStatus* status) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   GlobalLockR(&km->spinMutex);
   if (status) {
     assert(*status == KMUTEX_HAVE_WLOCK);
@@ -175,5 +183,9 @@ void kmutexWUnlockRecord(kmutex* km, kmutexStatus* status) {
       &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
     ;
   local->status = THREAD_RUNNABLE;
-  swtichToThread_Prelocked(local);
+  if (!currentThread->descheduling) {
+    swtichToThread_Prelocked(local);
+  } else {
+    local->owned = THREAD_NOT_OWNED;
+  }
 }

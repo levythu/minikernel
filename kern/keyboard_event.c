@@ -62,6 +62,7 @@ int getcharBlocking() {
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     eventWaiter = currentThread;
     waitingForAnyChar = true;
+    currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED;
     GlobalUnlockR(&latch);
 
@@ -112,6 +113,7 @@ int getStringBlocking(char* space, int maxlen) {
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     eventWaiter = currentThread;
     waitingForAnyChar = false;
+    currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED;
     GlobalUnlockR(&latch);
 
@@ -133,9 +135,12 @@ void onKeyboardSync(int ch) {
 }
 
 void onKeyboardAsync(int ch) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
     if (ch == KHE_ARROW_RIGHT) {
-      yieldToNext();
+      if (currentThread && !currentThread->descheduling) {
+        yieldToNext();
+      }
       return;
     }
   #endif
@@ -155,7 +160,13 @@ void onKeyboardAsync(int ch) {
           &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
         ;
       local->status = THREAD_RUNNABLE;
-      swtichToThread_Prelocked(local);
+      if (currentThread && !currentThread->descheduling) {
+        swtichToThread_Prelocked(local);
+      } else {
+        local->owned = THREAD_NOT_OWNED;
+        LocalUnlockR();
+      }
+
       return;
     }
   }

@@ -97,6 +97,10 @@ struct _tcb {
   uint32_t kernelStackPage;
   int owned;
   kmutexStatus memLockStatus;
+  // When a thread is descheduling (transiting to THREAD_BLOCKED(_USER)),
+  // this flag is set until successfully descheduled to prevent further
+  // interrupt to schedule to others and leave some staff undone (e.g. reaper)
+  bool descheduling;
 
   uint32_t faultHandler;
   uint32_t customArg;

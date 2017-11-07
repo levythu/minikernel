@@ -48,6 +48,7 @@ tcb* SpawnThread(pcb* proc) {
   ntcb->faultHandler = 0;
   ntcb->customArg = 0;
   ntcb->faultStack = 0;
+  ntcb->descheduling = false;
   initCrossCPULock(&ntcb->dmlock);
   if (!ntcb->kernelStackPage) {
     panic("SpawnProcess: fail to create kernel stack for new process.");
@@ -367,6 +368,7 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
 // This does nothing but just mark myself as dead.
 // All actual work is done by reaper
 void terminateThread(tcb* currentThread) {
+  currentThread->descheduling = true;
   currentThread->status = THREAD_DEAD;
   yieldToNext();
 }
@@ -406,7 +408,10 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
       wl.thread = currentThread;
       wl.next = currentProc->waiter;
       currentProc->waiter = &wl;
+      LocalLockR();
+      currentThread->descheduling = true;
       currentThread->status = THREAD_BLOCKED;
+      LocalUnlockR();
       kmutexWUnlock(&currentProc->mutex);
       // Deschedule
       yieldToNext();

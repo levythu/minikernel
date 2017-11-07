@@ -57,6 +57,7 @@ void sleepFor(uint32_t ticks) {
   ts.waitUntil = tickVal + ticks;
   GlobalLockR(&latch);
   insertTimeoutStatus(&ts);
+  currentThread->descheduling = true;
   currentThread->status = THREAD_BLOCKED;
   GlobalUnlockR(&latch);
   // It's time to sleep

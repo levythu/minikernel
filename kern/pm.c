@@ -108,3 +108,12 @@ void freeUserMemPage(uint32_t mem) {
   }
   GlobalUnlockR(&latch);
 }
+
+void reportUserMem() {
+  GlobalLockR(&latch);
+  lprintf("├ Physical Memory Tracker");
+  lprintf("│ ├ Total User Memory Page: %d", userPhysicalFrames);
+  lprintf("│ ├ ZFOD User Memory Page: %d", reservedSize);
+  lprintf("│ └ Available User Memory Page: %d", stackSize - reservedSize);
+  GlobalUnlockR(&latch);
+}

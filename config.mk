@@ -78,7 +78,8 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory.
 #
-STUDENTTESTS = agility_drill cyclone join_specific_test rwlock_downgrade_read_test startle switzerland thr_exit_join
+STUDENTTESTS = agility_drill cyclone join_specific_test rwlock_downgrade_read_test switzerland thr_exit_join
+STUDENTTESTS += misbehave
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk

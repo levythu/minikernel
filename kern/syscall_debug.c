@@ -23,13 +23,14 @@
 #include "cpu.h"
 #include "zeus.h"
 #include "loader.h"
+#include "pm.h"
 #include "source_untrusted.h"
 #include "kmutex.h"
 #include "console.h"
 #include "keyboard_event.h"
 #include "page.h"
 
-#define MISBEHAVE_NUM_SHOW_EVERYTHING -1
+#define MISBEHAVE_NUM_SHOW_EVERYTHING 701
 
 int misbehave_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
@@ -45,7 +46,15 @@ int misbehave_Internal(SyscallParams params) {
   kmutexRUnlockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
 
-  // dummy
+  if (num == MISBEHAVE_NUM_SHOW_EVERYTHING) {
+    // Just for debug, we don't want it to be interrupted during examine kernel
+    LocalLockR();
+    lprintf("LevyOS Kernel Status──────────────────────────────────");
+    reportUserMem();
+    reportProcessAndThread();
+    lprintf("└─────────────────────────────────────────────────────");
+  }
+
 
   return 0;
 }

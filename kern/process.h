@@ -141,4 +141,6 @@ tcb* roundRobinNextTCBWithEphemeralAccess(tcb* thread,
     bool needToReleaseFormer);
 void releaseEphemeralAccess(tcb* thread);
 
+void reportProcessAndThread();
+
 #endif

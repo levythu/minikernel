@@ -211,3 +211,52 @@ tcb* roundRobinNextTCBID(int tid) {
   GlobalUnlockR(&latch);
   return cTCB;
 }
+
+// For debugging
+
+static const char* ProcessStatusToString(ProcessStatus s) {
+  if (s == PROCESS_INITIALIZED) return "RUN";
+  if (s == PROCESS_ZOMBIE) return "ZOM";
+  if (s == PROCESS_DEAD) return "NUL";
+  return "???";
+}
+static const char* ThreadStatusToString(ThreadStatus s) {
+  if (s == THREAD_UNINITIALIZED) return "NEW";
+  if (s == THREAD_INITIALIZED) return "IOK";
+  if (s == THREAD_RUNNABLE) return "W8T";
+  if (s == THREAD_BLOCKED) return "BLK";
+  if (s == THREAD_RUNNING) return "RUN";
+  if (s == THREAD_DEAD) return "DIE";
+  if (s == THREAD_REAPED) return "NUL";
+  if (s == THREAD_BLOCKED_USER) return "DSC";
+  return "???";
+}
+void reportProcessAndThread() {
+  GlobalLockR(&latch);
+    lprintf("├ Process List");
+  int totCount = 0;
+  for (pcb* proc = pcbList; proc != NULL; proc = proc->next ) {
+    totCount++;
+    lprintf("│ ├ [%4d <- %4d] (%s) fTID:%d, nThr:%d, wCh:%d",
+                        proc->id,
+                        proc->parentPID,
+                        ProcessStatusToString(proc->status),
+                        proc->firstTID,
+                        proc->numThread,
+                        proc->unwaitedChildProc);
+  }
+    lprintf("│ └ Total %d processes", totCount);
+
+    lprintf("├ Thread List");
+  totCount = 0;
+  for (tcb* thr = tcbList; thr != NULL; thr = thr->next ) {
+    totCount++;
+    lprintf("│ ├ [%4d <- %4d] (%s) isOwned:%s",
+                        thr->id,
+                        thr->process->id,
+                        ThreadStatusToString(thr->status),
+                        thr->owned == THREAD_NOT_OWNED ? "F" : "T");
+  }
+    lprintf("│ └ Total %d threads", totCount);
+  GlobalUnlockR(&latch);
+}

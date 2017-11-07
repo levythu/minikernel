@@ -33,6 +33,30 @@
 #include "scheduler.h"
 #include "zeus.h"
 
+// Will own it. Will not increase proc's numThread
+tcb* SpawnThread(pcb* proc) {
+  LocalLockR();
+  tcb* ntcb = newTCB();
+  // Spinloop to get lock will only happens in multi-cpu
+  while (!__sync_bool_compare_and_swap(
+      &ntcb->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
+    ;
+  LocalUnlockR();
+  ntcb->process = proc;
+  ntcb->memLockStatus = KMUTEX_NOT_ACQUIRED;
+  ntcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
+  ntcb->faultHandler = 0;
+  ntcb->customArg = 0;
+  ntcb->faultStack = 0;
+  initCrossCPULock(&ntcb->dmlock);
+  if (!ntcb->kernelStackPage) {
+    panic("SpawnProcess: fail to create kernel stack for new process.");
+  }
+  ntcb->status = THREAD_INITIALIZED;
+
+  return ntcb;
+}
+
 // High level process creation, and will also spawn one thread for that process
 // Initiating every field for the pcb and tcb. Also, it will own the thread, for
 // further initial stack setting and context switching.
@@ -52,24 +76,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
 
-  LocalLockR();
-  tcb* ntcb = newTCB();
-  // Spinloop to get lock will only happens in multi-cpu
-  while (!__sync_bool_compare_and_swap(
-      &ntcb->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
-    ;
-  LocalUnlockR();
-  ntcb->process = npcb;
-  ntcb->memLockStatus = KMUTEX_NOT_ACQUIRED;
-  ntcb->kernelStackPage = (uint32_t)smalloc(PAGE_SIZE);
-  ntcb->faultHandler = 0;
-  ntcb->customArg = 0;
-  ntcb->faultStack = 0;
-  initCrossCPULock(&ntcb->dmlock);
-  if (!ntcb->kernelStackPage) {
-    panic("SpawnProcess: fail to create kernel stack for new process.");
-  }
-  ntcb->status = THREAD_INITIALIZED;
+  tcb* ntcb = SpawnThread(npcb);
 
   *firstThread = ntcb;
   npcb->firstTID = ntcb->id;
@@ -170,6 +177,44 @@ void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
   }
 }
 
+int forkThread(tcb* currentThread) {
+  pcb* currentProc = currentThread->process;
+  kmutexWLock(&currentProc->mutex);
+  currentProc->numThread++;
+  kmutexWUnlock(&currentProc->mutex);
+  tcb* newThread = SpawnThread(currentProc);
+  int newThreadID = newThread->id;
+
+  newThread->regs = currentThread->regs;
+  if (!checkpointTheWorld(&newThread->regs,
+      currentThread->kernelStackPage, newThread->kernelStackPage, PAGE_SIZE)) {
+    // This is the old thread!
+    // We want to rebase the newThread, overflow does not matter :)
+    newThread->regs.ebp +=
+        newThread->kernelStackPage - currentThread->kernelStackPage;
+    newThread->regs.esp +=
+        newThread->kernelStackPage - currentThread->kernelStackPage;
+    rebuildKernelStack(newThread->regs.ebp,
+        newThread->kernelStackPage - currentThread->kernelStackPage,
+        newThread->kernelStackPage,
+        newThread->kernelStackPage + PAGE_SIZE - 1);
+
+    // Yield to the new thread now!
+    swtichToThread(newThread);
+    // newThread may have already terminted (and reaped). Cannot reference it.
+
+    return newThreadID;
+  } else {
+    // This is the new thread!
+    // newThread is me now.
+    // currentThread is not me anymore, but since we schedule from it, we need
+    // to disown it.
+    currentThread->owned = THREAD_NOT_OWNED;
+    LocalUnlockR();
+    return 0;
+  }
+}
+
 // Fork a new process, based on the process of current thread. Return zero for
 // new process and child tid for old process.
 // Fork is completed in two phase:
@@ -264,9 +309,11 @@ int forkProcess(tcb* currentThread) {
     // On single core machine it's nothing
     // Even on multicore machine, since currentThread is BLOCKED, no one can
     // really own it, so this is very transient
+    LocalLockR();
     while (!__sync_bool_compare_and_swap(
         &currentThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
       ;
+    LocalUnlockR();
 
     // Before unblock parent process, tell him about our success.
     *ptr_retValueForParentCall = newThread->id;

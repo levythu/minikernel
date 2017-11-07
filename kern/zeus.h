@@ -22,4 +22,8 @@ void terminateThread(tcb* currentThread);
 
 int waitThread(tcb* currentThread, int* returnCodeAddr);
 
+int forkThread(tcb* currentThread);
+
+tcb* SpawnThread(pcb* proc);
+
 #endif

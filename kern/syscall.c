@@ -54,6 +54,7 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(yield, YIELD_INT);
   MAKE_SYSCALL_IDT(make_runnable, MAKE_RUNNABLE_INT);
   MAKE_SYSCALL_IDT(deschedule, DESCHEDULE_INT);
+  MAKE_SYSCALL_IDT(thread_fork, THREAD_FORK_INT);
 
   MAKE_SYSCALL_IDT(readfile, READFILE_INT);
   MAKE_SYSCALL_IDT(halt, HALT_INT);

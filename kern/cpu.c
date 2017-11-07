@@ -12,6 +12,7 @@
 #include <simics.h>
 #include <malloc.h>
 #include <assert.h>
+#include <x86/eflags.h>
 
 #include "x86/asm.h"
 #include "x86/cr.h"

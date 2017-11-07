@@ -156,8 +156,8 @@ void onKeyboardAsync(int ch) {
         ;
       local->status = THREAD_RUNNABLE;
       swtichToThread_Prelocked(local);
+      return;
     }
-  } else {
-    GlobalUnlockR(&latch);
   }
+  GlobalUnlockR(&latch);
 }

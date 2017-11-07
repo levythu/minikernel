@@ -351,6 +351,10 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
 
   if (argpkg) sfree(argpkg, sizeof(ArgPackage));
 
+  if (!(get_eflags() & EFL_IF)) {
+    panic("Oooops! Lock skews... current lock layer = %d",
+        getLocalCPU()->currentMutexLayer);
+  }
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   lprintf("Into Ring3...");

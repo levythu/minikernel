@@ -52,6 +52,7 @@ int misbehave_Internal(SyscallParams params) {
     lprintf("LevyOS Kernel Status──────────────────────────────────");
     reportUserMem();
     reportProcessAndThread();
+    reportCPU();
     lprintf("└─────────────────────────────────────────────────────");
   }
 

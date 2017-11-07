@@ -98,3 +98,14 @@ void GlobalUnlockR(CrossCPULock* lock) {
   }
   LocalUnlockR();
 }
+
+
+void reportCPU() {
+  cpu* s = getLocalCPU();
+  lprintf("├ CPU Info");
+  lprintf("│ ├ CPU ID: %d", s->id);
+  lprintf("│ ├ Running TID: %4d", s->runningTID);
+  lprintf("│ ├ Running PID: %4d", s->runningPID);
+  lprintf("│ ├ Interrupt: %s", s->interruptSwitch ? "ON" : "OFF");
+  lprintf("│ └ Current #LocalLock: %d", s->currentMutexLayer);
+}

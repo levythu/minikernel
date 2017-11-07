@@ -88,6 +88,10 @@ bool makeRegisterHandlerStackAndGo(tcb* thread, ureg_t* uregs) {
 
   kmutexWUnlockRecord(&thread->process->memlock, &thread->memLockStatus);
 
+  if (!(get_eflags() & EFL_IF)) {
+    panic("Oooops! Lock skews... current lock layer = %d",
+        getLocalCPU()->currentMutexLayer);
+  }
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   uint32_t eip = thread->faultHandler;

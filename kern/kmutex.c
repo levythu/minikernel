@@ -125,6 +125,7 @@ void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
     swtichToThread_Prelocked(local);
   } else {
     local->owned = THREAD_NOT_OWNED;
+    LocalUnlockR();
   }
 }
 
@@ -190,5 +191,6 @@ void kmutexWUnlockRecord(kmutex* km, kmutexStatus* status) {
     swtichToThread_Prelocked(local);
   } else {
     local->owned = THREAD_NOT_OWNED;
+    LocalUnlockR();
   }
 }

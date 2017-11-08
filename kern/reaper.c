@@ -153,11 +153,11 @@ void reapThread(tcb* targetThread) {
   // Deregister it self from the process
   pcb* targetProc = targetThread->process;
   kmutexWLock(&targetProc->mutex);
-  targetProc->numThread--;
-  if (targetProc->numThread == 0) {
+  int ntleft = --targetProc->numThread;
+  kmutexWUnlock(&targetProc->mutex);
+  if (ntleft == 0) {
     reapProcess(targetProc);
   }
-  kmutexWUnlock(&targetProc->mutex);
 
   sfree((void*)targetThread->kernelStackPage, PAGE_SIZE);
   removeTCB(targetThread);

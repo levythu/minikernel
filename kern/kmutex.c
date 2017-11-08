@@ -110,7 +110,10 @@ void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
   GlobalUnlockR(&km->spinMutex);
 
   LocalLockR();
-  assert(local->status == THREAD_BLOCKED);
+  if (local->status != THREAD_BLOCKED) {
+    panic("Local (#%d).status should be blocked, but is %d",
+        local->id, local->status);
+  }
   // Own the target thread for context switch. Since it's blocked, no one
   // should really own it, other cores may be accessing it temprorarily.
   // Should never loop on single core

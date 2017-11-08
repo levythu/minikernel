@@ -79,7 +79,7 @@ UPDATE_METHOD = afs
 # directory.
 #
 STUDENTTESTS = agility_drill cyclone join_specific_test rwlock_downgrade_read_test switzerland thr_exit_join
-STUDENTTESTS += misbehave
+STUDENTTESTS += misbehave racer
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk

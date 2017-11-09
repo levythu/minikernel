@@ -24,7 +24,7 @@
 void checkKernelStackOverflow() {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   if (!currentThread) return;
-  uint32_t retAddr = (uint32_t)get_retAddr();
+  uint32_t retAddr = (uint32_t)get_esp();
   if (retAddr < currentThread->kernelStackPage ||
       retAddr >= currentThread->kernelStackPage + PAGE_SIZE) {
     panic("Current retAddr = 0x%08lx, not falling in kernel stack "

@@ -32,12 +32,14 @@
 
 #define MISBEHAVE_NUM_SHOW_EVERYTHING 701
 
+extern void reportKernelMemAlloc();
 void dumpAll() {
   LocalLockR();
   lprintf("LevyOS Kernel Status──────────────────────────────────");
   reportUserMem();
   reportProcessAndThread();
   reportCPU();
+  reportKernelMemAlloc();
   lprintf("└─────────────────────────────────────────────────────");
   LocalUnlockR();
 }

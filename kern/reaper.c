@@ -28,6 +28,7 @@
 #include "context_switch.h"
 #include "mode_switch.h"
 #include "sysconf.h"
+#include "kernel_stack_protection.h"
 
 static uint32_t freeUserspace_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
     uint32_t _) {
@@ -71,6 +72,7 @@ static void notifyWaiter(pcb* proc, int num) {
 // 2. Tell the parent process that there's a zombie
 // Must work under process's mutex (or guarantee there's no one else accessing)
 void turnToPreZombie(pcb* targetProc) {
+  KERNEL_STACK_CHECK;
   targetProc->status = PROCESS_PREZOMBIE;
   if (targetProc->zombieChain) {
     // Target has zombie children, give it to init
@@ -138,6 +140,7 @@ void turnToPreZombie(pcb* targetProc) {
 // Run inside reaper.
 // So we don't want to acquire any kmutex
 void turnToZombie(pcb* targetProc) {
+  KERNEL_STACK_CHECK;
   assert(targetProc->status == PROCESS_PREZOMBIE);
   GlobalLockR(&targetProc->prezombieWatcherLock);
   targetProc->status = PROCESS_ZOMBIE;
@@ -160,6 +163,7 @@ void turnToZombie(pcb* targetProc) {
 // So we don't want to acquire any kmutex
 // Must guarantee there's no thread alive anymore
 void reapProcess(pcb* targetProc) {
+  KERNEL_STACK_CHECK;
   freeUserspace(targetProc->pd);
   freePageDirectory(targetProc->pd);
   turnToZombie(targetProc);
@@ -167,6 +171,7 @@ void reapProcess(pcb* targetProc) {
 
 // The first step for the death of a thread. Must be the running thread.
 void suicideThread(tcb* targetThread) {
+  KERNEL_STACK_CHECK;
   pcb* targetProc = targetThread->process;
   kmutexWLock(&targetProc->mutex);
   int ntleft = --targetProc->numThread;
@@ -182,6 +187,7 @@ void suicideThread(tcb* targetThread) {
 // just like the state before context switch. However, it differs that LocalLock
 // does not have to be acquried: reaper is free be interrupted
 void reapThread(tcb* targetThread) {
+  KERNEL_STACK_CHECK;
   assert(targetThread->status == THREAD_DEAD);
   targetThread->status = THREAD_REAPED;
 

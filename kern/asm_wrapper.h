@@ -9,5 +9,6 @@
 #define ASM_WRAPPER_H
 
 int get_ss();
+int get_retAddr();
 
 #endif

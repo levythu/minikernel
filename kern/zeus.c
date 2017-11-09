@@ -33,6 +33,7 @@
 #include "scheduler.h"
 #include "zeus.h"
 #include "reaper.h"
+#include "kernel_stack_protection.h"
 
 // Will own it. Will not increase proc's numThread
 tcb* SpawnThread(pcb* proc) {
@@ -182,6 +183,7 @@ void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
 }
 
 int forkThread(tcb* currentThread) {
+  KERNEL_STACK_CHECK;
   pcb* currentProc = currentThread->process;
   kmutexWLock(&currentProc->mutex);
   currentProc->numThread++;
@@ -239,6 +241,7 @@ int forkThread(tcb* currentThread) {
 // NOTE: never use it on a kernel-to-kernel interrupt stack. This will lead to
 // partial state copied.
 int forkProcess(tcb* currentThread) {
+  KERNEL_STACK_CHECK;
   tcb* newThread;
   pcb* newProc = SpawnProcess(&newThread);
   pcb* currentProc = currentThread->process;
@@ -332,6 +335,7 @@ int forkProcess(tcb* currentThread) {
 // A simple wrapper of ELF loader
 int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
     ArgPackage* argpkg, uint32_t* eip, uint32_t* esp) {
+  KERNEL_STACK_CHECK;
   if (initELFMemory(fileName, proc->pd, argpkg, &proc->memMeta, eip, esp) < 0) {
     return -1;
   }
@@ -346,6 +350,7 @@ int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
 // argpkg can be null, or a smalloc'd array. If it success (no return), argpkg
 // will be disposed correctly; otherwise, the caller should dispose it
 int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
+  KERNEL_STACK_CHECK;
   uint32_t esp, eip;
   if (LoadELFToProcess(
           currentThread->process, currentThread, filename,
@@ -371,6 +376,7 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
 // This does nothing but just mark myself as dead.
 // All actual work is done by reaper
 void terminateThread(tcb* currentThread) {
+  KERNEL_STACK_CHECK;
   suicideThread(currentThread);
   currentThread->descheduling = true;
   currentThread->status = THREAD_DEAD;
@@ -378,6 +384,7 @@ void terminateThread(tcb* currentThread) {
 }
 
 int waitThread(tcb* currentThread, int* returnCodeAddr) {
+  KERNEL_STACK_CHECK;
   pcb* currentProc = currentThread->process;
   bool firstTime = true;
   while (true) {

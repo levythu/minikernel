@@ -24,6 +24,7 @@
 #include "scheduler.h"
 #include "dbgconf.h"
 #include "context_switch.h"
+#include "kernel_stack_protection.h"
 
 static kmutex keyboardHolder;
 
@@ -135,6 +136,7 @@ void onKeyboardSync(int ch) {
 }
 
 void onKeyboardAsync(int ch) {
+  KERNEL_STACK_CHECK;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
     if (ch == KHE_ARROW_RIGHT) {

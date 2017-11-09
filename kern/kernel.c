@@ -38,11 +38,13 @@
 #include "sysconf.h"
 #include "fault.h"
 #include "timeout.h"
+#include "kernel_stack_protection.h"
 
 extern void initMemManagement();
 
 // Dummy timer event, can visualize whether the interrupt is on.
 void _tickback(unsigned int tk) {
+  KERNEL_STACK_CHECK;
   onTickEvent();
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
     if (tk % 1000 == 0) {

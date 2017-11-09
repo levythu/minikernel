@@ -27,8 +27,9 @@
 
 typedef enum ProcessStatus {
   PROCESS_INITIALIZED = 1,
-  PROCESS_ZOMBIE = 2,
-  PROCESS_DEAD = 3
+  PROCESS_PREZOMBIE = 2,
+  PROCESS_ZOMBIE = 3,
+  PROCESS_DEAD = 4
 } ProcessStatus;
 
 typedef struct _tcb tcb;
@@ -55,6 +56,10 @@ typedef struct _pcb {
   // Otherwise, it points to the first zombie child
   struct _pcb* zombieChain;
   waiterLinklist* waiter;
+
+  // only useful when status=prezombie
+  void* prezombieWatcher; // tcb*
+  CrossCPULock prezombieWatcherLock;
 
   ProcessStatus status;
 

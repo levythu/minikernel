@@ -69,9 +69,9 @@ static void notifyWaiter(pcb* proc, int num) {
 
 // 1. Delegate target's zombie children to init
 // 2. Tell the parent process that there's a zombie
-// Must work under process's mutex
-void turnToZombie(pcb* targetProc) {
-  targetProc->status = PROCESS_ZOMBIE;
+// Must work under process's mutex (or guarantee there's no one else accessing)
+void turnToPreZombie(pcb* targetProc) {
+  targetProc->status = PROCESS_PREZOMBIE;
   if (targetProc->zombieChain) {
     // Target has zombie children, give it to init
     pcb* initPCB = findPCBWithEphemeralAccess(INIT_PID);
@@ -135,14 +135,49 @@ void turnToZombie(pcb* targetProc) {
   // We are done!
 }
 
+// Run inside reaper.
+// So we don't want to acquire any kmutex
+void turnToZombie(pcb* targetProc) {
+  assert(targetProc->status == PROCESS_PREZOMBIE);
+  GlobalLockR(&targetProc->prezombieWatcherLock);
+  targetProc->status = PROCESS_ZOMBIE;
+  tcb* localWatcher = (tcb*)targetProc->prezombieWatcher;
+  GlobalUnlockR(&targetProc->prezombieWatcherLock);
+  // Notify zombie watcher
+  if (localWatcher) {
+    LocalLockR();
+    assert(localWatcher->status == THREAD_BLOCKED);
+    // Only spin on multicore
+    while (!__sync_bool_compare_and_swap(
+        &localWatcher->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
+      ;
+    localWatcher->status = THREAD_RUNNABLE;
+    swtichToThread_Prelocked(localWatcher);
+  }
+}
+
+// Run inside reaper.
+// So we don't want to acquire any kmutex
 // Must guarantee there's no thread alive anymore
-// Then there's no need to acquire procMutex
 void reapProcess(pcb* targetProc) {
   freeUserspace(targetProc->pd);
   freePageDirectory(targetProc->pd);
   turnToZombie(targetProc);
 }
 
+// The first step for the death of a thread. Must be the running thread.
+void suicideThread(tcb* targetThread) {
+  pcb* targetProc = targetThread->process;
+  kmutexWLock(&targetProc->mutex);
+  int ntleft = --targetProc->numThread;
+  kmutexWUnlock(&targetProc->mutex);
+  if (ntleft == 0) {
+    turnToPreZombie(targetProc);
+  }
+}
+
+// Run inside reaper.
+// So we don't want to acquire any kmutex
 // targetThread mustn't be current thread, and current CPU need to own it,
 // just like the state before context switch. However, it differs that LocalLock
 // does not have to be acquried: reaper is free be interrupted
@@ -151,12 +186,8 @@ void reapThread(tcb* targetThread) {
   targetThread->status = THREAD_REAPED;
 
   // Deregister it self from the process
-  pcb* targetProc = targetThread->process;
-  kmutexWLock(&targetProc->mutex);
-  int ntleft = --targetProc->numThread;
-  kmutexWUnlock(&targetProc->mutex);
-  if (ntleft == 0) {
-    reapProcess(targetProc);
+  if (targetThread->process->status == PROCESS_PREZOMBIE) {
+    reapProcess(targetThread->process);
   }
 
   sfree((void*)targetThread->kernelStackPage, PAGE_SIZE);

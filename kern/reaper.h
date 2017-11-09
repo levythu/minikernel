@@ -15,4 +15,6 @@ void freeUserspace(PageDirectory pd);
 
 void reapThread(tcb* targetThread);
 
+void suicideThread(tcb* targetThread);
+
 #endif

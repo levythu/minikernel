@@ -216,6 +216,7 @@ tcb* roundRobinNextTCBID(int tid) {
 
 static const char* ProcessStatusToString(ProcessStatus s) {
   if (s == PROCESS_INITIALIZED) return "RUN";
+  if (s == PROCESS_PREZOMBIE) return "PRZ";
   if (s == PROCESS_ZOMBIE) return "ZOM";
   if (s == PROCESS_DEAD) return "NUL";
   return "???";

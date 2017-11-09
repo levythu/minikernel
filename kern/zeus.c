@@ -32,6 +32,7 @@
 #include "mode_switch.h"
 #include "scheduler.h"
 #include "zeus.h"
+#include "reaper.h"
 
 // Will own it. Will not increase proc's numThread
 tcb* SpawnThread(pcb* proc) {
@@ -74,6 +75,8 @@ pcb* SpawnProcess(tcb** firstThread) {
   npcb->waiter = NULL;
   npcb->status = PROCESS_INITIALIZED;
   npcb->unwaitedChildProc = 0;
+  npcb->prezombieWatcher = NULL;
+  initCrossCPULock(&npcb->prezombieWatcherLock);
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
 
@@ -368,6 +371,7 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
 // This does nothing but just mark myself as dead.
 // All actual work is done by reaper
 void terminateThread(tcb* currentThread) {
+  suicideThread(currentThread);
   currentThread->descheduling = true;
   currentThread->status = THREAD_DEAD;
   yieldToNext();
@@ -395,6 +399,23 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
       pcb* zombie = currentProc->zombieChain;
       currentProc->zombieChain = currentProc->zombieChain->zombieChain;
       kmutexWUnlock(&currentProc->mutex);
+
+      // Wait for the zombie to leave prezombie state
+      while (true) {
+        GlobalLockR(&zombie->prezombieWatcherLock);
+        if (zombie->status == PROCESS_ZOMBIE) {
+          GlobalUnlockR(&zombie->prezombieWatcherLock);
+          break;
+        }
+        assert(zombie->status == PROCESS_PREZOMBIE);
+        zombie->prezombieWatcher = currentThread;
+        currentThread->descheduling = true;
+        currentThread->status = THREAD_BLOCKED;
+        GlobalUnlockR(&zombie->prezombieWatcherLock);
+        // Deschedule
+        yieldToNext();
+      }
+
       // no one will access zombie, so I own the process
       zombie->status = PROCESS_DEAD;
       int zombieTID = zombie->firstTID;

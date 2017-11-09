@@ -47,6 +47,10 @@ void onTickEvent() {
   alarm();
 }
 
+uint32_t getTicks() {
+  return tickVal;
+}
+
 void sleepFor(uint32_t ticks) {
   if (ticks == 0) return;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);

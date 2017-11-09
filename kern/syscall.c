@@ -38,6 +38,7 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(wait, WAIT_INT);
   MAKE_SYSCALL_IDT(vanish, VANISH_INT);
   MAKE_SYSCALL_IDT(exec, EXEC_INT);
+  MAKE_SYSCALL_IDT(task_vanish, TASK_VANISH_INT);
 
   MAKE_SYSCALL_IDT(new_pages, NEW_PAGES_INT);
   MAKE_SYSCALL_IDT(remove_pages, REMOVE_PAGES_INT);
@@ -55,6 +56,7 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(make_runnable, MAKE_RUNNABLE_INT);
   MAKE_SYSCALL_IDT(deschedule, DESCHEDULE_INT);
   MAKE_SYSCALL_IDT(thread_fork, THREAD_FORK_INT);
+  MAKE_SYSCALL_IDT(get_ticks, GET_TICKS_INT);
 
   MAKE_SYSCALL_IDT(readfile, READFILE_INT);
   MAKE_SYSCALL_IDT(halt, HALT_INT);

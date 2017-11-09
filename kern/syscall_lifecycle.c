@@ -24,6 +24,16 @@
 #include "loader.h"
 #include "source_untrusted.h"
 
+int task_vanish_Internal(SyscallParams params) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  lprintf("WARNING: Dummy task vanish is called by thread #%d of proc #%d. "
+          "We just spin",
+          currentThread->id, currentThread->process->id);
+  while (true)
+    ;
+  return -1;
+}
+
 int gettid_Internal(SyscallParams params) {
   return getLocalCPU()->runningTID;
 }

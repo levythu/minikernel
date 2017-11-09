@@ -34,6 +34,10 @@
 #include "scheduler.h"
 #include "context_switch.h"
 
+int get_ticks_Internal(SyscallParams params) {
+  return (int)getTicks();
+}
+
 int thread_fork_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   return forkThread(currentThread);

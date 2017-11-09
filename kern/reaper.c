@@ -135,8 +135,8 @@ void turnToZombie(pcb* targetProc) {
   // We are done!
 }
 
-// Must work under the process's mutex, must guarantee there's no thread alive
-// anymore
+// Must guarantee there's no thread alive anymore
+// Then there's no need to acquire procMutex
 void reapProcess(pcb* targetProc) {
   freeUserspace(targetProc->pd);
   freePageDirectory(targetProc->pd);

@@ -24,6 +24,8 @@
 #include "context_switch.h"
 #include "reaper.h"
 
+extern void dumpAll();
+
 // Scheduler is special enough:
 // It's the ONLY place that one RUNNING thread trying to own another RUNNABLE
 // or even RUNNING thread (exclude bootstrap the 1st)
@@ -43,6 +45,7 @@ void yieldToNext() {
     // No other thread, run myself. If myself is not runnalbe (impossible if
     // we have idle), panic
     if (currentThread->status != THREAD_RUNNING) {
+      dumpAll();
       panic("yieldToNext: current TID = -1");
     }
     return;

@@ -102,9 +102,6 @@ void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
   // make the next one in the wl runnable
   waiterLinklist* wl = km->writerWL;
   km->writerWL = wl->next;
-
-  assert(((tcb*)wl->thread)->status == THREAD_BLOCKED);
-  ((tcb*)wl->thread)->status = THREAD_RUNNABLE;
   tcb* local = (tcb*)wl->thread;
 
   GlobalUnlockR(&km->spinMutex);

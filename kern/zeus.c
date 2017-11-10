@@ -173,7 +173,7 @@ void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
   while (true) {
     if (ebp < kernelStackStart || ebp > kernelStackEnd) {
       panic("%%ebp=0x%08lx does not fall into kernel stack [0x%08lx, 0x%08lx]",
-            kernelStackStart, kernelStackEnd);
+            ebp, kernelStackStart, kernelStackEnd);
     }
     uint32_t* pNextEBP = (uint32_t*)ebp;
     if (*pNextEBP == 0) return;

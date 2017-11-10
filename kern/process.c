@@ -45,7 +45,10 @@ static pcb** _findPCB(int pid) {
 }
 
 pcb* findPCB(int pid) {
-  return *_findPCB(pid);
+  GlobalLockR(&latch);
+  pcb* ret = *_findPCB(pid);
+  GlobalUnlockR(&latch);
+  return ret;
 }
 
 static void _removePCB(pcb* proc) {
@@ -111,7 +114,10 @@ static tcb** _findTCB(int tid) {
 }
 
 tcb* findTCB(int tid) {
-  return *_findTCB(tid);
+  GlobalLockR(&latch);
+  tcb* ret = *_findTCB(tid);
+  GlobalUnlockR(&latch);
+  return ret;
 }
 
 tcb* findTCBWithEphemeralAccess(int tid) {

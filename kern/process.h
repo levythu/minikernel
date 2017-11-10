@@ -76,6 +76,14 @@ typedef struct _pcb {
   int _ephemeralRefCount;
 } pcb;
 
+
+typedef struct _dualLinklist {
+  struct _dualLinklist* prev;
+  struct _dualLinklist* next;
+  void* data;
+} dualLinklist;
+
+
 typedef enum ThreadStatus {
   THREAD_UNINITIALIZED = 0,
   THREAD_INITIALIZED = 1,
@@ -117,6 +125,8 @@ struct _tcb {
   // process.c
   bool _hasAbandoned;
   int _ephemeralRefCount;
+
+  dualLinklist _xlx;
 };
 
 #define THREAD_NOT_OWNED -1
@@ -144,11 +154,13 @@ tcb* newTCB();
 tcb* findTCB(int tid);
 tcb* findTCBWithEphemeralAccess(int tid);
 void removeTCB(tcb* thread);
-tcb* roundRobinNextTCBID(int tid);
 tcb* roundRobinNextTCB(tcb* thread);
 tcb* roundRobinNextTCBWithEphemeralAccess(tcb* thread,
     bool needToReleaseFormer);
 void releaseEphemeralAccess(tcb* thread);
+
+void removeFromXLX(tcb* thread);
+void addToXLX(tcb* thread);
 
 void reportProcessAndThread();
 

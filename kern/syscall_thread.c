@@ -70,6 +70,7 @@ int make_runnable_Internal(SyscallParams params) {
   bool succ = false;
   GlobalLockR(&targetThread->dmlock);
   if (targetThread->status == THREAD_BLOCKED_USER) {
+    addToXLX(targetThread);
     targetThread->status = THREAD_RUNNABLE;
     succ = true;
   }
@@ -118,6 +119,7 @@ int deschedule_Internal(SyscallParams params) {
   if (*((int*)rejectAddr) == 0) {
     currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED_USER;
+    removeFromXLX(currentThread);
     goingAway = true;
   }
   GlobalUnlockR(&currentThread->dmlock);

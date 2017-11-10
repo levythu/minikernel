@@ -80,6 +80,7 @@ void kmutexRLockRecord(kmutex* km, kmutexStatus* status) {
     km->readerWL = &wl;
     ((tcb*)wl.thread)->descheduling = true;
     ((tcb*)wl.thread)->status = THREAD_BLOCKED;
+    removeFromXLX((tcb*)wl.thread);
 
     GlobalUnlockR(&km->spinMutex);
     yieldToNext();
@@ -118,6 +119,7 @@ void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status) {
       &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
     ;
   local->status = THREAD_RUNNABLE;
+  addToXLX(local);
   if (!currentThread->descheduling) {
     swtichToThread_Prelocked(local);
   } else {
@@ -146,6 +148,7 @@ void kmutexWLockRecord(kmutex* km, kmutexStatus* status) {
     km->writerWL = &wl;
     ((tcb*)wl.thread)->descheduling = true;
     ((tcb*)wl.thread)->status = THREAD_BLOCKED;
+    removeFromXLX((tcb*)wl.thread);
 
     GlobalUnlockR(&km->spinMutex);
     yieldToNext();
@@ -184,6 +187,7 @@ void kmutexWUnlockRecord(kmutex* km, kmutexStatus* status) {
       &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
     ;
   local->status = THREAD_RUNNABLE;
+  addToXLX(local);
   if (!currentThread->descheduling) {
     swtichToThread_Prelocked(local);
   } else {

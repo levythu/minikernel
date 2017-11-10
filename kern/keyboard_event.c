@@ -65,6 +65,7 @@ int getcharBlocking() {
     waitingForAnyChar = true;
     currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED;
+    removeFromXLX(currentThread);
     GlobalUnlockR(&latch);
 
     // We sleep with keyboardHolder, since we are still the one that listens to
@@ -116,6 +117,7 @@ int getStringBlocking(char* space, int maxlen) {
     waitingForAnyChar = false;
     currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED;
+    removeFromXLX(currentThread);
     GlobalUnlockR(&latch);
 
     // We sleep with keyboardHolder, since we are still the one that listens to
@@ -162,6 +164,7 @@ void onKeyboardAsync(int ch) {
           &local->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
         ;
       local->status = THREAD_RUNNABLE;
+      addToXLX(local);
       if (currentThread && !currentThread->descheduling) {
         swtichToThread_Prelocked(local);
       } else {

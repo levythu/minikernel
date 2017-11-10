@@ -63,6 +63,7 @@ void sleepFor(uint32_t ticks) {
   insertTimeoutStatus(&ts);
   currentThread->descheduling = true;
   currentThread->status = THREAD_BLOCKED;
+  removeFromXLX(currentThread);
   GlobalUnlockR(&latch);
   // It's time to sleep
   yieldToNext();
@@ -85,6 +86,7 @@ static void alarm() {
     timeoutStatus* ts = tryRemoveTimeoutStatus();
     if (!ts) break;
     assert(ts->thread->status == THREAD_BLOCKED);
+    addToXLX(ts->thread);
     ts->thread->status = THREAD_RUNNABLE;
   }
   alarmSingleInstanceGuard = 0;

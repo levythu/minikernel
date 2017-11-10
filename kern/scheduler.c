@@ -46,7 +46,7 @@ void yieldToNext() {
     // we have idle), panic
     if (currentThread->status != THREAD_RUNNING) {
       dumpAll();
-      panic("yieldToNext: current TID = -1");
+      panic("yieldToNext: current TID = no runnable thread. DL.");
     }
     return;
   }

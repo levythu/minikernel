@@ -27,13 +27,6 @@ static int tidNext;
 
 static CrossCPULock latch;
 
-void initProcess() {
-  initCrossCPULock(&latch);
-  pcbList = NULL;
-  tcbList = NULL;
-  pidNext = tidNext = 1;
-}
-
 static pcb** _findPCB(int pid) {
   GlobalLockR(&latch);
   pcb** ptr;
@@ -103,6 +96,10 @@ pcb* newPCB() {
   return npcb;
 }
 
+/*****************************************************************************/
+
+static dualLinklist xlx;  // express links
+
 static tcb** _findTCB(int tid) {
   GlobalLockR(&latch);
   tcb** ptr;
@@ -142,14 +139,63 @@ tcb* newTCB() {
 
   ntcb->_ephemeralRefCount = 0;
   ntcb->_hasAbandoned = false;
+  ntcb->_xlx.next = ntcb->_xlx.prev = NULL;
+  ntcb->_xlx.data = ntcb;
   GlobalUnlockR(&latch);
   return ntcb;
+}
+
+void removeFromXLX(tcb* thread) {
+  GlobalLockR(&latch);
+  assert(thread->_xlx.next != NULL);
+  assert(thread->_xlx.prev != NULL);
+  thread->_xlx.next->prev = thread->_xlx.prev;
+  thread->_xlx.prev->next = thread->_xlx.next;
+  thread->_xlx.next = thread->_xlx.prev = NULL;
+  GlobalUnlockR(&latch);
+}
+
+void addToXLX(tcb* thread) {
+  GlobalLockR(&latch);
+  assert(thread->_xlx.next == NULL);
+  assert(thread->_xlx.prev == NULL);
+  thread->_xlx.next = xlx.next;
+  thread->_xlx.prev = &xlx;
+  thread->_xlx.next->prev = &thread->_xlx;
+  thread->_xlx.prev->next = &thread->_xlx;
+  GlobalUnlockR(&latch);
+}
+
+tcb* dequeueXLX() {
+  GlobalLockR(&latch);
+  dualLinklist* last = xlx.prev;
+  if (last == &xlx) {
+    GlobalUnlockR(&latch);
+    return NULL;
+  }
+  assert(last->data != NULL);
+  tcb* t = (tcb*)last->data;
+  removeFromXLX(t);
+  GlobalUnlockR(&latch);
+  return t;
 }
 
 tcb* roundRobinNextTCBWithEphemeralAccess(tcb* thread,
     bool needToReleaseFormer) {
   GlobalLockR(&latch);
-  tcb* retTCB = roundRobinNextTCB(thread);
+  tcb* retTCB = thread;
+  while (retTCB == thread) {
+    if (retTCB->_xlx.prev == &xlx && retTCB->_xlx.next == &xlx) {
+      // retTCB is the only runnable. return it
+      break;
+    }
+    // refind one
+    retTCB = roundRobinNextTCB(retTCB);
+    if (retTCB == NULL) {
+      GlobalUnlockR(&latch);
+      return thread;
+    }
+  }
   if (retTCB != thread) {
     // ephemeral refer to this thread
     retTCB->_ephemeralRefCount++;
@@ -168,6 +214,10 @@ static void _removeTCB(tcb* thread) {
   tcb** ptrToThreadToDelete = _findTCB(thread->id);
   assert(*ptrToThreadToDelete != NULL); // Must find it
   *ptrToThreadToDelete = thread->next;
+
+  if (thread->_xlx.next) {
+    removeFromXLX(thread);
+  }
   lprintf("Removing thread #%d", thread->id);
   // Goodbye, my thread
   sfree(thread, sizeof(tcb));
@@ -194,28 +244,20 @@ void removeTCB(tcb* thread) {
 
 tcb* roundRobinNextTCB(tcb* thread) {
   GlobalLockR(&latch);
-  if (!thread->next) {
-    thread = tcbList;
-  } else {
-    thread = thread->next;
-  }
+  thread = dequeueXLX();
+  assert(thread != NULL);  // must have at least one runnable (i.e. idle)
+  addToXLX(thread);
   GlobalUnlockR(&latch);
   return thread;
 }
 
-tcb* roundRobinNextTCBID(int tid) {
-  GlobalLockR(&latch);
-  tcb* cTCB = findTCB(tid);
-  if (!cTCB) {
-    panic("roundRobinNextTCB: trying to round robin a non-existing thread");
-  }
-  if (!cTCB->next) {
-    cTCB = tcbList;
-  } else {
-    cTCB = cTCB->next;
-  }
-  GlobalUnlockR(&latch);
-  return cTCB;
+void initProcess() {
+  initCrossCPULock(&latch);
+  pcbList = NULL;
+  tcbList = NULL;
+  pidNext = tidNext = 1;
+
+  xlx.prev = xlx.next = &xlx;
 }
 
 // For debugging
@@ -263,6 +305,14 @@ void reportProcessAndThread() {
                         thr->process->id,
                         ThreadStatusToString(thr->status),
                         thr->owned == THREAD_NOT_OWNED ? "F" : "T");
+  }
+    lprintf("│ └ Total %d threads", totCount);
+
+    lprintf("├ Express Links");
+  totCount = 0;
+  for (dualLinklist* lk = xlx.next; lk != &xlx; lk = lk->next ) {
+    totCount++;
+    lprintf("│ ├ Threads #%d", ((tcb*)lk->data)->id);
   }
     lprintf("│ └ Total %d threads", totCount);
   GlobalUnlockR(&latch);

@@ -62,6 +62,7 @@ static void notifyWaiter(pcb* proc, int num) {
     // wake up one waiter, need not to own it
     tcb* wThread = (tcb*)proc->waiter->thread;
     assert(wThread->status == THREAD_BLOCKED);
+    addToXLX(wThread);
     wThread->status = THREAD_RUNNABLE;
     proc->waiter = proc->waiter->next;
     num--;
@@ -154,6 +155,7 @@ void turnToZombie(pcb* targetProc) {
     while (!__sync_bool_compare_and_swap(
         &localWatcher->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD))
       ;
+    addToXLX(localWatcher);
     localWatcher->status = THREAD_RUNNABLE;
     swtichToThread_Prelocked(localWatcher);
   }

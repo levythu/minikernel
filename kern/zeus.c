@@ -56,6 +56,7 @@ tcb* SpawnThread(pcb* proc) {
     panic("SpawnProcess: fail to create kernel stack for new process.");
   }
   ntcb->status = THREAD_INITIALIZED;
+  addToXLX(ntcb);
 
   return ntcb;
 }
@@ -281,6 +282,7 @@ int forkProcess(tcb* currentThread) {
     // Yield to the new thread now! Should be atomic deschedule
     LocalLockR();
     currentThread->status = THREAD_BLOCKED;
+    removeFromXLX(currentThread);
     swtichToThread_Prelocked(newThread);
     // We have recover, we know that the new process is forked and finishes copy
     // But we cannot access thread (it may have already ends!)
@@ -306,6 +308,7 @@ int forkProcess(tcb* currentThread) {
       lprintf("Fork fail due to insufficient memory");
       *ptr_retValueForParentCall = -1;  // Fork fail
 
+      addToXLX(currentThread);
       currentThread->status = THREAD_RUNNABLE;
       currentThread->owned = THREAD_NOT_OWNED;
       terminateThread(newThread);
@@ -326,6 +329,7 @@ int forkProcess(tcb* currentThread) {
     *ptr_retValueForParentCall = newThread->id;
 
     lprintf("Setting %d to runnable", currentThread->id);
+    addToXLX(currentThread);
     currentThread->status = THREAD_RUNNABLE;
     currentThread->owned = THREAD_NOT_OWNED;
     return 0;
@@ -418,6 +422,7 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
         zombie->prezombieWatcher = currentThread;
         currentThread->descheduling = true;
         currentThread->status = THREAD_BLOCKED;
+        removeFromXLX(currentThread);
         GlobalUnlockR(&zombie->prezombieWatcherLock);
         // Deschedule
         yieldToNext();
@@ -439,6 +444,7 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
       LocalLockR();
       currentThread->descheduling = true;
       currentThread->status = THREAD_BLOCKED;
+      removeFromXLX(currentThread);
       LocalUnlockR();
       kmutexWUnlock(&currentProc->mutex);
       // Deschedule

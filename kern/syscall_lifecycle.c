@@ -72,7 +72,8 @@ int wait_Internal(SyscallParams params) {
         &currentThread->memLockStatus);
     return -1;
   }
-  if (statusPtr != 0 && !verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
+  if (statusPtr != 0 &&
+      !verifyUserSpaceAddr(statusPtr, statusPtr + sizeof(int) - 1, true)) {
     // the address is not writable
     kmutexRUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
@@ -88,7 +89,7 @@ int wait_Internal(SyscallParams params) {
     // We need to double check, we dont know what happened when we sleep
     kmutexWLockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
-    if (!verifyUserSpaceAddr(statusPtr, statusPtr, true)) {
+    if (!verifyUserSpaceAddr(statusPtr, statusPtr + sizeof(int) - 1, true)) {
       // the address is not writable
       kmutexWUnlockRecord(&currentThread->process->memlock,
           &currentThread->memLockStatus);

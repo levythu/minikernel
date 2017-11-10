@@ -62,8 +62,11 @@ int make_runnable_Internal(SyscallParams params) {
   if (!targetThread) {
     return -1;
   }
-  // TODO: the target thread may not even finish init!, so dmlock is not
-  // prepared yet
+  if (targetThread->status == THREAD_UNINITIALIZED) {
+    // huh... bad call
+    releaseEphemeralAccess(targetThread);
+    return -1;
+  }
   bool succ = false;
   GlobalLockR(&targetThread->dmlock);
   if (targetThread->status == THREAD_BLOCKED_USER) {
@@ -103,7 +106,6 @@ int deschedule_Internal(SyscallParams params) {
         &currentThread->memLockStatus);
     return -1;
   }
-  // TODO: check the other verifyUserSpaceAddr calls about size
   if (!verifyUserSpaceAddr(rejectAddr, rejectAddr + sizeof(int) - 1, false)) {
     // the address is not valid
     kmutexRUnlockRecord(&currentThread->process->memlock,

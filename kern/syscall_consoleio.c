@@ -42,7 +42,7 @@ int readline_Internal(SyscallParams params) {
         &currentThread->memLockStatus);
     return -1;
   }
-  if (len > MAX_READWRITE_BUFFER_SIZE) {
+  if (len > MAX_READWRITE_BUFFER_SIZE || len <= 0) {
     kmutexRUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);
     return -1;
@@ -214,8 +214,8 @@ int get_cursor_pos_Internal(SyscallParams params) {
         &currentThread->memLockStatus);
     return -1;
   }
-  if (!verifyUserSpaceAddr(rowAddr, rowAddr, true) ||
-      !verifyUserSpaceAddr(colAddr, colAddr, true)) {
+  if (!verifyUserSpaceAddr(rowAddr, rowAddr + sizeof(int) - 1, true) ||
+      !verifyUserSpaceAddr(colAddr, colAddr + sizeof(int) - 1, true)) {
     // row/col destination is not writable
     kmutexWUnlockRecord(&currentThread->process->memlock,
         &currentThread->memLockStatus);

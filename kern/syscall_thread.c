@@ -79,6 +79,11 @@ int make_runnable_Internal(SyscallParams params) {
   if (succ) {
     // try to own target and switch
     LocalLockR();
+    if (!THREAD_STATUS_CAN_RUN(targetThread->status)) {
+      releaseEphemeralAccess(targetThread);
+      LocalUnlockR();
+      return 0;
+    }
     bool owned = __sync_bool_compare_and_swap(
         &targetThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
     releaseEphemeralAccess(targetThread);
@@ -157,13 +162,14 @@ int yield_Internal(SyscallParams params) {
   if (!targetThread) {
     return -1;
   }
-  if (!THREAD_STATUS_CAN_RUN(targetThread->status)) {
-    releaseEphemeralAccess(targetThread);
-    return -1;
-  }
   // Try to run it by acquiring the lock. If can acquire, it's fine. Otherwise
   // someone else is trying to run it, just return succ
   LocalLockR();
+  if (!THREAD_STATUS_CAN_RUN(targetThread->status)) {
+    releaseEphemeralAccess(targetThread);
+    LocalUnlockR();
+    return -1;
+  }
   bool owned = __sync_bool_compare_and_swap(
       &targetThread->owned, THREAD_NOT_OWNED, THREAD_OWNED_BY_THREAD);
   releaseEphemeralAccess(targetThread);

@@ -1,7 +1,6 @@
 /** @file syscall_memory.c
  *
- *  @brief TODO
-
+ *  @brief Syscalls memory management
  *
  *  @author Leiyu Zhao
  */

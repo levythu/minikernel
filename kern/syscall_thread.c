@@ -1,7 +1,6 @@
-/** @file syscall.c
+/** @file syscall_thread.c
  *
- *  @brief TODO
-
+ *  @brief Syscalls thread primitives
  *
  *  @author Leiyu Zhao
  */

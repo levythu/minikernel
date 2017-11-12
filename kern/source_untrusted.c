@@ -1,7 +1,10 @@
 /** @file source_untrusted.c
  *
- *  @brief TODO
-
+ *  @brief Helper utilities for validate and get data from untrusted source
+ *
+ *  All function inside is non-thread safe nor interrupt safe. Generally the
+ *  caller use memlock to protect thread safeness, while avoid calling it inside
+ *  interrupt handler to allow interrupt unsafeness.
  *
  *  @author Leiyu Zhao
  */
@@ -68,6 +71,7 @@ bool sGetInt(uint32_t addr, int* target) {
   return true;
 }
 
+// TODO: bug in :88!
 #define sGetTypeArray(FuncName, TYPE) \
   int FuncName(uint32_t addr, TYPE* target, int size) { \
     PageDirectory mypd = findPCB(getLocalCPU()->runningPID)->pd; \

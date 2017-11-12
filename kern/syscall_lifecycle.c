@@ -1,7 +1,6 @@
-/** @file syscall.c
+/** @file syscall_lifecycle.c
  *
- *  @brief TODO
-
+ *  @brief Syscalls about lifecycle
  *
  *  @author Leiyu Zhao
  */

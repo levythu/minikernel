@@ -1,7 +1,6 @@
-/** @file syscall.c
+/** @file syscall_consoleio.c
  *
- *  @brief TODO
-
+ *  @brief Syscalls about console I/O
  *
  *  @author Leiyu Zhao
  */

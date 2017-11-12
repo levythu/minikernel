@@ -2,7 +2,22 @@
  *
  *  @brief Death walks among you
  *
- *  TODO
+ *  Reaper handles the death of a thread and process. It collaborate with zeus
+ *  to be the core function module in OS
+ *
+ *  A process die in this order:
+ *  1. The last thread calls suicideThread() to perform voluntary termination
+ *  2. The process's #thread reduce to zero, turn to prezombie and notify parent
+ *     (turnToPreZombie())
+ *  3. The last thread turn into THREAD_DEAD, and descheduling to others
+ *  4. scheduler working, reaper work inside scheduler to find dead thread, and
+ *     that thread is found.
+ *  5. The thread is destroyed, together with kernel stack and tcb (reapThread)
+ *  6. The process is turned into real zombie (reapProcess->turnToZombie), its
+ *     resources other than pcb are destroyed
+ *  7. ...
+ *  8. The waiter (one thread inside parent process) catches the zombie, and
+ *     pcb is destroyed
  *
  *  @author Leiyu Zhao
  */

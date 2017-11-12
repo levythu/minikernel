@@ -1,7 +1,8 @@
 /** @file timeout.c
  *
- *  @brief TODO
+ *  @brief Timeout manager, now only controls sleep()
  *
+ *  
  *
  *  @author Leiyu Zhao
  */
@@ -75,7 +76,7 @@ void sleepFor(uint32_t ticks) {
 // tryRemoveTimeoutStatus time after time to wake all up until no one needs to
 // be waked. This function use something to keep running at single-instance
 // We don't switch to target thread imediately for two reasons: 1. there's slack
-// for a thread to be run; 2. we may hava somebody else to awake
+// for a thread to be run; 2. we may have somebody else to awake
 static int alarmSingleInstanceGuard = 0;
 static void alarm() {
   if (!__sync_bool_compare_and_swap(&alarmSingleInstanceGuard, 0, 1)) {

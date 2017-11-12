@@ -1,5 +1,8 @@
-/*
- * TODO
+/** @file syscall.h
+ *
+ *  @brief Syscall module
+ *
+ *  @author Leiyu Zhao
  */
 
 #ifndef SYSCALL_H
@@ -49,6 +52,7 @@ DECLARE_SYSCALL_WRAPPER(readfile);
 DECLARE_SYSCALL_WRAPPER(halt);
 DECLARE_SYSCALL_WRAPPER(misbehave);
 
+// Install syscall handler. Must be called in kernel setup
 void initSyscall();
 
 // Parsing process is not atomic: some memory may be freed by other thread, so

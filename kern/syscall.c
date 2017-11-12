@@ -1,7 +1,6 @@
 /** @file syscall.c
  *
- *  @brief TODO
-
+ *  @brief Syscall module, used for set up syscalls and helpers
  *
  *  @author Leiyu Zhao
  */

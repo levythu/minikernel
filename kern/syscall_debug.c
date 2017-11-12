@@ -1,7 +1,9 @@
-/** @file syscall.c
+/** @file syscall_debug.c
  *
- *  @brief TODO
-
+ *  @brief Syscalls for debugging purpose
+ *
+ *  Now, the only one is misbehave. misbehave(701) leads to dumping all internal
+ *  states of interest
  *
  *  @author Leiyu Zhao
  */

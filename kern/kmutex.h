@@ -1,8 +1,10 @@
 /** @file kmutex.h
  *
- *  @brief TODO
+ *  @brief kernel blocking mutex
  *
- *  This module
+ *  The blocking mutex differs from CrossCPULock in cpu.c in that this one is
+ *  blocking, instead of spinlock. It deschedule current thread when waiting for
+ *  lock.
  *
  *  @author Leiyu Zhao
  */
@@ -40,6 +42,9 @@ void kmutexRUnlock(kmutex* km);
 void kmutexWLock(kmutex* km);
 void kmutexWUnlock(kmutex* km);
 
+// This set of APIs do essentially the same as above, while bookkeeping the
+// current states into status atomically.
+// The state can be used for kmutexWLockForce
 void kmutexRLockRecord(kmutex* km, kmutexStatus* status);
 void kmutexRUnlockRecord(kmutex* km, kmutexStatus* status);
 void kmutexWLockRecord(kmutex* km, kmutexStatus* status);

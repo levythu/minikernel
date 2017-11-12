@@ -1,6 +1,16 @@
 /** @file fault.c
  *
- *  @brief TODO
+ *  @brief kernel fault handler. It is strctured in macros.
+ *
+ *  FAULT_ACTION declares a fault handler. Inside the function body, it can use
+ *  all registers on exception happens to judge what happens and make decision.
+ *  The decision is reflected in return value: true indicates the exception
+ *  is properly handled, and the same instr would run again. False indicate
+ *  the fault is not managed by this handler, and will be skipped and passed to
+ *  the next handler.
+ *
+ *  ON sets a trigger in main fault entry to *try* a handler, when the condition
+ *  is fullfilled.
  *
  *  @author Leiyu Zhao
  */
@@ -78,7 +88,7 @@ void registerFaultHandler() {
 /*****************************************************************************/
 // Now it's all about fault handlers
 
-// Print the fault out
+// Print the fault out. Just always return false to let true handler handle it
 FAULT_ACTION(printError) {
   lprintf("Exception, IDT-number=%d. Core Dump:============================",
       faultNumber);
@@ -145,6 +155,7 @@ FAULT_ACTION(ZFODUpgrader) {
   return true;
 }
 
+// This handler is used to deligate the fault to user-fault handler
 FAULT_ACTION(UserModeErrorSWE) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   assert(currentThread);
@@ -171,6 +182,8 @@ FAULT_ACTION(UserModeErrorSWE) {
   return makeRegisterHandlerStackAndGo(currentThread, &uregs);
 }
 
+// This handler is to call vanish() since the current thread is making somebody
+// angry
 FAULT_ACTION(UserModeErrorCrash) {
   // Crash! It's equal to vanish
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
@@ -182,6 +195,7 @@ FAULT_ACTION(UserModeErrorCrash) {
   return true;
 }
 
+// This handler is a catch-all. It panics
 FAULT_ACTION(CatchAllHandler) {
   panic("Uncaught exception. See descriptions above.");
   return true;

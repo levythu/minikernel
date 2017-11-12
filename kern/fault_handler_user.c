@@ -1,6 +1,6 @@
-/** @file pm.c
+/** @file fault_handler_user.c
  *
- *  @brief TODO
+ *  @brief User-caused fault handler and related helper functions
  *
  *  @author Leiyu Zhao
  */
@@ -24,6 +24,7 @@
 #include "source_untrusted.h"
 #include "mode_switch.h"
 
+// Register a user-space fault handler to one thread. Thread should be owned.
 // Won't do validation on any param -- the caller should do it
 void registerUserFaultHandler(tcb* thread, uint32_t esp3, uint32_t eip,
     uint32_t customArg) {
@@ -32,12 +33,15 @@ void registerUserFaultHandler(tcb* thread, uint32_t esp3, uint32_t eip,
   thread->faultStack = esp3;
 }
 
+// Remove a user-space fault handler from one thread. Thread should be owned.
 void deregisterUserFaultHandler(tcb* thread) {
   thread->faultHandler = 0;
   thread->customArg = 0;
   thread->faultStack = 0;
 }
 
+// Helper function, translate a idtnumber (provided in kernel fault handler)
+// to a ureg_t.cause
 int translateIDTNumToCause(int idtNumber) {
   #define MAKE_MAP(_idtDst, _causeDst) \
     if (idtNumber == (_idtDst)) return (_causeDst)
@@ -58,7 +62,8 @@ int translateIDTNumToCause(int idtNumber) {
   return -1;
 }
 
-// Should never return on success
+// Consume uregs, return to ring3 with target registers.
+// Should never return on success, or false on failure
 bool makeRegisterHandlerStackAndGo(tcb* thread, ureg_t* uregs) {
   if (thread->faultHandler == 0) {
     return false;

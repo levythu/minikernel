@@ -188,6 +188,8 @@ void suicideThread(tcb* targetThread) {
 // targetThread mustn't be current thread, and current CPU need to own it,
 // just like the state before context switch. However, it differs that LocalLock
 // does not have to be acquried: reaper is free be interrupted
+// TODO: bug! what if several threads of one process are waiting to be reaped
+// at the same time??
 void reapThread(tcb* targetThread) {
   KERNEL_STACK_CHECK;
   assert(targetThread->status == THREAD_DEAD);

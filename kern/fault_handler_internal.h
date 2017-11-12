@@ -1,6 +1,8 @@
 #include <x86/seg.h>
 #include <x86/idt.h>
 
+// The macro to define a fault handler asm, provided idt number and forwarded
+// internal function
 #define MAKE_FAULT_HANDLER_NO_ERRCODE(idtNumber, internalFunction) \
     .globl IDT_Handler_ ## idtNumber; \
                         \
@@ -31,7 +33,8 @@
         add $8, %esp;   \
         iret;
 
-
+// The macro to define a fault handler asm, provided idt number and forwarded
+// internal function. This one differs in that it support errorcode
 #define MAKE_FAULT_HANDLER_WITH_ERRCODE(idtNumber, internalFunction) \
     .globl IDT_Handler_ ## idtNumber; \
                         \

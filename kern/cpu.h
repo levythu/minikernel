@@ -67,6 +67,7 @@ void initCrossCPULock(CrossCPULock* lock);
 void GlobalLockR(CrossCPULock* lock);
 void GlobalUnlockR(CrossCPULock* lock);
 
+// For debug.
 void reportCPU();
 
 #endif

@@ -22,10 +22,12 @@
 // It will set segment registers accordingly
 void switchToRing3(uint32_t esp, uint32_t eflags, uint32_t eip);
 
+// The same with ring3, but setting more registers
 void switchToRing3X(uint32_t esp, uint32_t eflags, uint32_t eip, uint32_t edi,
                     uint32_t esi, uint32_t ebp, uint32_t ebx, uint32_t edx,
                     uint32_t ecx, uint32_t eax);
 
+// Validate whether the target ureg is good to be set when entering ring3
 bool validateUregs(ureg_t* uregs);
 
 #endif

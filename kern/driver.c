@@ -1,7 +1,6 @@
 /** @file driver.c
  *
  *  @brief Skeleton implementation of device-driver library.
-
  *
  *  @author Leiyu Zhao
  */

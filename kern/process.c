@@ -1,7 +1,8 @@
 /** @file process.c
  *
- *  @brief TODO
-
+ *  @brief Core data structure for PCB and TCB.
+ *
+ *  See process.h for very detailed docs
  *
  *  @author Leiyu Zhao
  */
@@ -260,6 +261,7 @@ void initProcess() {
   xlx.prev = xlx.next = &xlx;
 }
 
+/*****************************************************************************/
 // For debugging
 
 static const char* ProcessStatusToString(ProcessStatus s) {

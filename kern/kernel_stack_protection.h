@@ -1,11 +1,9 @@
 /** @file kernel_stack_protection.h
  *
- *  @brief Physical Memory manager, only for non-kernel space.
+ *  @brief Stack protection helpers
  *
- *  This module manages all non-kernel physical memory. And provide them to
- *  kernel to set vm-to-pm mappings
- *
- *  All functions except claimUserMem are interrupt-safe and multicore-safe.
+ *  This module detect kernel stack misbehaviour and panic the whole system
+ *  in time before it makes mysterious undefined behavior.
  *
  *  @author Leiyu Zhao
  */
@@ -13,9 +11,10 @@
 #ifndef KERNEL_STACK_PRO_H
 #define KERNEL_STACK_PRO_H
 
-// TODO disable it in non-debug mode
 void checkKernelStackOverflow();
 
+// use KERNEL_STACK_CHECK on the entry of critical system functions (mostly in
+// zeus and reaper) help detect stack misbehaviour effectively.
 #define KERNEL_STACK_CHECK checkKernelStackOverflow()
 
 #endif

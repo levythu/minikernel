@@ -1,8 +1,20 @@
 /** @file kmutex.c
  *
- *  @brief TODO
+ *  @brief kernel blocking mutex
  *
- *  TODO
+ *  The blocking mutex differs from CrossCPULock in cpu.c in that this one is
+ *  blocking, instead of spinlock. It deschedule current thread when waiting for
+ *  lock.
+ *  Therefore, to use it, some notifications need to be kept in mind:
+ *  1. Only use it after process/thread is established and scheduler starts
+ *  working
+ *  2. NEVER use it when interrupt is off (i.e. inside LocalLock or
+ *  CrossCPULock).
+ *  3. It cannot protect critical session from interrupt, and any reentry due to
+ *  it. For that purpose, use CrossCPULock based on your needs.
+ *  4. For other cases, use this, especially when critical session is very large
+ *  this enables preemtive.
+ *
  *
  *  @author Leiyu Zhao
  */

@@ -1,3 +1,13 @@
+/** @file malloc_wrappers.c
+ *
+ *  @brief The wrapper for malloc, to ensure interrupt and multithread safeness
+ *
+ *  CrossCPULock instead of kmutex is used to ensure that since kmutex does not
+ *  guarantee interrupt safeness
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stddef.h>
 #include <malloc.h>
 #include <malloc/malloc_internal.h>
@@ -72,6 +82,7 @@ void sfree(void *buf, size_t size) {
   GlobalUnlockR(&latch);
 }
 
+// Report still allocated kernel memory. Use it to detect kernel mem leak
 void reportKernelMemAlloc() {
   GlobalLockR(&latch);
   lprintf("├ Kernel Memory Allocator");

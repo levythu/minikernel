@@ -1,6 +1,9 @@
 /** @file kernel_stack_protection.c
  *
- *  @brief TODO
+ *  @brief Stack protection helpers
+ *
+ *  This module detect kernel stack misbehaviour and panic the whole system
+ *  in time before it makes mysterious undefined behavior.
  *
  *  @author Leiyu Zhao
  */

@@ -1,8 +1,9 @@
 /** @file kayboard.c
  *
- *  @brief TODO
+ *  @brief keyboard event handler.
  *
- *  TODO
+ *  This module is decoupled from keyboard handler. And kernel should attach it
+ *  to keyboard event to make things work,
  *
  *  @author Leiyu Zhao
  */
@@ -78,7 +79,6 @@ int getcharBlocking() {
 
 // Must be called when occupying keyboard
 // maxlen cannot be zero
-// TODO: remove non-printable char
 int getStringBlocking(char* space, int maxlen) {
   int currentLen = 0;
   bool preexist = true;
@@ -128,7 +128,7 @@ int getStringBlocking(char* space, int maxlen) {
   return -1;
 }
 
-// TODO: remove non-printable char
+// In readline mode, print the char in synchronously to avoid re-order
 void onKeyboardSync(int ch) {
   GlobalLockR(&latch);
   if (eventWaiter && !waitingForAnyChar) {
@@ -137,6 +137,7 @@ void onKeyboardSync(int ch) {
   GlobalUnlockR(&latch);
 }
 
+// For the rest of work (awakening the waiter), out-of-order is acceptable
 void onKeyboardAsync(int ch) {
   KERNEL_STACK_CHECK;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);

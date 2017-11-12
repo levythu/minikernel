@@ -1,6 +1,8 @@
-/** @file pm.c
+/** @file mode_switch_c.c
  *
- *  @brief TODO
+ *  @brief C functions about mode switch.
+ *
+ *  Generally, they are helper functions about mode switch
  *
  *  @author Leiyu Zhao
  */

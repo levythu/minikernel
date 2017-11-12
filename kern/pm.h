@@ -36,6 +36,7 @@ bool isZFOD(uint32_t addr);
 // getUserMemPageZFOD. After that you cannot use the memory anymore
 void freeUserMemPage(uint32_t mem);
 
+// Report user space usage, use this to detect memory leak
 void reportUserMem();
 
 #endif

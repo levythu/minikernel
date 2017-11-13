@@ -231,6 +231,9 @@ struct _tcb {
   // this flag is set until successfully descheduled to prevent further
   // interrupt to schedule to others and leave some staff undone (e.g. reaper)
   bool descheduling;
+  // When set, this is the last thread of current process and reaping this will
+  // lead to the process to become zombie
+  bool lastThread;
 
   // Set by swexn
   uint32_t faultHandler;

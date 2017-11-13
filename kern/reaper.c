@@ -195,6 +195,7 @@ void suicideThread(tcb* targetThread) {
   kmutexWUnlock(&targetProc->mutex);
   if (ntleft == 0) {
     turnToPreZombie(targetProc);
+    targetThread->lastThread = true;
   }
 }
 
@@ -203,15 +204,14 @@ void suicideThread(tcb* targetThread) {
 // targetThread mustn't be current thread, and current CPU need to own it,
 // just like the state before context switch. However, it differs that LocalLock
 // does not have to be acquried: reaper is free be interrupted
-// TODO: bug! what if several threads of one process are waiting to be reaped
-// at the same time??
 void reapThread(tcb* targetThread) {
   KERNEL_STACK_CHECK;
   assert(targetThread->status == THREAD_DEAD);
   targetThread->status = THREAD_REAPED;
 
   // Deregister it self from the process
-  if (targetThread->process->status == PROCESS_PREZOMBIE) {
+  if (targetThread->lastThread) {
+    assert(targetThread->process->status == PROCESS_PREZOMBIE);
     reapProcess(targetThread->process);
   }
 

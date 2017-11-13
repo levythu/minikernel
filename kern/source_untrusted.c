@@ -71,7 +71,6 @@ bool sGetInt(uint32_t addr, int* target) {
   return true;
 }
 
-// TODO: bug in :88!
 #define sGetTypeArray(FuncName, TYPE) \
   int FuncName(uint32_t addr, TYPE* target, int size) { \
     PageDirectory mypd = findPCB(getLocalCPU()->runningPID)->pd; \
@@ -85,7 +84,7 @@ bool sGetInt(uint32_t addr, int* target) {
  \
       if (i % sizeof(TYPE) == 0) { \
         TYPE tmp = *((TYPE*)(addr + i)); \
-        if (target) target[i] = tmp; \
+        if (target) target[i / sizeof(TYPE)] = tmp; \
         if (tmp == 0) { \
           return i / sizeof(TYPE); \
         } \

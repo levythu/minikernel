@@ -23,16 +23,16 @@ bool sGetInt(uint32_t addr, int* target);
 
 // get a NUL-terminated string from addr to target, return its size
 // return -1 on failure
-// return non-neg value indicating the number of chars get (include the
+// return non-neg value indicating the number of chars get (exclude the
 // terminating zero). Must <= size
-//    if return < size, there must be a terminating zero at target[return - 1]
+//    if return < size, there must be a terminating zero at target[return]
 int sGetString(uint32_t addr, char* target, int size);
 
 // get a NUL-terminated uint array from addr to target, return its size
 // return -1 on failure
-// return non-neg value indicating the number of uint get (include the
+// return non-neg value indicating the number of uint get (exclude the
 // terminating zero). Must <= size
-//    if return < size, there must be a terminating zero at target[return - 1]
+//    if return < size, there must be a terminating zero at target[return]
 int sGeUIntArray(uint32_t addr, uint32_t* target, int size);
 
 #endif

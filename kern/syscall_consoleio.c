@@ -91,7 +91,6 @@ int readline_Internal(SyscallParams params) {
   return actualLen;
 }
 
-// TODO test it
 int getchar_Internal(SyscallParams params) {
   occupyKeyboard();
   int actualLen = getcharBlocking();
@@ -150,7 +149,6 @@ int print_Internal(SyscallParams params) {
   return 0;
 }
 
-// TODO test it
 int set_term_color_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int color;
@@ -168,7 +166,6 @@ int set_term_color_Internal(SyscallParams params) {
   return set_term_color(color);
 }
 
-// TODO test it
 int set_cursor_pos_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   int row, col;
@@ -192,7 +189,6 @@ int set_cursor_pos_Internal(SyscallParams params) {
   return set_cursor(row, col);
 }
 
-// TODO test it
 int get_cursor_pos_Internal(SyscallParams params) {
   int row, col;
   get_cursor(&row, &col);

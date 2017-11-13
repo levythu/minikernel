@@ -1,6 +1,6 @@
 /** @file sysconf.h
  *
- *  @brief TODO
+ *  @brief Basic configuration for LevyOS
 
  *
  *  @author Leiyu Zhao

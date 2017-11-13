@@ -348,8 +348,7 @@ int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
 
 // Internal implementation of exec(), load a new elf to the current process
 // space. It's idempotent, i.e. can be safely called multiple times on a single
-// process, while the excessive memory will be kept (TODO: maybe a bug? need to
-// fix it)
+// process, while the excessive memory will be kept (NOTE: maybe a bug?)
 // NOTE: the current process *must* only have the current thread
 // argpkg can be null, or a smalloc'd array. If it success (no return), argpkg
 // will be disposed correctly; otherwise, the caller should dispose it

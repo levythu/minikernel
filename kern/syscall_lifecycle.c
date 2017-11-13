@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "dbgconf.h"
 #include "common_kern.h"
 #include "syscall.h"
 #include "process.h"
@@ -195,7 +196,9 @@ int exec_Internal(SyscallParams params) {
   pkg->c[argvecLen][0] = 0;
   pkg->c[argvecLen][1] = -1;
 
+  #ifdef VERBOSE_PRINT
   printArgPackage(pkg);
+  #endif
 
   execProcess(currentThread, pkg->c[0], pkg);
 

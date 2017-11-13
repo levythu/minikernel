@@ -63,7 +63,10 @@ void yieldToNext() {
     }
     return;
   }
+
+  #ifdef VERBOSE_PRINT
   lprintf("Scheduling to thread #%d", nextThread->id);
+  #endif
   swtichToThread_Prelocked(nextThread);
 }
 

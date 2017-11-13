@@ -43,6 +43,7 @@
 #include "context_switch.h"
 #include "mode_switch.h"
 #include "sysconf.h"
+#include "dbgconf.h"
 #include "kernel_stack_protection.h"
 
 static uint32_t freeUserspace_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
@@ -102,8 +103,10 @@ void turnToPreZombie(pcb* targetProc) {
 
     initPCB->unwaitedChildProc += zombieCount;
     if (zombieCount > 0) {
+      #ifdef VERBOSE_PRINT
       lprintf("Handling %d zombie children to INIT.., now it's %d",
           zombieCount, initPCB->unwaitedChildProc);
+      #endif
     }
     notifyWaiter(initPCB, zombieCount);
     kmutexWUnlock(&initPCB->mutex);
@@ -143,8 +146,10 @@ void turnToPreZombie(pcb* targetProc) {
   if (notMyFather) {
     // this is not the child of INIT, so we need to add unwaitedChildProc
     directParentPCB->unwaitedChildProc += 1;
+    #ifdef VERBOSE_PRINT
     lprintf("I'm orphan... contacting INIT, now it's %d",
         directParentPCB->unwaitedChildProc);
+    #endif
   }
   notifyWaiter(directParentPCB, 1);
   kmutexWUnlock(&directParentPCB->mutex);

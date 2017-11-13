@@ -20,6 +20,7 @@
 #include "vm.h"
 #include "bool.h"
 #include "context_switch.h"
+#include "dbgconf.h"
 
 // Switch to the process pointed by parameter, it will do several things:
 // It's not a public function
@@ -57,8 +58,10 @@ void swtichToThread_Prelocked(tcb* thread) {
     switchToProcess(thread->process);
   }
 
+  #ifdef VERBOSE_PRINT
   lprintf("Kernel stack switch to [0x%08lx, 0x%08lx]",
       thread->kernelStackPage, thread->kernelStackPage + PAGE_SIZE - 1);
+  #endif
   set_esp0(thread->kernelStackPage + PAGE_SIZE - 1);
 
   ureg_t dummyUReg;
@@ -82,7 +85,9 @@ void swtichToThread_Prelocked(tcb* thread) {
 
   // disown the former thread
   if (switchedFrom) {
+    #ifdef VERBOSE_PRINT
     lprintf("disown thread #%d", switchedFrom->id);
+    #endif
     switchedFrom->owned = THREAD_NOT_OWNED;
   }
   // Now it should be where the entry of newly switched thread.

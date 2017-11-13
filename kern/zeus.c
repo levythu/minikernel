@@ -24,6 +24,7 @@
 #include "common_kern.h"
 #include "process.h"
 #include "bool.h"
+#include "dbgconf.h"
 #include "process.h"
 #include "vm.h"
 #include "pm.h"
@@ -329,7 +330,9 @@ int forkProcess(tcb* currentThread) {
     // Before unblock parent process, tell him about our success.
     *ptr_retValueForParentCall = newThread->id;
 
+    #ifdef VERBOSE_PRINT
     lprintf("Setting %d to runnable", currentThread->id);
+    #endif
     addToXLX(currentThread);
     currentThread->status = THREAD_RUNNABLE;
     currentThread->owned = THREAD_NOT_OWNED;
@@ -370,7 +373,9 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
   }
   uint32_t neweflags =
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
+  #ifdef VERBOSE_PRINT
   lprintf("Into Ring3...");
+  #endif
 
   // Will never return!
   switchToRing3(esp, neweflags, eip);
@@ -397,7 +402,6 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
       firstTime = false;
       if (currentProc->unwaitedChildProc == 0) {
         // Bad, nothing can be waited
-        lprintf("Bad things since nothing to be wait");
         kmutexWUnlock(&currentProc->mutex);
         return -1;
       }

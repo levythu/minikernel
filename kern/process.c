@@ -20,6 +20,7 @@
 #include "bool.h"
 #include "vm.h"
 #include "cpu.h"
+#include "dbgconf.h"
 
 static pcb* pcbList;
 static tcb* tcbList;
@@ -48,7 +49,9 @@ pcb* findPCB(int pid) {
 static void _removePCB(pcb* proc) {
   pcb** ptrToProcToDelete = _findPCB(proc->id);
   assert(*ptrToProcToDelete != NULL); // Must find it
+  #ifdef VERBOSE_PRINT
   lprintf("Removing process #%d", proc->id);
+  #endif
   *ptrToProcToDelete = proc->next;
   // Goodbye, my process
   sfree(proc, sizeof(pcb));
@@ -219,7 +222,9 @@ static void _removeTCB(tcb* thread) {
   if (thread->_xlx.next) {
     removeFromXLX(thread);
   }
+  #ifdef VERBOSE_PRINT
   lprintf("Removing thread #%d", thread->id);
+  #endif
   // Goodbye, my thread
   sfree(thread, sizeof(tcb));
 }

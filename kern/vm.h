@@ -1,5 +1,11 @@
-/*
- * TODO
+/** @file vm.h
+ *
+ *  @brief Functions and utilities for virtual memory
+ *
+ *  All that are needed for manipulating virtual memory and page table. See
+ *  comments below for each util
+ *
+ *  @author Leiyu Zhao
  */
 
 #ifndef VM_H
@@ -22,9 +28,15 @@ typedef PDE* PageDirectory;
 #define PD_SIZE (1 << PD_BIT)
 #define PT_SIZE (1 << PT_BIT)
 
+// Given a virtual memory address, extract the page directory index
 #define STRIP_PD_INDEX(addr) ((addr) >> (32 - PD_BIT))
+
+// Given a virtual memory address, extract the page table index inside some page
+// directory
 #define STRIP_PT_INDEX(addr) \
     (  ((addr) >> (32 - PD_BIT - PT_BIT)) & ((1 << PT_BIT) - 1)  )
+
+// Given a page directory and page table index, reconstruct the virtual memory
 #define RECONSTRUCT_ADDR(pdindex, ptindex) \
     (  ((pdindex) << (32 - PD_BIT)) | ((ptindex) << (32 - PD_BIT - PT_BIT))  )
 
@@ -53,38 +65,56 @@ typedef PDE* PageDirectory;
 #define PDE_CLEAR_PT(pde) ((pde) & 0xfff)
 #define PTE_CLEAR_ADDR(pte) PDE_CLEAR_PT(pte)
 
-//
 #define IS_PAGE_ALIGNED(addr) (((addr) >> PAGE_SHIFT << PAGE_SHIFT) == addr)
 
-
+// Start paging (vm)
 void enablePaging();
 
+// create a page directory, with nothing mapped
 PageDirectory newPageDirectory();
 
-// Only free the pd, not any physical page associated
+// Only free the page directory (and recursively page table), not any physical
+// page associated.
 void freePageDirectory(PageDirectory pd);
 
+// Given a page directory, set initial kernel memory direct mapping
 void setKernelMapping(PageDirectory pd);
 
+// Map one physical page to a virtual page in the directory, given the access
+// ring and write privilege
 void createMapPageDirectory(PageDirectory pd, uint32_t vaddr, uint32_t paddr,
     bool isUserMem, bool isWritable);
 
+// return the reference of the page table entry for one virtual address
+// Or NULL if it's not presented in the page directory
 PTE* searchPTEntryPageDirectory(PageDirectory pd, uint32_t vaddr);
 
+// Adopt the page directory
 void activatePageDirectory(PageDirectory pd);
 
+// Get what page directory is adopted
 PageDirectory getActivePageDirectory();
 
+// Clone a page table, associated physical pages are not cloned
 PageTable clonePageTable(PageTable old);
 
+// Recursively clone a page directory (and page table), from startPDIndex
+// to endPDIndex. associated physical pages are not cloned
+// dst must not present page table in the range [startPDIndex, endPDIndex]
 void clonePageDirectory(PageDirectory src, PageDirectory dst,
     uint32_t startPDIndex, uint32_t endPDIndex);
 
+// Traverse all presented pages in one page directory, given range
+// [startPDIndex, endPDIndex]. initialToken is a user-given token that can be
+// passed on each onPTE call, so this function acts as fold() on onPTE
 uint32_t traverseEntryPageDirectory(PageDirectory pd,
     uint32_t startPDIndex, uint32_t endPDIndex,
     uint32_t (*onPTE)(int, int, PTE*, uint32_t),
     uint32_t initialToken);
 
+// Invalid the TLB cache for given virtual address
+// When modify current page directory without switching the whole PD, this one
+// need to called to ensure consistent
 void invalidateTLB(uint32_t addr);
 
 #endif

@@ -119,6 +119,9 @@ int new_pages_Internal(SyscallParams params) {
   return 0;
 }
 
+// We take advantage of custom bits in page table entry to mark allocated memory
+// and boundary. PAGE_STAMP_USR_HEAD for the first page allocated in one call,
+// and PAGE_STAMP_USR_BODY for the rest pages allocated in one call.
 int remove_pages_Internal(SyscallParams params) {
   // We own currentThread
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);

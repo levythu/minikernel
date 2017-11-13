@@ -1,7 +1,8 @@
 /** @file vm.c
  *
- *  @brief TODO
-
+ *  @brief Functions and utilities for virtual memory
+ *
+ *  All that are needed for manipulating virtual memory and page table
  *
  *  @author Leiyu Zhao
  */

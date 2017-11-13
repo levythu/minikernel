@@ -2,7 +2,9 @@
  *
  *  @brief Timeout manager, now only controls sleep()
  *
- *  
+ *  Timeout manager works in similar way to keyboard event handler. It keeps all
+ *  waiters (sleepers) in a monotonous queue sorted by wakeup time, and timer
+ *  event will dequeue sleeping threads and unblock them,
  *
  *  @author Leiyu Zhao
  */

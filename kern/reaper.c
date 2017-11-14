@@ -92,7 +92,8 @@ static void notifyWaiter(pcb* proc, int num) {
 
 // 1. Delegate target's zombie children to init
 // 2. Tell the parent process that there's a zombie
-// Don't have to acquiring targetProc's mutex, because no other thread is alive,
+// Must work inside targetProc's zombie to avoid race that one child is trying
+// to append zombie to target's zombie chain
 void turnToPreZombie(pcb* targetProc) {
   KERNEL_STACK_CHECK;
   targetProc->status = PROCESS_PREZOMBIE;

@@ -1,6 +1,6 @@
 /** @file process.h
  *
- *  @brief Core data structure for PCB and TCB.
+ *  @brief Core data structure for PCB and TCB. Critical component
  *
  *  The description of TCB and PCB are detailed below; Besides the definition,
  *  this module only manages the internal storage of TCB/PCB itself. To specify,
@@ -259,6 +259,7 @@ struct _tcb {
 #define THREAD_OWNED_BY_CPU 1
 #define THREAD_OWNED_BY_THREAD 2
 
+
 void initProcess();
 
 pcb* findPCB(int pid);
@@ -280,7 +281,10 @@ tcb* newTCB();
 tcb* findTCB(int tid);
 tcb* findTCBWithEphemeralAccess(int tid);
 void removeTCB(tcb* thread);
+// Will always return a runnable thread (maybe the thread passedin itself) due
+// to the existence of IDLE thread.
 tcb* roundRobinNextTCB(tcb* thread);
+// When needToReleaseFormer = true, the former thread will be released
 tcb* roundRobinNextTCBWithEphemeralAccess(tcb* thread,
     bool needToReleaseFormer);
 void releaseEphemeralAccess(tcb* thread);
@@ -288,6 +292,7 @@ void releaseEphemeralAccess(tcb* thread);
 void removeFromXLX(tcb* thread);
 void addToXLX(tcb* thread);
 
+// for debug
 void reportProcessAndThread();
 
 #endif

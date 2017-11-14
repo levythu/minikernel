@@ -15,9 +15,10 @@
  *  5. The thread is destroyed, together with kernel stack and tcb (reapThread)
  *  6. The process is turned into real zombie (reapProcess->turnToZombie), its
  *     resources other than pcb are destroyed
- *  7. ...
+ *  7. ... (others running)
  *  8. The waiter (one thread inside parent process) catches the zombie, and
  *     pcb is destroyed
+ *  The whole procedure is fully preemptible
  *
  *  @author Leiyu Zhao
  */
@@ -55,6 +56,7 @@ static uint32_t freeUserspace_EachPage(int pdIndex, int ptIndex, PTE* ptentry,
   return 0;
 }
 
+// Reclaim all the user space memory refered in the page directory.
 void freeUserspace(PageDirectory pd) {
   traverseEntryPageDirectory(pd,
                              STRIP_PD_INDEX(USER_MEM_START),
@@ -63,6 +65,8 @@ void freeUserspace(PageDirectory pd) {
                              0);
 }
 
+// Go through a zombie chain, get its last next pointer reference, and count
+// the length of zombie chain btw
 static pcb** followZombieChain(pcb* proc, int* len) {
   pcb** ret;
   if (len) *len = 0;
@@ -72,7 +76,8 @@ static pcb** followZombieChain(pcb* proc, int* len) {
   return ret;
 }
 
-// Must Lock proc
+// Must run with proc's mutex
+// Notify `num` waiters in given process's waiter threads
 static void notifyWaiter(pcb* proc, int num) {
   while (proc->waiter && num > 0) {
     // wake up one waiter, need not to own it
@@ -87,7 +92,7 @@ static void notifyWaiter(pcb* proc, int num) {
 
 // 1. Delegate target's zombie children to init
 // 2. Tell the parent process that there's a zombie
-// Must work under process's mutex (or guarantee there's no one else accessing)
+// Don't have to acquiring targetProc's mutex, because no other thread is alive,
 void turnToPreZombie(pcb* targetProc) {
   KERNEL_STACK_CHECK;
   targetProc->status = PROCESS_PREZOMBIE;
@@ -159,7 +164,8 @@ void turnToPreZombie(pcb* targetProc) {
 }
 
 // Run inside reaper.
-// So we don't want to acquire any kmutex
+// So we don't want to acquire any kmutex: the target proc is prezombie and
+// won't be touched by anyone.
 void turnToZombie(pcb* targetProc) {
   KERNEL_STACK_CHECK;
   assert(targetProc->status == PROCESS_PREZOMBIE);
@@ -197,11 +203,11 @@ void suicideThread(tcb* targetThread) {
   pcb* targetProc = targetThread->process;
   kmutexWLock(&targetProc->mutex);
   int ntleft = --targetProc->numThread;
-  kmutexWUnlock(&targetProc->mutex);
   if (ntleft == 0) {
     turnToPreZombie(targetProc);
     targetThread->lastThread = true;
   }
+  kmutexWUnlock(&targetProc->mutex);
 }
 
 // Run inside reaper.

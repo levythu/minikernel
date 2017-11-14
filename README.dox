@@ -7,7 +7,7 @@ For the section that we don't want to be interrupted, we differentiate GlobalLoc
 
 Another interesting design is that those locks are CPU-reentrant, i.e., for the same CPU, a lock can be acquired arbitrary times without any problem or worrying about when should *real* unlock takes place.
 
-Note that GlobalLock is a spinlock. In multicore environment, it's reasonable to spin sometimes, while in single core GlobalLock never spins. Similarly, there're some spinloops on owning a thread, but it's still only for multicore situation. In single core it always succeeds on the first tick.
+Note that GlobalLock is a spinlock. In multicore environment, it's reasonable to spin sometimes, while in single core GlobalLock never spins. Similarly, there're some spinloops on owning a thread, but it's still only for multicore situation. In single core it always succeeds on the first tick. Since those spinloops to own a thread only happens when a thread is confirmed to be in `THREAD_BLOCK`, no one would really own it, and any temporary own by scheduler (for preflight check) is protected by LocalLock. Therefore, there's no chance for such spinloop to be more than one-operation in uniprocessor machine.
 
 ### Kernel Mutex (kmutex)
 GlobalLock/LocalLock is used only for small and critical session that we don't want anything to interrupt. But there're great number of cases where we don't have to be so strict: we allow interleaving with other threads that's unrelated to the critical session. In those cases, we use kmutex, it has very similar semantics to user space mutex, and never disable context switch during the section. For overall prreemptibility, it's a good practice to use kmutex when possible.
@@ -15,7 +15,7 @@ GlobalLock/LocalLock is used only for small and critical session that we don't w
 Fine-grained lock design makes it easy to ensure interrupt and multithread safety while keeping the best preemptibility.
 
 ### MACRO-Generated Syscall Stub, Interrupt Handler and Fault Handler
-For those who are registered to IDT, we all use macros to generate codes in very short time, to make it quicker to develop and nicer to look.
+For those who are registered to IDT, we all use macros to generate codes in very short time, to make it quicker to develop and nicer to look. See `fault_handler_internal.h`, `make_syscall_handler.h` for more details.
 
 ## Known Bugs
 - In Readline, backspace can remove characters on the screen that does not belong to this round of readline

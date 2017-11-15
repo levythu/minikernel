@@ -25,15 +25,22 @@ void claimUserMem();
 // or 0 if there's no free space available
 uint32_t getUserMemPage();
 
+// similar to getUserMemPage, but the caller should know that this is a fake
+// shared page with all contents equal to zero. Caller should register this as
+// a readonly page, and ask for upgrade when anyone wants to write it.
 uint32_t getUserMemPageZFOD();
 
-// Upgrade never fail
+// Given a physical page that's returned by getUserMemPageZFOD(), return a
+// real page that's dedicated and all-zero'd. Caller should replace the old page
+// with the new one in page table.
+// Upgrade never fail.
 uint32_t upgradeUserMemPageZFOD(uint32_t mem);
 
+// return true if the current phyisical address is ZFOD'd that's not upgraded
 bool isZFOD(uint32_t addr);
 
 // Free one user page that is previously got by calling getUserMemPage or
-// getUserMemPageZFOD. After that you cannot use the memory anymore
+// getUserMemPageZFOD. After that you cannot use the page anymore
 void freeUserMemPage(uint32_t mem);
 
 // Report user space usage, use this to detect memory leak

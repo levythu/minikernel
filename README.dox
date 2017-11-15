@@ -40,6 +40,70 @@ Reaper run inside scheduler to reap a dead thread in different kernel stack, so 
 
 The only situation that reaper will by scheduler is in deschedule mode. (case 2 and 3) In deschedule mode we know that the current thread will not come back for a long time, so we hope this thread to do nothing before being descheduled. Otherwise, the reaper may be hanged halfway and introduce extra wait time for waiter.
 
+### Physical Memory Management ZFOD Design
+
+All free physical pages index are kept in kernel memory as a stack, and each time user request memory, one is popped to make a mapping in page table. 
+
+Compared to the normal pages, ZFOD pages work in a more interesting way: it involves two-phase supply. 
+
+Since ZFOD pages don't require a real physical page until writes happens, when physical memory manager is asked for a ZFOD page, it simply returns a pre-defined all-zero common page, and the caller should register this as a read-only mapping. Meanwhile, pm manager *reserve* a spare physical page in the stack from bottom, to avoid over-provisioning blocks. This is the first phase.
+
+The second phase takes place when page fault happens due to writes on fake ZFOD page. In the situation, kernel ask pm manager to "cash out" the reserved page, and from that point on, the page has nothing special than normal pages any more.
+
+### Safety Checkpoint
+
+All codes have bugs, and we can be vigilant to it, panic the kernel before it introduces much more weird misbehavior. Safety checkpoint happens everywhere, and the common and important checkpoints are:
+
+- All lock infra, to ensure that we never unlock twice, use unmatched rwlock, etc.
+- Interrupt bit check on mode switch, to ensure that we never disable interrupt unexpectedly due to incomplete LocalLock nests.
+- Kernel stack corruption check on common core functions and interrupt handler, to avoid kernel stack overflow (maybe due to too high timer rate)
+
+### Misbehave
+
+Although we don't implement misbehave to adjust the way kernel behaves, we use misbehave as a special syscall entry to peep into the kernel at runtime. Supported usage:
+
+#### Misbehave 701
+
+This will dump all kernel states as a user readable tree (in simics console). In stable states in the shell, running `misbehave 701` will get the following status:
+
+```
+LevyOS Kernel Status──────────────────────────────────
+├ Physical Memory Tracker
+│ ├ Total User Memory Page: 61182
+│ ├ ZFOD User Memory Page: 0
+│ └ Available User Memory Page: 61097
+├ Process List
+│ ├ [   4 <-    3] (RUN) fTID:4, nThr:1, wCh:0
+│ ├ [   3 <-    2] (RUN) fTID:3, nThr:1, wCh:0
+│ ├ [   2 <-    1] (RUN) fTID:2, nThr:1, wCh:0
+│ ├ [   1 <-   -1] (RUN) fTID:1, nThr:1, wCh:1
+│ └ Total 4 processes
+├ Thread List
+│ ├ [   4 <-    4] (RUN) isOwned:T
+│ ├ [   3 <-    3] (BLK) isOwned:F
+│ ├ [   2 <-    2] (BLK) isOwned:F
+│ ├ [   1 <-    1] (W8T) isOwned:F
+│ └ Total 4 threads
+├ Express Links
+│ ├ Threads #4
+│ ├ Threads #1
+│ └ Total 2 threads
+├ CPU Info
+│ ├ CPU ID: 0
+│ ├ Running TID:    4
+│ ├ Running PID:    4
+│ ├ Interrupt: OFF
+│ └ Current #LocalLock: 0
+├ Kernel Memory Allocator
+│ └ Bytes allocated: 397384
+└─────────────────────────────────────────────────────
+
+```
+
+Physical Memory Tracker helps detect user-space memory leak, while Kernel Memory Allocator helps detect kernel-space memory leak. Process and Thread List help greatly in finding and debugging problems related to thread and process lifetime (fork, vanish, context switch, etc.)
+
+For the latest stable version we cannot find abnormal numbers after running solidity tests and stability tests several times with timer rate = 1000/s.
+
 ## Known Bugs
 - In Readline, backspace can remove characters on the screen that does not belong to this round of readline
 

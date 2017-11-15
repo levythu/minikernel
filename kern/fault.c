@@ -200,7 +200,7 @@ FAULT_ACTION(CatchAllHandler) {
   return true;
 }
 
-
+// Overall entry for any kind of fault
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
     int espOnCurrentStack,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,

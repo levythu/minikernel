@@ -167,7 +167,8 @@ static bool rebuildPD(PageDirectory mypd) {
 
 // Apply delta to all saved %ebp on the stack, which happens in adjustion phase
 // of fork()
-// Since the initial ebp is all set to zero, it stops at zero
+// Since the initial ebp is all set to zero (when switched to kernel mode, or
+// pushing interrupt), it stops at zero
 // [kernelStackStart, kernelStackEnd] is just for verification
 void rebuildKernelStack(uint32_t ebpStartChain, uint32_t delta,
     uint32_t kernelStackStart, uint32_t kernelStackEnd) {

@@ -17,6 +17,29 @@ Fine-grained lock design makes it easy to ensure interrupt and multithread safet
 ### MACRO-Generated Syscall Stub, Interrupt Handler and Fault Handler
 For those who are registered to IDT, we all use macros to generate codes in very short time, to make it quicker to develop and nicer to look. See `fault_handler_internal.h`, `make_syscall_handler.h` for more details.
 
+### On-the-stack WaitList
+
+In any kind of blocking (blocking a thread and wait for some condition), the original thread needs to register itself to some "waitlist" so that the thread that fulfills the condition knows who to wake. Although it's doable through malloc'd linkedlist or fixed length array, in the kernel we put the linkedlist node on the kernel stack of blocked thread. It does not waste extra space: since kernel stack is reserved for usage anyway, and it's safe: as long as the thread is blocked, we know that it will never progress so kernel stack never changes.
+
+### Process & Thread
+
+PCB and TCB are the core data structures in the kernel.  They have complex states and variant transitions. See `process.h` for a very detail description of everything. PCBs and TCBs are organized as linkedlist, while there's an extra XLX (express links) for quick access to runnable threads.
+
+Ephemeral access (weak reference) is introduced to prevent a referred PCB/TCB from disappearing from memory unexpectedly. It's required when you are not sure about its state (as supposed to the cases when you own the thread, or you are the alarm of the thread), and need to release it when you own it, or don't need it. Ephemeral access is just a reference count, which may defer the destroying of PCB/TCB even if it's freed by reaper or waiter.
+
+### Scheduler + Reaper
+
+Scheduler in the kernel is a simple round-robin version. It uses XLX to access all runnable threads, (plus dead threads to reap). Scheduler will run in the following situation:
+
+- Timer fires
+- Deschedule happens (user calls deschedule)
+- Current thread blocks for any reason
+- Yield happens (user calls yield(-1))
+
+Reaper run inside scheduler to reap a dead thread in different kernel stack, so that the kernel stack of reaped thread can be safely freed. Also, reaper is responsible for turning a process into zombie. Although sounds like an entity, reaper is never run as a dedicated threads. Actually, when reaper is working, it's fully preemptive and the interrupt handler can even run another instance of reaper stacked on the original one.
+
+The only situation that reaper will by scheduler is in deschedule mode. (case 2 and 3) In deschedule mode we know that the current thread will not come back for a long time, so we hope this thread to do nothing before being descheduled. Otherwise, the reaper may be hanged halfway and introduce extra wait time for waiter.
+
 ## Known Bugs
 - In Readline, backspace can remove characters on the screen that does not belong to this round of readline
 

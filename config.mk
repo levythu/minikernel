@@ -179,3 +179,5 @@ KERNEL_OBJS += kernel_stack_protection.o
 # won't.
 #
 STUDENTREQPROGS =
+
+CONFIG_DEBUG = user kernel

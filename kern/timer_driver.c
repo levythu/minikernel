@@ -27,7 +27,7 @@ static unsigned int epoch;
 int install_timer_driver(TimerCallback callback) {
   cb = callback;
   epoch = 0;
-  int intervalFor10ms = TIMER_RATE / 1000;
+  int intervalFor10ms = TIMER_RATE / 100;
   int32_t* idtBase = (int32_t*)idt_base();
   idtBase[TIMER_IDT_ENTRY << 1] = ENCRYPT_IDT_TRAPGATE_LSB(
     0, (int32_t)timerIntHandler, 1, SEGSEL_KERNEL_CS, 1);

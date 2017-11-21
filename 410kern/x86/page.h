@@ -7,9 +7,14 @@
 #ifndef _PAGE_H_
 #define _PAGE_H_
 
-
 /* Pages are 4K */
+
+#ifndef PAGE_SHIFT
 #define PAGE_SHIFT  12
+#endif
+
+#ifndef PAGE_SIZE
 #define PAGE_SIZE   (1 << PAGE_SHIFT)
+#endif
 
 #endif /* _PAGE_H_ */

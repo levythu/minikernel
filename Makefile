@@ -51,6 +51,8 @@ PROJROOT = $(PWD)
 410SDIR = spec
 410UDIR = 410user
 BOOTDIR = boot
+410GDIR = 410guests
+STUGDIR = guests
 STUKDIR = kern
 STUUDIR = user
 EXTRADIR ?= 410extra
@@ -159,6 +161,9 @@ CRT0 = $(410UDIR)/crt0.o
 # Boot loader P4
 -include $(BOOTDIR)/boot.mk
 
+# Guest P4
+-include $(410GDIR)/guests.mk
+
 # Include 410kern control, responsible for 410kern libraries, objects, interim
 -include $(410KDIR)/kernel.mk
 # Include 410user control, responsible for 410user libraries and programs
@@ -184,6 +189,9 @@ KCFLAGS = -nostdinc \
 	-fno-aggressive-loop-optimizations \
 	--std=gnu99 \
 	-Wall -gstabs+ -Werror -O0 -m32
+ifneq (,$(findstring kernel,$(CONFIG_DEBUG)))
+	KCFLAGS += -DDEBUG
+endif
 KLDFLAGS = -static -Ttext 100000 --fatal-warnings -melf_i386
 KINCLUDES = -I$(410KDIR) -I$(410KDIR)/inc \
 			-I$(410SDIR) \
@@ -197,8 +205,9 @@ UCFLAGS = -nostdinc \
 	-Wall -gstabs+ -Werror -O0 -m32
 # This prevents the gcc4 "hurr durr I'm aligning main()'s stack"
 UCFLAGS += -mpreferred-stack-boundary=2
-# It is only fair for contracts.h to work (until we give students a way to turn it on/off).
-UCFLAGS += -DDEBUG
+ifneq (,$(findstring user,$(CONFIG_DEBUG)))
+	UCFLAGS += -DDEBUG
+endif
 ULDFLAGS = -static -Ttext 1000000 --fatal-warnings -melf_i386 --entry=_main
 UINCLUDES = -I$(410SDIR) -I$(410UDIR) -I$(410UDIR)/inc \
 						-I$(STUUDIR)/inc \
@@ -237,6 +246,7 @@ STUUPROGS_DEPS = $(STUUPROGS:%=%.dep)
 
 update:
 	./update.sh $(UPDATE_METHOD)
+	$(GUEST_UPDATE)
 
 query_update:
 	./update.sh $(UPDATE_METHOD) query
@@ -364,10 +374,12 @@ clean:
 	rm -f $(STUUPROGS:%=%.o)
 	rm -f $(STUUPROGS_DEPS)
 	rm -f $(BOOT_CLEANS)
+	$(GUEST_CLEAN)
 
 veryclean: clean
 	rm -rf doc $(PRINTOUT) bootfd.img kernel kernel.log $(BUILDDIR)
 	rm -f $(FINALVERYCLEANS)
+	$(GUEST_VERYCLEAN)
 
 %clean:
 	$(error "Unknown cleaning target")

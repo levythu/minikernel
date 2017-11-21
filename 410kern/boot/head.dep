@@ -1,0 +1,8 @@
+410kern/boot/head.o: 410kern/boot/head.S 410kern/simics/simics.h \
+ 410kern/x86/video_defines.h 410kern/x86/seg.h
+
+410kern/simics/simics.h:
+
+410kern/x86/video_defines.h:
+
+410kern/x86/seg.h:

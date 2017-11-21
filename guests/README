@@ -1,0 +1,32 @@
+To build the "hello" guest kernel from source:
+
+0. If you already have a test program called "hello",
+   make sure to remove it from STUDENTTESTS in your
+   config.mk.
+
+1. edit config.mk so your STUDENTGUESTS directive
+   contains "hello" (initially you will not have
+   such a directive, so you will need to add one).
+
+2. cd guests
+
+3. tar xpvfz $HOME/410/Web/p4/proj4.tar.gz
+
+4. mv p4 hello
+
+5. (cd hello && ./update.sh)
+
+5. cd ..
+
+6. (cd 410guests/hello && tar cf - .) | (cd guests/hello && tar xpf -)
+
+7. Upgrade hello/kern/hvstubs.S so it does something.
+
+8. make
+
+The file "temp/hello" should be created, and when you boot
+your kernel and do "ls" you should see "hello".
+
+If you happen to want to build a guest kernel from source
+of your own (such as your P1), the steps are similar (we
+expect you can figure them out).

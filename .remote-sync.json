@@ -4,7 +4,7 @@
   "deleteLocal": false,
   "hostname": "ghc33.ghc.andrew.cmu.edu",
   "port": "22",
-  "target": "osprj/scratch/p3",
+  "target": "osprj/scratch/p4",
   "ignore": [
     ".remote-sync.json",
     ".git/**"

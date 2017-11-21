@@ -14,6 +14,8 @@ void lgdt(void *gdt, unsigned int limit);
 void lidt(void *idt, unsigned int limit);
 /** @brief Read address of IDT */
 void *idt_base(void);
+/** @brief Read address of GDT */
+void *gdt_base(void);
 /** @brief Load a segment selector into the task register. */
 void ltr(unsigned int sel);
 

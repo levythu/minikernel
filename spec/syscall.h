@@ -13,7 +13,9 @@
 #define NORETURN __attribute__((__noreturn__))
 #endif
 
+#ifndef PAGE_SIZE
 #define PAGE_SIZE 0x0001000 /* 4096 */
+#endif
 
 /* Life cycle */
 int fork(void);
@@ -81,6 +83,9 @@ void misbehave(int mode);
 #include <ureg.h> /* may be directly included by kernel guts */
 typedef void (*swexn_handler_t)(void *arg, ureg_t *ureg);
 int swexn(void *esp3, swexn_handler_t eip, void *arg, ureg_t *newureg);
+
+/* Project 4 F2017 */
+int new_console(void); 
 
 /* Previous API */
 /*

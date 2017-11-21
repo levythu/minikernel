@@ -99,7 +99,7 @@ void squidboy(void) {
 	/* N.B. This is NOT to be construed as style guidance!! */
 	/* N.B. This is NOT to be construed as style guidance!! */
 	/* Needs to be kept in sync with init_gdt in boot/head.S */
-	gdt[SEGSEL_KERNEL_TSS_IDX] -= 65536 * (34605360ull - (int)tss);
+	gdt[SEGSEL_KERNEL_TSS_IDX] -= 65536 * (34605392ull - (int)tss);
 	/**/
 
 	lgdt(gdt, sizeof(gdt)-1);

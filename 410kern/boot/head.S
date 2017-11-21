@@ -93,7 +93,9 @@ df_handler_loop:
     jmp df_handler_loop
 
 _start:
-    cli
+    cmpl $0x15410DE0, %eax
+    je _guest_start
+    cli                   /* I sure HOPE this is superfluous */
     leal istack, %esp     /* Load initial stack pointer */
 
     movl $init_tss, %eax
@@ -119,9 +121,18 @@ _start:
     pushl %ebx            /* Pass in the multiboot structure */
     call mb_entry         /* Call the C entry point */
 
+    /* "should not get here" */
     pushl $pbytes
     call blat
 stuck:
+    jmp stuck
+
+_guest_start:
+    leal istack, %esp     /* Load initial stack pointer */
+    pushl %ecx            /* Max legal vaddr */
+    pushl %ebx            /* Number of max legal vframe */
+    call hv_guest_entry
+    addl $8,%esp          /* In case anybody's keeping score */
     jmp stuck
 
 # void blat(uint8_t *bytes)
@@ -184,5 +195,6 @@ pbytes:
     .asciz "K\re\rr\rn\re\rl\r \rc\ra\rn\rn\ro\rt\r \rr\re\rt\ru\rr\rn\r(\r)\r!\r \r"
 
 /* Initial stack */
+.align 4        
 .space 4096
 istack:

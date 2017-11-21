@@ -7,6 +7,18 @@
 /*                                                                   */
 /*********************************************************************/
 
+/** @brief Query whether we are running as a hypervisor guest.
+  *
+  * @return True if we are a guest.
+  */
+int hv_isguest(void);
+
+/** @brief Fetch virtual-address cap set by hypervisor.
+  *
+  * @return Largest virtual address we are allowed to use.
+  */
+void *hv_maxvaddr(void);
+
 /** @brief Return total number of frames (each of PAGE_SIZE bytes)
   *        that our machine is currently configured with.
   *

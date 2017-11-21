@@ -40,6 +40,15 @@ idt_base:
     addl $6, %esp       /* reclaim stack */
     ret                 /* return the higher 32 bits */
 
+.global gdt_base
+gdt_base:
+    subl $6, %esp       /* get 6 bytes for sgdt */
+    sgdt (%esp)         /* sgdt loads into the address */
+    movl 2(%esp), %eax  /* we ignore the lower 16 bits (limit bits) */
+    addl $6, %esp       /* reclaim stack */
+    ret                 /* return the higher 32 bits */
+
+
 .global disable_interrupts
 disable_interrupts:
 	cli

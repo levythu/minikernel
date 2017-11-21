@@ -35,6 +35,7 @@
 #define HALT_INT            0x55
 /* #define LS_INT              0x56 */
 #define TASK_VANISH_INT     0x57 /* previously known as TASK_EXIT_INT */
+#define NEW_CONSOLE_INT     0x58
 #define SET_STATUS_INT      0x59
 #define VANISH_INT          0x60
 /* #define CAS2I_RUNFLAG_INT   0x61 */

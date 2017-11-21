@@ -1,0 +1,24 @@
+To get started with P4:
+
+1. Make a copy of your P3 directory.
+
+2. Move/copy the update.sh from this directory so it replaces the
+   update.sh present in your newly-made P4 directory.
+
+3. Move/copy the guests sub-directory from this directory to create
+   a top-level directory called "guests" in your source tree.
+
+4. In your new P4 directory, run "make update".  You should see a
+   bunch of updates.
+
+5. Now "make" should work.  The resulting system should behave a
+   LOT like your unaltered P3!
+
+6. Read the directions in guests/README to find out how to build
+   guest kernels.
+
+See http://www.cs.cmu.edu/~410/p4/ for what you are supposed to do.
+
+Don't forget that your README.dox for P4 should document your P4,
+not your P3!  Please be sure that the documentation includes
+everything we ask for.

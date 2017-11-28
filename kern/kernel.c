@@ -40,6 +40,8 @@
 #include "timeout.h"
 #include "kernel_stack_protection.h"
 
+#include "hv.h"
+
 extern void initMemManagement();
 
 // Dummy timer event, can visualize whether the interrupt is on.
@@ -136,6 +138,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
 
     registerFaultHandler();
     initSyscall();
+
+    initHypervisor();
 
     EmitInitProcess("init");
 

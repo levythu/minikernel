@@ -34,6 +34,7 @@
 #include "ureg.h"
 #include "cpu.h"
 #include "kmutex.h"
+#include "hv.h"
 
 /*************************Process Control Blok (PCB)****************************
  * PCB control all the states of one process (task in Pebble kernel)
@@ -79,6 +80,8 @@ typedef struct _pcb {
   int parentPID;
   // the first thread for the process. Only serves for fork() return
   int firstTID;
+  // TODO
+  HyperInfo hyperInfo;
   /* END: Read only after creation */
 
   /* BEGIN: Section C */

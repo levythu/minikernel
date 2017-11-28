@@ -28,17 +28,20 @@ switchToRing3:
     iret
 
 
-# switchToRing3X(esp, eflags, eip, edi, esi, ebp, ebx, edx, ecx, eax)
+# switchToRing3X(esp, eflags, eip, edi, esi, ebp, ebx, edx, ecx, eax, cs, ds)
 switchToRing3X:
     mov %esp, %ecx
 
-    mov $SEGSEL_USER_DS, %eax
+    mov 48(%ecx), %eax
     mov %ax, %ds
     mov %ax, %es
-    pushl $SEGSEL_USER_DS  # ss
+    mov %ax, %fs
+    mov %ax, %gs
+    pushl %eax  # ss
     pushl 4(%ecx) # esp
     pushl 8(%ecx) # eflags
-    pushl $SEGSEL_USER_CS  # cs
+    mov 44(%ecx), %eax
+    pushl %eax  # cs
     pushl 12(%ecx) # eip
 
     mov 16(%ecx), %edi

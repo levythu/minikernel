@@ -22,6 +22,7 @@
 #include "dbgconf.h"
 #include "vm.h"
 #include "pm.h"
+#include "hv.h"
 
 // Only for debug
 void printArgPackage(ArgPackage* pkg) {
@@ -162,7 +163,7 @@ static void setupInitialStack(ArgPackage* argpkg,
 
 // see loader.h
 int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
-    ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp) {
+    ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp, HyperInfo* info) {
   #ifdef VERBOSE_PRINT
     lprintf("Loading %s", filename);
   #endif
@@ -174,6 +175,16 @@ int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
   if (elf_load_helper(&elfMetadata, filename) != ELF_SUCCESS) {
     lprintf("%s fail to parse elf", filename);
     return -1;
+  }
+
+  if (fillHyperInfo(&elfMetadata, info)) {
+    // Allocate the whole virtual memory
+    if (cloneMemoryWithPTERange(pd, GUEST_PHYSICAL_START,
+                                GUEST_PHYSICAL_START + HYPERVISOR_MEMORY,
+                                0,
+                                true) < 0) {
+      return -1;
+    }
   }
 
   #ifdef VERBOSE_PRINT
@@ -255,31 +266,33 @@ int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
     #endif
   }
 
-  // Init stack, give it two page
-  // the bottom one will hold ArgPackage
-  // Since it gets written immediately, we don't use ZFOD here
-  if (cloneMemoryWithPTERange(pd, 0 - (uint32_t)(PAGE_SIZE * 2),
-                              0,    // 0xffffffff + 1
-                              0,
-                              true) < 0) {
-    return -1;
+  if (!info->isHyper) {
+    // Init stack, give it two page
+    // the bottom one will hold ArgPackage
+    // Since it gets written immediately, we don't use ZFOD here
+    if (cloneMemoryWithPTERange(pd, 0 - (uint32_t)(PAGE_SIZE * 2),
+                                0,    // 0xffffffff + 1
+                                0,
+                                true) < 0) {
+      return -1;
+    }
+    #ifdef VERBOSE_PRINT
+      lprintf("Allocated stack");
+    #endif
+
+    // Makeup mem meta
+    memMeta->stackHigh = 0xffffffff;
+    memMeta->stackLow = 0 - (uint32_t)(PAGE_SIZE * 2);
+    // No fixed heap place in pebble syscall, so leave it.
+    memMeta->heapLow = 0;
+    memMeta->heapSize = 0;
+    setupInitialStack(argpkg, memMeta, esp);
+    *eip = elfMetadata.e_entry;
+    #ifdef VERBOSE_PRINT
+      lprintf("Inited stack");
+    #endif
   }
-  #ifdef VERBOSE_PRINT
-    lprintf("Allocated stack");
-  #endif
-
-  // Makeup mem meta
-  memMeta->stackHigh = 0xffffffff;
-  memMeta->stackLow = 0 - (uint32_t)(PAGE_SIZE * 2);
-  // No fixed heap place in pebble syscall, so leave it.
-  memMeta->heapLow = 0;
-  memMeta->heapSize = 0;
-  setupInitialStack(argpkg, memMeta, esp);
-  *eip = elfMetadata.e_entry;
-  #ifdef VERBOSE_PRINT
-    lprintf("Inited stack");
-  #endif
-
+  
   return 0;
 }
 

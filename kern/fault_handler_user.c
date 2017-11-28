@@ -101,7 +101,9 @@ bool makeRegisterHandlerStackAndGo(tcb* thread, ureg_t* uregs) {
       (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   uint32_t eip = thread->faultHandler;
   deregisterUserFaultHandler(thread);
-  switchToRing3X(esp, neweflags, eip, 0, 0, 0, 0, 0, 0, 0);
+  switchToRing3X(esp, neweflags, eip, 0, 0, 0, 0, 0, 0, 0,
+                 thread->process->hyperInfo.cs,
+                 thread->process->hyperInfo.ds);
   // Should never reach
   return false;
 }

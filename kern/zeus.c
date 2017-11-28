@@ -35,6 +35,7 @@
 #include "zeus.h"
 #include "reaper.h"
 #include "kernel_stack_protection.h"
+#include "hv.h"
 
 // Will own it. Will not increase proc's numThread
 tcb* SpawnThread(pcb* proc) {
@@ -345,7 +346,8 @@ int forkProcess(tcb* currentThread) {
 int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
     ArgPackage* argpkg, uint32_t* eip, uint32_t* esp) {
   KERNEL_STACK_CHECK;
-  if (initELFMemory(fileName, proc->pd, argpkg, &proc->memMeta, eip, esp) < 0) {
+  if (initELFMemory(fileName, proc->pd, argpkg,
+                    &proc->memMeta, eip, esp, &proc->hyperInfo) < 0) {
     return -1;
   }
   return 0;
@@ -379,7 +381,12 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
   #endif
 
   // Will never return!
-  switchToRing3(esp, neweflags, eip);
+  if (currentThread->process->hyperInfo.isHyper) {
+    bootstrapHypervisorAndSwitchToRing3(
+        &currentThread->process->hyperInfo, eip, neweflags);
+  } else {
+    switchToRing3(esp, neweflags, eip);
+  }
   return 0;
 }
 

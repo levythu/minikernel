@@ -284,7 +284,9 @@ int swexn_Internal(SyscallParams params) {
     // jump to target ureg
     switchToRing3X(userUreg.esp, userUreg.eflags, userUreg.eip, userUreg.edi,
                    userUreg.esi, userUreg.ebp,    userUreg.ebx, userUreg.edx,
-                   userUreg.ecx, userUreg.eax);
+                   userUreg.ecx, userUreg.eax,
+                   currentThread->process->hyperInfo.cs,
+                   currentThread->process->hyperInfo.ds);
   }
   return 0;
 }

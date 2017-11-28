@@ -15,6 +15,7 @@
 
 #include "bool.h"
 #include "vm.h"
+#include "hv.h"
 
 // Below are the definition of argument package, which is a package to hold
 // the initial argv from exec.
@@ -78,6 +79,6 @@ int getbytes( const char *filename, int offset, int size, char *buf );
 //       for _main set)
 // Return: 0 if success, -1 otherwise
 int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
-     ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp);
+     ProcessMemoryMeta* memMeta, uint32_t* eip, uint32_t *esp, HyperInfo* info);
 
 #endif /* _LOADER_H */

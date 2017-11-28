@@ -17,13 +17,6 @@
 // pcb/tcb. When returned, the current CPU will own first thread
 pcb* SpawnProcess(tcb** firstThread);
 
-// Load an ELF to given process and thread (don't have to be running thread)
-// Given the arg package.
-// Will return the start eip and esp for mode switch.
-// On failure returns -1
-int LoadELFToProcess(pcb* proc, tcb* firstThread, const char* fileName,
-    ArgPackage* argpkg, uint32_t* eip, uint32_t* esp);
-
 // The internal implementation of fork. Will result in two threads (returns)
 // Parent process will get the first thread TID of child process
 // Child process will get 0

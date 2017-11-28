@@ -24,7 +24,7 @@
 
 #define SEG_TYPE_TSS          0x09
 #define SEG_TYPE_DATA         0x03
-#define SEG_TYPE_CODE         0x11
+#define SEG_TYPE_CODE         0x0b
 
 #define SEGSEL_TSS         0x08      /**< Task Segment Selector */
 #define SEGSEL_KERNEL_CS   0x10      /**< Kernel Code Segment */

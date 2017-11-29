@@ -13,6 +13,12 @@ void hyperCallHandler();
 int hpc_magic(int userEsp, tcb* thr);
 int hpc_exit(int userEsp, tcb* thr);
 
+int hpc_print(int userEsp, tcb* thr);
+int hpc_cons_set_term_color(int userEsp, tcb* thr);
+int hpc_cons_set_cursor_pos(int userEsp, tcb* thr);
+int hpc_cons_get_cursor_pos(int userEsp, tcb* thr);
+int hpc_print_at(int userEsp, tcb* thr);
+
 #define HPC_ON(opNumber, func) \
   if (eax == opNumber) { \
     return func(userEsp, currentThread); \

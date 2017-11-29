@@ -58,6 +58,7 @@ void _tickback(unsigned int tk) {
       yieldToNext();
     }
   #endif
+  hv_CallMeOnTick();
 }
 
 // The init function that runs inside first kernel stack.

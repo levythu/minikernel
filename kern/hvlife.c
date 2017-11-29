@@ -12,6 +12,10 @@
 #include "mode_switch.h"
 #include "hvcall.h"
 #include "dbgconf.h"
+#include "hvinterrupt.h"
+#include "hvinterrupt_timer.h"
+
+MAKE_VAR_QUEUE_UTILITY(hvInt);
 
 bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   if (elfMetadata->e_txtstart < USER_MEM_START) {
@@ -47,6 +51,18 @@ void bootstrapHypervisorAndSwitchToRing3(
 
   // set all the other fields for hyperInfo before activating it
   info->interrupt = false;
+  initCrossCPULock(&info->latch);
+  varQueueInit(&info->delayedInt, MAX_WAITING_INT);
+  varQueueInit(&info->immediateInt, MAX_WAITING_INT);
+  // TODO: check sucessful of smalloc
+  info->idt = (IDTEntry*)smalloc(sizeof(IDTEntry) *
+                                 (MAX_SUPPORTED_VIRTUAL_INT + 1));
+  for (int i = 0; i <= MAX_SUPPORTED_VIRTUAL_INT; i++) {
+    info->idt[i].present = false;
+  }
+
+  // register myself to timer multiplexer
+  addToWaiter(&timeMultiplexter, info);
 
   #ifdef HYPERVISOR_VERBOSE_PRINT
     lprintf("Entering into virtual machine at 0x%08lx", entryPoint);

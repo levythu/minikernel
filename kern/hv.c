@@ -8,8 +8,10 @@
 #include "common_kern.h"
 #include "bool.h"
 #include "hv.h"
+#include "hvinterrupt_timer.h"
 
 void initHypervisor() {
   setupVirtualSegmentation();
   initHyperCall();
+  initMultiplexer(&timeMultiplexter);
 }

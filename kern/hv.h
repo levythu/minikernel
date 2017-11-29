@@ -12,4 +12,6 @@
 
 void initHypervisor();
 
+void hv_CallMeOnTick();
+
 #endif

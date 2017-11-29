@@ -6,6 +6,7 @@
 #include <hvcall_int.h>
 #include <hvcall.h>
 #include <x86/asm.h>
+#include <x86/timer_defines.h>
 
 #include "int_handler.h"
 #include "common_kern.h"
@@ -16,18 +17,14 @@
 #include "hvlife.h"
 #include "source_untrusted.h"
 #include "hv_hpcall_internal.h"
+#include "hvinterrupt.h"
+#include "hvinterrupt_timer.h"
 #include "zeus.h"
 
-int hpc_magic(int userEsp, tcb* thr) {
-  return HV_MAGIC;
-}
+intMultiplexer timeMultiplexter;
 
-int hpc_exit(int userEsp, tcb* thr) {
-  DEFINE_PARAM(int, status, 0);
-
-  //TODO restrory hyperinfo
-  thr->process->retStatus = status;
-  // one way trp
-  terminateThread(thr);
-  return -1;
+void hv_CallMeOnTick() {
+  hvInt tint;
+  tint.intNum = TIMER_IDT_ENTRY;
+  broadcastIntTo(&timeMultiplexter, tint);
 }

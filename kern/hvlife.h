@@ -11,6 +11,9 @@
 
 #include "bool.h"
 #include "hvseg.h"
+#include "hvinterrupt.h"
+#include "cpu.h"
+#include "queue.h"
 
 typedef struct HyperInfo {
   bool isHyper;
@@ -21,6 +24,14 @@ typedef struct HyperInfo {
 
   // After it, will not be set by loader
   bool interrupt;
+
+  IDTEntry* idt;
+  // The following two are protected by GlobalLock, and also they are the only
+  // fields accessible by something outside hypersivor
+  varQueue delayedInt;
+  varQueue immediateInt;
+  CrossCPULock latch;
+
 } HyperInfo;
 
 // Return true if given elfMetadata is a virtual machine.

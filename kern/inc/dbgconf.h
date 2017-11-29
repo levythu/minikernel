@@ -9,6 +9,8 @@
 #ifndef DBGCONF_H
 #define DBGCONF_H
 
+#define HYPERVISOR_VERBOSE_PRINT
+
 /* When defined, print more information to simics console. */
 #define VERBOSE_PRINT
 

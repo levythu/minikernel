@@ -91,6 +91,7 @@ void registerFaultHandler() {
 FAULT_ACTION(printError) {
   lprintf("Exception, IDT-number=%d. Core Dump:============================",
       faultNumber);
+  lprintf("ErrorCode=%d", errCode);
   lprintf("%%cs=%d\t%%ss=%d\t%%ds=%d\t%%es=%d", cs, ss, ds, es);
   lprintf("%%eax=0x%08X\t%%ebx=0x%08X\t%%ecx=0x%08X\t%%edx=0x%08X",
       eax, ebx, ecx, edx);

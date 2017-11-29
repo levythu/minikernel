@@ -182,3 +182,5 @@ KERNEL_OBJS += hv.o hvseg.o hvlife.o
 STUDENTREQPROGS =
 
 CONFIG_DEBUG = user kernel
+
+410GUESTBINS = hello

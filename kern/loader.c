@@ -185,6 +185,9 @@ int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
                                 true) < 0) {
       return -1;
     }
+    #ifdef VERBOSE_PRINT
+      lprintf("Allocated bootstrapping memory for vm");
+    #endif
   }
 
   #ifdef VERBOSE_PRINT
@@ -287,12 +290,12 @@ int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
     memMeta->heapLow = 0;
     memMeta->heapSize = 0;
     setupInitialStack(argpkg, memMeta, esp);
-    *eip = elfMetadata.e_entry;
     #ifdef VERBOSE_PRINT
       lprintf("Inited stack");
     #endif
   }
-  
+  *eip = elfMetadata.e_entry;
+
   return 0;
 }
 

@@ -33,9 +33,6 @@ switchToRing3X:
     mov %esp, %ecx
 
     mov 48(%ecx), %eax
-    mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %fs
     mov %ax, %gs
     pushl %eax  # ss
     pushl 4(%ecx) # esp
@@ -51,5 +48,12 @@ switchToRing3X:
     mov 32(%ecx), %edx
     mov 40(%ecx), %eax
     mov 36(%ecx), %ecx
+
+    pushl %ecx
+    mov %gs, %cx
+    mov %cx, %ds
+    mov %cx, %es
+    mov %cx, %fs
+    popl %ecx
 
     iret

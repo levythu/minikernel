@@ -11,6 +11,7 @@
 #include "hv.h"
 #include "mode_switch.h"
 #include "hvcall.h"
+#include "dbgconf.h"
 
 bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   if (elfMetadata->e_txtstart < USER_MEM_START) {
@@ -43,6 +44,9 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
 void bootstrapHypervisorAndSwitchToRing3(
     HyperInfo* info, uint32_t entryPoint, uint32_t eflags) {
   assert(info->isHyper);
+  #ifdef HYPERVISOR_VERBOSE_PRINT
+    lprintf("Entering into virtual machine at 0x%08lx", entryPoint);
+  #endif
   switchToRing3X(0, eflags, entryPoint - info->baseAddr, 0,
                  0, 0, HYPERVISOR_MEMORY / PAGE_SIZE, 0,
                  GUEST_PHYSICAL_MAXVADDR, GUEST_LAUNCH_EAX,

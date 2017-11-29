@@ -12,7 +12,7 @@
 #define HYPERVISOR_VERBOSE_PRINT
 
 /* When defined, print more information to simics console. */
-#define VERBOSE_PRINT
+// #define VERBOSE_PRINT
 
 /* When defined, print all decisions and reasons of scheduler */
 // #define SCHEDULER_DECISION_PRINT

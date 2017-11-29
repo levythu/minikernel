@@ -183,4 +183,4 @@ STUDENTREQPROGS =
 
 CONFIG_DEBUG = user kernel
 
-410GUESTBINS = hello
+410GUESTBINS = hello dumper

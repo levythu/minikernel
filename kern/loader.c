@@ -178,6 +178,7 @@ int initELFMemory(const char *filename, PageDirectory pd, ArgPackage* argpkg,
   }
 
   if (fillHyperInfo(&elfMetadata, info)) {
+    lprintf("bootstrapping virtual machine...");
     // Allocate the whole virtual memory
     if (cloneMemoryWithPTERange(pd, GUEST_PHYSICAL_START,
                                 GUEST_PHYSICAL_START + HYPERVISOR_MEMORY,

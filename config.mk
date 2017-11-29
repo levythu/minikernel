@@ -147,6 +147,7 @@ KERNEL_OBJS += mode_switch_c.o fault_handler_user.o syscall_thread.o
 KERNEL_OBJS += timeout.o syscall_debug.o
 KERNEL_OBJS += kernel_stack_protection.o
 KERNEL_OBJS += hv.o hvseg.o hvlife.o
+KERNEL_OBJS += hv_hpcall_s.o hv_hpcall.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your
@@ -183,4 +184,4 @@ STUDENTREQPROGS =
 
 CONFIG_DEBUG = user kernel
 
-410GUESTBINS = hello dumper
+410GUESTBINS = hello dumper magic

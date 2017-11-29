@@ -11,4 +11,5 @@
 
 void initHypervisor() {
   setupVirtualSegmentation();
+  initHyperCall();
 }

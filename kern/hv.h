@@ -8,6 +8,7 @@
 
 #include "hvseg.h"
 #include "hvlife.h"
+#include "hv_hpcall.h"
 
 void initHypervisor();
 

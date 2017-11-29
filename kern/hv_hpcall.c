@@ -26,9 +26,6 @@ void initHyperCall() {
     3, (int32_t)(hyperCallHandler), 1, SEGSEL_KERNEL_CS, 1);
 }
 
-static int hpc_magic(int userEsp, tcb* thr);
-static int hpc_exit(int userEsp, tcb* thr);
-
 // The dispatcher
 int hyperCallHandler_Internal(int userEsp, int eax) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
@@ -40,20 +37,5 @@ int hyperCallHandler_Internal(int userEsp, int eax) {
   HPC_ON(HV_MAGIC_OP, hpc_magic);
   HPC_ON(HV_EXIT_OP, hpc_exit);
 
-  return -1;
-}
-
-/******************************************************************************/
-
-static int hpc_magic(int userEsp, tcb* thr) {
-  return HV_MAGIC;
-}
-
-static int hpc_exit(int userEsp, tcb* thr) {
-  DEFINE_PARAM(int, status, 0);
-
-  thr->process->retStatus = status;
-  // one way trp
-  terminateThread(thr);
   return -1;
 }

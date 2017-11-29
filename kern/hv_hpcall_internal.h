@@ -6,7 +6,12 @@
 #ifndef HV_HPCALL_INTERNAL_H
 #define HV_HPCALL_INTERNAL_H
 
+#include "process.h"
+
 void hyperCallHandler();
+
+int hpc_magic(int userEsp, tcb* thr);
+int hpc_exit(int userEsp, tcb* thr);
 
 #define HPC_ON(opNumber, func) \
   if (eax == opNumber) { \

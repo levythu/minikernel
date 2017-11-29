@@ -10,8 +10,13 @@
 #include "int_handler.h"
 #include "common_kern.h"
 #include "bool.h"
+#include "process.h"
+#include "cpu.h"
 #include "hv.h"
+#include "hvlife.h"
+#include "source_untrusted.h"
 #include "hv_hpcall_internal.h"
+#include "zeus.h"
 
 void initHyperCall() {
   int32_t* idtBase = (int32_t*)idt_base();
@@ -21,16 +26,34 @@ void initHyperCall() {
     3, (int32_t)(hyperCallHandler), 1, SEGSEL_KERNEL_CS, 1);
 }
 
-static int hpc_magic(int userEsp);
+static int hpc_magic(int userEsp, tcb* thr);
+static int hpc_exit(int userEsp, tcb* thr);
 
 // The dispatcher
 int hyperCallHandler_Internal(int userEsp, int eax) {
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  if (!currentThread->process->hyperInfo.isHyper) {
+    // Not a hypervisor. Cannot issue hyper call
+    return -1;
+  }
+
   HPC_ON(HV_MAGIC_OP, hpc_magic);
+  HPC_ON(HV_EXIT_OP, hpc_exit);
+
   return -1;
 }
 
 /******************************************************************************/
 
-static int hpc_magic(int userEsp) {
+static int hpc_magic(int userEsp, tcb* thr) {
   return HV_MAGIC;
+}
+
+static int hpc_exit(int userEsp, tcb* thr) {
+  DEFINE_PARAM(int, status, 0);
+
+  thr->process->retStatus = status;
+  // one way trp
+  terminateThread(thr);
+  return -1;
 }

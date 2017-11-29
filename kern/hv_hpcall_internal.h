@@ -19,6 +19,9 @@ int hpc_cons_set_cursor_pos(int userEsp, tcb* thr);
 int hpc_cons_get_cursor_pos(int userEsp, tcb* thr);
 int hpc_print_at(int userEsp, tcb* thr);
 
+int hpc_disable_interrupts(int userEsp, tcb* thr);
+int hpc_enable_interrupts(int userEsp, tcb* thr);
+
 #define HPC_ON(opNumber, func) \
   if (eax == opNumber) { \
     return func(userEsp, currentThread); \

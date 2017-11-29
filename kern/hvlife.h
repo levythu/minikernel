@@ -18,6 +18,9 @@ typedef struct HyperInfo {
   int ds;
   // Replicate cs/ds's base addr
   uint32_t baseAddr;
+
+  // After it, will not be set by loader
+  bool interrupt;
 } HyperInfo;
 
 // Return true if given elfMetadata is a virtual machine.

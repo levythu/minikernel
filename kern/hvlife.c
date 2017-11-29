@@ -44,6 +44,10 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
 void bootstrapHypervisorAndSwitchToRing3(
     HyperInfo* info, uint32_t entryPoint, uint32_t eflags) {
   assert(info->isHyper);
+
+  // set all the other fields for hyperInfo before activating it
+  info->interrupt = false;
+
   #ifdef HYPERVISOR_VERBOSE_PRINT
     lprintf("Entering into virtual machine at 0x%08lx", entryPoint);
   #endif

@@ -43,5 +43,8 @@ int hyperCallHandler_Internal(int userEsp, int eax) {
   HPC_ON(HV_GET_CURSOR_OP, hpc_cons_get_cursor_pos);
   HPC_ON(HV_PRINT_AT_OP, hpc_print_at);
 
+  HPC_ON(HV_DISABLE_OP, hpc_disable_interrupts);
+  HPC_ON(HV_ENABLE_OP, hpc_enable_interrupts);
+
   return -1;
 }

@@ -59,8 +59,8 @@ void applyInt(HyperInfo* info, hvInt hvi,
   stack[-1] = oldEFLAGS;
   stack[-2] = GUEST_INTERRUPT_KMODE;
   stack[-3] = oldEIP;
-  stack[-4] = 0;
-  stack[-5] = 0;
+  stack[-4] = hvi.spCode;
+  stack[-5] = hvi.cr2;
   uint32_t newESP = (uint32_t)(&stack[-5]) - info->baseAddr;
 
   // 2. Prepare to swtich

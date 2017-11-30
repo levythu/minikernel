@@ -23,6 +23,7 @@
 #include <x86/asm.h>
 #include <x86/cr.h>
 #include <x86/idt.h>
+#include <x86/seg.h>
 
 #include "common_kern.h"
 #include "pm.h"
@@ -36,6 +37,8 @@
 #include "int_handler.h"
 #include "zeus.h"
 #include "console.h"
+#include "fault.h"
+#include "hv.h"
 
 DECLARE_FAULT_ENTRANCE(IDT_DE);  // SWEXN_CAUSE_DIVIDE
 DECLARE_FAULT_ENTRANCE(IDT_DB);  // SWEXN_CAUSE_DEBUG
@@ -53,6 +56,11 @@ DECLARE_FAULT_ENTRANCE(IDT_PF);  // SWEXN_CAUSE_PAGEFAULT
 DECLARE_FAULT_ENTRANCE(IDT_MF);  // SWEXN_CAUSE_FPUFAULT
 DECLARE_FAULT_ENTRANCE(IDT_AC);  // SWEXN_CAUSE_ALIGNFAULT
 DECLARE_FAULT_ENTRANCE(IDT_XF);  // SWEXN_CAUSE_SIMDFAULT
+// Some not-interested fault
+DECLARE_FAULT_ENTRANCE(IDT_DF);
+DECLARE_FAULT_ENTRANCE(IDT_TS);
+DECLARE_FAULT_ENTRANCE(IDT_MC);
+
 
 void registerFaultHandler() {
   MAKE_FAULT_IDT(IDT_DE);
@@ -71,12 +79,11 @@ void registerFaultHandler() {
   MAKE_FAULT_IDT(IDT_MF);
   MAKE_FAULT_IDT(IDT_AC);
   MAKE_FAULT_IDT(IDT_XF);
-}
 
-#define FAULT_ACTION(_name) \
-  bool _name(int es, int ds, int edi, int esi, int ebp, \
-      int ebx, int edx, int ecx, int eax, int faultNumber, int errCode, \
-      int eip, int cs, int eflags, int esp, int ss, int cr2)
+  MAKE_FAULT_IDT(IDT_DF);
+  MAKE_FAULT_IDT(IDT_TS);
+  MAKE_FAULT_IDT(IDT_MC);
+}
 
 #define ON(_cond, _name) \
   if (_cond) {  \
@@ -201,15 +208,36 @@ FAULT_ACTION(CatchAllHandler) {
   return true;
 }
 
+// This handler is to ignore anything
+FAULT_ACTION(IGNORE) {
+  return true;
+}
+
+FAULT_ACTION(HyperFaultHandler) {
+  printError(es, ds, edi, esi, ebp,
+      ebx, edx, ecx, eax, faultNumber, errCode,
+      eip, cs, eflags, esp, ss, cr2);
+  return false;
+}
+
 // Overall entry for any kind of fault
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
     int espOnCurrentStack,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
     int eip, int cs, int eflags, int esp, int ss) {
   // TODO change condition of juding error pos
-  int trueESP = eip >= USER_MEM_START ? esp : espOnCurrentStack;
-  int trueSS = eip >= USER_MEM_START ? ss : get_ss();
+  int trueESP = cs != SEGSEL_KERNEL_CS ? esp : espOnCurrentStack;
+  int trueSS = cs != SEGSEL_KERNEL_CS ? ss : get_ss();
   int cr2 = get_cr2();
+
+  // when it's something out of guest, give it
+  // HyperFaultHandler should never return true!!
+  ON(cs == SEGSEL_GUEST_CS, HyperFaultHandler);
+  // assert(cs != SEGSEL_GUEST_CS)
+
+  // ignore those fault number we don't care
+  ON(faultNumber == IDT_DF || faultNumber == IDT_TS || faultNumber == IDT_MC,
+     IGNORE);
 
   // Area for OS tricks that's hidden from anyone else
   ON(faultNumber == IDT_PF, ZFODUpgrader);
@@ -218,8 +246,8 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
   ON(true, printError);
 
   // Huh, user code! What are you doing!
-  ON(eip >= USER_MEM_START, UserModeErrorSWE);
-  ON(eip >= USER_MEM_START, UserModeErrorCrash);
+  ON(cs != SEGSEL_KERNEL_CS, UserModeErrorSWE);
+  ON(cs != SEGSEL_KERNEL_CS, UserModeErrorCrash);
 
   // Hmmmmmm it's me that screwed up. Let's panic and let Levy debug it
   ON(true, CatchAllHandler);

@@ -25,10 +25,6 @@ int hpc_magic(int userEsp, tcb* thr) {
 int hpc_exit(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, status, 0);
 
-  destroyHyperInfo(&thr->process->hyperInfo);
-
-  thr->process->retStatus = status;
-  // one way trp
-  terminateThread(thr);
+  exitHyperWithStatus(&thr->process->hyperInfo, thr, status);
   return -1;
 }

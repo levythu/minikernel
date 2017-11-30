@@ -15,6 +15,8 @@
 #include "hvinterrupt.h"
 #include "hvinterrupt_pushevent.h"
 #include "keyboard_event.h"
+#include "process.h"
+#include "zeus.h"
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
@@ -63,6 +65,16 @@ void destroyHyperInfo(HyperInfo* info) {
 
   varQueueDestroy(&info->delayedInt);
   sfree(info->idt, sizeof(IDTEntry) * (MAX_SUPPORTED_VIRTUAL_INT + 1));
+}
+
+void exitHyperWithStatus(HyperInfo* info, void* _thr, int statusCode) {
+  tcb* thr = (tcb*)_thr;
+  assert((&thr->process->hyperInfo) == info);
+  destroyHyperInfo(info);
+
+  thr->process->retStatus = statusCode;
+  // one way trp
+  terminateThread(thr);
 }
 
 void bootstrapHypervisorAndSwitchToRing3(

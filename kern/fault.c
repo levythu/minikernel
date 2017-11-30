@@ -213,13 +213,6 @@ FAULT_ACTION(IGNORE) {
   return true;
 }
 
-FAULT_ACTION(HyperFaultHandler) {
-  printError(es, ds, edi, esi, ebp,
-      ebx, edx, ecx, eax, faultNumber, errCode,
-      eip, cs, eflags, esp, ss, cr2);
-  return false;
-}
-
 // Overall entry for any kind of fault
 void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
     int espOnCurrentStack,
@@ -232,7 +225,7 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
   // when it's something out of guest, give it
   // HyperFaultHandler should never return true!!
   ON(cs == SEGSEL_GUEST_CS, HyperFaultHandler);
-  // assert(cs != SEGSEL_GUEST_CS)
+  assert(cs != SEGSEL_GUEST_CS);
 
   // ignore those fault number we don't care
   ON(faultNumber == IDT_DF || faultNumber == IDT_TS || faultNumber == IDT_MC,

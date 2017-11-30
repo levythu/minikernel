@@ -40,7 +40,7 @@ bool appendIntTo(void* _info, hvInt hvi) {
 }
 
 // One-way function.
-void applyInt(HyperInfo* info, hvInt hvi,
+bool applyInt(HyperInfo* info, hvInt hvi,
     uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
 
   assert(hvi.intNum >= 0 && hvi.intNum <= MAX_SUPPORTED_VIRTUAL_INT);
@@ -48,7 +48,7 @@ void applyInt(HyperInfo* info, hvInt hvi,
   IDTEntry localIDT = info->idt[hvi.intNum];
   GlobalUnlockR(&info->latch);
   if (!localIDT.present) {
-    return;
+    return false;
   }
 
   // TODO: address validation
@@ -66,6 +66,7 @@ void applyInt(HyperInfo* info, hvInt hvi,
   // 2. Prepare to swtich
   switchToRing3X(newESP, oldEFLAGS, localIDT.eip, 0, 0, 0, 0, 0, 0, 0,
                  info->cs, info->ds);
+  return true;
 }
 
 // Called on timer interrupt return when it's from kernel to guest

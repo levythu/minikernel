@@ -56,7 +56,7 @@ void initHyperInfo(HyperInfo* info);
 // Otherwise, elfMetadata is unchanged, with normal HyperInfo
 bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info);
 
-void destroyHyperInfo(HyperInfo* info);
+void exitHyperWithStatus(HyperInfo* info, void* thr, int statusCode);
 
 void bootstrapHypervisorAndSwitchToRing3(
     HyperInfo* info, uint32_t entryPoint, uint32_t eflags);

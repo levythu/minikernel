@@ -39,6 +39,7 @@
 #include "fault.h"
 #include "timeout.h"
 #include "kernel_stack_protection.h"
+#include "virtual_console.h"
 
 #include "hv.h"
 
@@ -125,7 +126,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     initCPU();
     initMemManagement();
 
-    initKeyboardEvent();
+    initVirtualConsole();
+
     initTimeout();
     if (handler_install(_tickback, onKeyboardSync, onKeyboardAsync) != 0) {
       panic("Fail to install all drivers");

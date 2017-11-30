@@ -16,24 +16,24 @@
 
 #include "hv.h"
 
-intMultiplexer* getKeyboardMultiplexer();
+intMultiplexer* getKeyboardMultiplexer(void* _vc);
 
-// let kernel call it on startup!
-// It must happen before register keyboard driver
-void initKeyboardEvent();
+void useVirtualKeyboard(void* _vc);
+
+void initKeyboardEvent(void* _vc);
 
 // Ocuppy the keyboard, avoid other threads from listening to it (may block due
 // to others listening)
-void occupyKeyboard();
+void occupyKeyboard(void* _vc);
 
 // release the keyboard and let other listeners in
-void releaseKeyboard();
+void releaseKeyboard(void* _vc);
 
 // Get a char or a string from keyboard, otherwise block the current thread.
 // No validation is made on the target space, the caller should safeguard it.
 // NOTE the two functions can only be called when occupying the keyboard
-int getcharBlocking();
-int getStringBlocking(char* space, int maxlen);
+int getcharBlocking(void* _vc);
+int getStringBlocking(void* _vc, char* space, int maxlen);
 
 // Exposed two functions, and kernel.c should use them to register to kayboard
 // driver

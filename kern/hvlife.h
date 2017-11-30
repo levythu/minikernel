@@ -25,11 +25,10 @@ typedef struct HyperInfo {
   // After it, will not be set by loader
   bool interrupt;
 
-  IDTEntry* idt;
   // The following two are protected by GlobalLock, and also they are the only
   // fields accessible by something outside hypersivor
+  IDTEntry* idt;
   varQueue delayedInt;
-  varQueue immediateInt;
   CrossCPULock latch;
 
 } HyperInfo;

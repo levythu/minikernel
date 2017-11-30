@@ -53,7 +53,6 @@ void bootstrapHypervisorAndSwitchToRing3(
   info->interrupt = false;
   initCrossCPULock(&info->latch);
   varQueueInit(&info->delayedInt, MAX_WAITING_INT);
-  varQueueInit(&info->immediateInt, MAX_WAITING_INT);
   // TODO: check sucessful of smalloc
   info->idt = (IDTEntry*)smalloc(sizeof(IDTEntry) *
                                  (MAX_SUPPORTED_VIRTUAL_INT + 1));

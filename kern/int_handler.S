@@ -12,6 +12,7 @@ timerIntHandler:
     mov %ax, %es
     mov $0, %ebp
     call timerIntHandlerInternal
+    call hypervisorTimerHook
     pop %es
     pop %ds
     popa

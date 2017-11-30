@@ -31,20 +31,90 @@ int hpc_enable_interrupts(int userEsp, tcb* thr) {
   return 0;
 }
 
+int hpc_setidt(int userEsp, tcb* thr) {
+  DEFINE_PARAM(int, irqno, 0);
+  DEFINE_PARAM(uint32_t, eip, 1);
+  DEFINE_PARAM(int, privileged, 2);
+
+  if (irqno < 0 || irqno > MAX_SUPPORTED_VIRTUAL_INT) {
+    // TODO crash the guest
+    return -1;
+  }
+
+  HyperInfo* info = &thr->process->hyperInfo;
+  GlobalLockR(&info->latch);
+  info->idt[irqno].present = true;
+  info->idt[irqno].eip = eip;
+  info->idt[irqno].privileged = privileged;
+  GlobalUnlockR(&info->latch);
+  return 0;
+}
+
 // Will return false if there's no corresponding IDT entry
 bool appendIntTo(void* _info, hvInt hvi) {
+  assert(hvi.intNum >= 0 && hvi.intNum <= MAX_SUPPORTED_VIRTUAL_INT);
   HyperInfo* info = (HyperInfo*)_info;
-  if (!info->idt[hvi.intNum].present) {
-    lprintf("Non-presented");
+  GlobalLockR(&info->latch);
+  IDTEntry localIDT = info->idt[hvi.intNum];
+  GlobalUnlockR(&info->latch);
+  if (!localIDT.present) {
     return false;
   }
   bool succ;
   GlobalLockR(&info->latch);
-  // TODO may need to append huahua
   succ = varQueueEnq(&info->delayedInt, hvi);
-  lprintf("Queue = %d", info->delayedInt.size);
   GlobalUnlockR(&info->latch);
   return succ;
+}
+
+// Called on timer interrupt return when it's from kernel to guest
+void applyDelayedInt(HyperInfo* info,
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
+  if (info->interrupt) return;
+  GlobalLockR(&info->latch);
+  if (info->delayedInt.size == 0) {
+    GlobalUnlockR(&info->latch);
+    return;
+  }
+  hvInt hvi = varQueueDeq(&info->delayedInt);
+  GlobalUnlockR(&info->latch);
+
+  applyInt(info, hvi, oldESP, oldEFLAGS, oldEIP);
+}
+
+// One-way function.
+void applyInt(HyperInfo* info, hvInt hvi,
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
+
+  assert(hvi.intNum >= 0 && hvi.intNum <= MAX_SUPPORTED_VIRTUAL_INT);
+  GlobalLockR(&info->latch);
+  IDTEntry localIDT = info->idt[hvi.intNum];
+  GlobalUnlockR(&info->latch);
+  if (!localIDT.present) {
+    return;
+  }
+
+  // TODO: address validation
+  // TODO: privilege validation
+  uint32_t* stack = (uint32_t*)(oldESP + info->baseAddr);
+  // 1. Push state:
+  // No stack change
+  stack[-1] = oldEFLAGS;
+  stack[-2] = GUEST_INTERRUPT_KMODE;
+  stack[-3] = oldEIP;
+  stack[-4] = 0;
+  stack[-5] = 0;
+  uint32_t newESP = (uint32_t)(&stack[-5]) - info->baseAddr;
+
+  // 2. Prepare to swtich
+  switchToRing3X(newESP, oldEFLAGS, localIDT.eip, 0, 0, 0, 0, 0, 0, 0,
+                 info->cs, info->ds);
+}
+
+// Will be called after each timer event is handled completely.
+// See int_handler.S
+void hypervisorTimerHook(const ) {
+
 }
 
 /****************************************************************************/

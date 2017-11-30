@@ -40,7 +40,7 @@ typedef struct {
     return true; \
   } \
  \
-  static T __attribute__((unused)) varQueueDec(varQueue* q) { \
+  static T __attribute__((unused)) varQueueDeq(varQueue* q) { \
     assert(q->size > 0); \
     q->tail = (q->tail + 1) % q->capacity; \
     T res = ((T*)q->payload)[q->tail]; \

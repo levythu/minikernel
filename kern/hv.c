@@ -8,7 +8,7 @@
 #include "common_kern.h"
 #include "bool.h"
 #include "hv.h"
-#include "hvinterrupt_timer.h"
+#include "hvinterrupt_pushevent.h"
 
 void initHypervisor() {
   setupVirtualSegmentation();

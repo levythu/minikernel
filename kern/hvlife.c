@@ -13,7 +13,7 @@
 #include "hvcall.h"
 #include "dbgconf.h"
 #include "hvinterrupt.h"
-#include "hvinterrupt_timer.h"
+#include "hvinterrupt_pushevent.h"
 #include "keyboard_event.h"
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);

@@ -225,7 +225,6 @@ void unifiedErrorHandler(int es, int ds, int edi, int esi, int ebp,
     int espOnCurrentStack,
     int ebx, int edx, int ecx, int eax, int faultNumber, int errCode,
     int eip, int cs, int eflags, int esp, int ss) {
-  // TODO change condition of juding error pos
   int trueESP = cs != SEGSEL_KERNEL_CS ? esp : espOnCurrentStack;
   int trueSS = cs != SEGSEL_KERNEL_CS ? ss : get_ss();
   int cr2 = get_cr2();

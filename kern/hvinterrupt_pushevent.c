@@ -18,7 +18,7 @@
 #include "source_untrusted.h"
 #include "hv_hpcall_internal.h"
 #include "hvinterrupt.h"
-#include "hvinterrupt_timer.h"
+#include "hvinterrupt_pushevent.h"
 #include "zeus.h"
 
 void hv_CallMeOnTick(HyperInfo* info) {
@@ -26,7 +26,7 @@ void hv_CallMeOnTick(HyperInfo* info) {
 
   uint32_t currentTic = __sync_fetch_and_add(&info->status, 1);
   if (currentTic % GENERATE_TIC_EVERY_N_TIMESLICE != 0) return;
-  
+
   hvInt tint;
   tint.intNum = TIMER_IDT_ENTRY;
   tint.spCode = 0;

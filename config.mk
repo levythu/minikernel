@@ -186,4 +186,4 @@ STUDENTREQPROGS =
 
 CONFIG_DEBUG = user kernel
 
-410GUESTBINS = hello dumper magic console
+410GUESTBINS = hello dumper magic console station

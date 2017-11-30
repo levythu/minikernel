@@ -21,6 +21,7 @@ int hpc_print_at(int userEsp, tcb* thr);
 
 int hpc_disable_interrupts(int userEsp, tcb* thr);
 int hpc_enable_interrupts(int userEsp, tcb* thr);
+int hpc_setidt(int userEsp, tcb* thr);
 
 #define HPC_ON(opNumber, func) \
   if (eax == opNumber) { \

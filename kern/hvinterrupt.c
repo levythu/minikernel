@@ -16,6 +16,7 @@
 #include "hvlife.h"
 #include "source_untrusted.h"
 #include "hv_hpcall_internal.h"
+#include "mode_switch.h"
 #include "hvinterrupt.h"
 #include "zeus.h"
 
@@ -67,21 +68,6 @@ bool appendIntTo(void* _info, hvInt hvi) {
   return succ;
 }
 
-// Called on timer interrupt return when it's from kernel to guest
-void applyDelayedInt(HyperInfo* info,
-    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
-  if (info->interrupt) return;
-  GlobalLockR(&info->latch);
-  if (info->delayedInt.size == 0) {
-    GlobalUnlockR(&info->latch);
-    return;
-  }
-  hvInt hvi = varQueueDeq(&info->delayedInt);
-  GlobalUnlockR(&info->latch);
-
-  applyInt(info, hvi, oldESP, oldEFLAGS, oldEIP);
-}
-
 // One-way function.
 void applyInt(HyperInfo* info, hvInt hvi,
     uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
@@ -111,10 +97,42 @@ void applyInt(HyperInfo* info, hvInt hvi,
                  info->cs, info->ds);
 }
 
+// Called on timer interrupt return when it's from kernel to guest
+void applyDelayedInt(HyperInfo* info,
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
+  if (!info->interrupt) return;
+  GlobalLockR(&info->latch);
+  lprintf("%d", info->delayedInt.size);
+  if (info->delayedInt.size == 0) {
+    GlobalUnlockR(&info->latch);
+    return;
+  }
+  info->interrupt = false;
+  hvInt hvi = varQueueDeq(&info->delayedInt);
+  GlobalUnlockR(&info->latch);
+
+  applyInt(info, hvi, oldESP, oldEFLAGS, oldEIP);
+}
+
 // Will be called after each timer event is handled completely.
 // See int_handler.S
-void hypervisorTimerHook(const ) {
+void hypervisorTimerHook(const int es, const int ds,
+    const int _edi, const int _esi, const int _ebp, // pusha region
+    const int _espOnCurrentStack, // pusha region
+    const int _ebx, const int _edx, const int _ecx, const int _eax, // pusha
+    const int eip, const int cs,  // from-user-mode only
+    const int eflags, const int esp,  // from-user-mode only
+    const int ss  // from-user-mode only
+    ) {
+  if (es != SEGSEL_GUEST_DS) {
+    // either from normal elf or kernel mode. We are not interested.
+    return;
+  }
+  tcb* thr = findTCB(getLocalCPU()->runningTID);
+  assert(thr != NULL);
+  assert(thr->process->hyperInfo.isHyper);
 
+  applyDelayedInt(&thr->process->hyperInfo, esp, eflags, eip);
 }
 
 /****************************************************************************/

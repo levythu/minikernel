@@ -28,56 +28,57 @@
 #include "kernel_stack_protection.h"
 #include "hv.h"
 #include "virtual_console_dev.h"
+#include "virtual_console.h"
 
 static virtualConsole* currentVC = NULL;
 
-void useVirtualKeyboard(void* _vc) {
-  currentVC = (virtualConsole*)_vc;
+void useVirtualKeyboard(int vcn) {
+  currentVC = (virtualConsole*)getVirtualConsole(vcn);
 }
 
 void initKeyboardEvent(void* _vc) {
   virtualConsole* vc = (virtualConsole*)_vc;
-  kmutexInit(&vc->i->keyboardHolder);
-  initCrossCPULock(&vc->i->latch);
-  vc->i->eventWaiter = NULL;
-  initMultiplexer(&vc->i->kbMul);
+  kmutexInit(&vc->i.keyboardHolder);
+  initCrossCPULock(&vc->i.latch);
+  vc->i.eventWaiter = NULL;
+  initMultiplexer(&vc->i.kbMul);
 }
 
-intMultiplexer* getKeyboardMultiplexer(void* _vc) {
-  virtualConsole* vc = (virtualConsole*)_vc;
-  return &vc->i->kbMul;
+intMultiplexer* getKeyboardMultiplexer(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  return &vc->i.kbMul;
 }
 
-void occupyKeyboard(void* _vc) {
-  virtualConsole* vc = (virtualConsole*)_vc;
-  kmutexWLock(&vc->i->keyboardHolder);
+void occupyKeyboard(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  kmutexWLock(&vc->i.keyboardHolder);
 }
 
-void releaseKeyboard(void* _vc) {
-  virtualConsole* vc = (virtualConsole*)_vc;
-  kmutexWUnlock(&vc->i->keyboardHolder);
+void releaseKeyboard(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  kmutexWUnlock(&vc->i.keyboardHolder);
 }
 
 // Must be called when occupying keyboard
-int getcharBlocking(void* _vc) {
-  virtualConsole* vc = (virtualConsole*)_vc;
+int getcharBlocking(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   while (true) {
-    GlobalLockR(&vc->i->latch);
+    GlobalLockR(&vc->i.latch);
     int ch = fetchCharEvent();
     if (ch >= 0) {
-      GlobalUnlockR(&vc->i->latch);
+      GlobalUnlockR(&vc->i.latch);
       return ch;
     }
-    assert(vc->i->eventWaiter == NULL);
+    assert(vc->i.eventWaiter == NULL);
 
     // okay, it's time to sleep
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
-    vc->i->eventWaiter = currentThread;
-    vc->i->waitingForAnyChar = true;
+    vc->i.eventWaiter = currentThread;
+    vc->i.waitingForAnyChar = true;
     currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED;
     removeFromXLX(currentThread);
-    GlobalUnlockR(&vc->i->latch);
+    GlobalUnlockR(&vc->i.latch);
 
     // We sleep with keyboardHolder, since we are still the one that listens to
     // keyboard
@@ -89,12 +90,12 @@ int getcharBlocking(void* _vc) {
 
 // Must be called when occupying keyboard
 // maxlen cannot be zero
-int getStringBlocking(void* _vc, char* space, int maxlen) {
-  virtualConsole* vc = (virtualConsole*)_vc;
+int getStringBlocking(int vcn, char* space, int maxlen) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   int currentLen = 0;
   bool preexist = true;
   while (true) {
-    GlobalLockR(&vc->i->latch);
+    GlobalLockR(&vc->i.latch);
     while (true) {
       int ch = fetchCharEvent();
       if (ch >= 0 && preexist) {
@@ -107,12 +108,12 @@ int getStringBlocking(void* _vc, char* space, int maxlen) {
         if (currentLen < maxlen) {
           space[currentLen++] = 0;
         }
-        GlobalUnlockR(&vc->i->latch);
+        GlobalUnlockR(&vc->i.latch);
         return currentLen;
       } else if (ch >= 0) {
         space[currentLen++] = ch;
         if (currentLen == maxlen) {
-          GlobalUnlockR(&vc->i->latch);
+          GlobalUnlockR(&vc->i.latch);
           return maxlen;
         }
       } else {
@@ -120,16 +121,16 @@ int getStringBlocking(void* _vc, char* space, int maxlen) {
       }
     }
     preexist = false;
-    assert(vc->i->eventWaiter == NULL);
+    assert(vc->i.eventWaiter == NULL);
 
     // okay, it's time to sleep
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
-    vc->i->eventWaiter = currentThread;
-    vc->i->waitingForAnyChar = false;
+    vc->i.eventWaiter = currentThread;
+    vc->i.waitingForAnyChar = false;
     currentThread->descheduling = true;
     currentThread->status = THREAD_BLOCKED;
     removeFromXLX(currentThread);
-    GlobalUnlockR(&vc->i->latch);
+    GlobalUnlockR(&vc->i.latch);
 
     // We sleep with keyboardHolder, since we are still the one that listens to
     // keyboard
@@ -142,11 +143,11 @@ int getStringBlocking(void* _vc, char* space, int maxlen) {
 // In readline mode, print the char in synchronously to avoid re-order
 void onKeyboardSync(int ch) {
   virtualConsole* vc = currentVC;
-  GlobalLockR(&vc->i->latch);
-  if (vc->i->eventWaiter && !vc->i->waitingForAnyChar) {
+  GlobalLockR(&vc->i.latch);
+  if (vc->i.eventWaiter && !vc->i.waitingForAnyChar) {
     putbyte(ch);
   }
-  GlobalUnlockR(&vc->i->latch);
+  GlobalUnlockR(&vc->i.latch);
 }
 
 // For the rest of work (awakening the waiter), out-of-order is acceptable
@@ -158,7 +159,7 @@ void onKeyboardAsync(int ch) {
   ev.intNum = KEY_IDT_ENTRY;
   ev.spCode = ch;
   ev.cr2 = 0;
-  broadcastIntTo(&vc->i->kbMul, ev);
+  broadcastIntTo(&vc->i.kbMul, ev);
 
   if (ch < 0) return;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
@@ -170,12 +171,12 @@ void onKeyboardAsync(int ch) {
       return;
     }
   #endif
-  GlobalLockR(&vc->i->latch);
-  if (vc->i->eventWaiter) {
-    if (vc->i->waitingForAnyChar || ch == '\n') {
-      tcb* local = vc->i->eventWaiter;
-      vc->i->eventWaiter = NULL;
-      GlobalUnlockR(&vc->i->latch);
+  GlobalLockR(&vc->i.latch);
+  if (vc->i.eventWaiter) {
+    if (vc->i.waitingForAnyChar || ch == '\n') {
+      tcb* local = vc->i.eventWaiter;
+      vc->i.eventWaiter = NULL;
+      GlobalUnlockR(&vc->i.latch);
 
       LocalLockR();
       assert(local->status == THREAD_BLOCKED);
@@ -197,5 +198,5 @@ void onKeyboardAsync(int ch) {
       return;
     }
   }
-  GlobalUnlockR(&vc->i->latch);
+  GlobalUnlockR(&vc->i.latch);
 }

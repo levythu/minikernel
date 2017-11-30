@@ -58,9 +58,9 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   return info->isHyper;
 }
 
-void destroyHyperInfo(HyperInfo* info) {
+void destroyHyperInfo(HyperInfo* info, int vcn) {
   removeWaiter(&info->selfMulti, info);
-  intMultiplexer* currentKB = getKeyboardMultiplexer();
+  intMultiplexer* currentKB = getKeyboardMultiplexer(vcn);
   removeWaiter(currentKB, info);
 
   varQueueDestroy(&info->delayedInt);
@@ -70,7 +70,7 @@ void destroyHyperInfo(HyperInfo* info) {
 void exitHyperWithStatus(HyperInfo* info, void* _thr, int statusCode) {
   tcb* thr = (tcb*)_thr;
   assert((&thr->process->hyperInfo) == info);
-  destroyHyperInfo(info);
+  destroyHyperInfo(info, thr->process->vcNumber);
 
   thr->process->retStatus = statusCode;
   // one way trp
@@ -78,7 +78,7 @@ void exitHyperWithStatus(HyperInfo* info, void* _thr, int statusCode) {
 }
 
 void bootstrapHypervisorAndSwitchToRing3(
-    HyperInfo* info, uint32_t entryPoint, uint32_t eflags) {
+    HyperInfo* info, uint32_t entryPoint, uint32_t eflags, int vcn) {
   assert(info->isHyper);
 
   // 1. set all the other fields for hyperInfo before activating it
@@ -100,7 +100,7 @@ void bootstrapHypervisorAndSwitchToRing3(
   // 2. register myself to self-multiplexer
   addToWaiter(&info->selfMulti, info);
   // listen to keyboard
-  intMultiplexer* currentKB = getKeyboardMultiplexer();
+  intMultiplexer* currentKB = getKeyboardMultiplexer(vcn);
   addToWaiter(currentKB, info);
 
   info->status = HyperInited;

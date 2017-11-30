@@ -69,9 +69,9 @@ int readline_Internal(SyscallParams params) {
     return -1;
   }
 
-  occupyKeyboard();
-  int actualLen = getStringBlocking(buf, len);
-  releaseKeyboard();
+  occupyKeyboard(currentThread->process->vcNumber);
+  int actualLen = getStringBlocking(currentThread->process->vcNumber, buf, len);
+  releaseKeyboard(currentThread->process->vcNumber);
 
   kmutexWLockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
@@ -92,9 +92,10 @@ int readline_Internal(SyscallParams params) {
 }
 
 int getchar_Internal(SyscallParams params) {
-  occupyKeyboard();
-  int actualLen = getcharBlocking();
-  releaseKeyboard();
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  occupyKeyboard(currentThread->process->vcNumber);
+  int actualLen = getcharBlocking(currentThread->process->vcNumber);
+  releaseKeyboard(currentThread->process->vcNumber);
 
   return actualLen;
 }

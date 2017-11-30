@@ -82,6 +82,8 @@ typedef struct _pcb {
   int firstTID;
   // TODO
   HyperInfo hyperInfo;
+  // Not really readonly, but in multithreaded mode it's not modifiable
+  int vcNumber;
   /* END: Read only after creation */
 
   /* BEGIN: Section C */

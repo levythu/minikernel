@@ -36,6 +36,7 @@
 #include "reaper.h"
 #include "kernel_stack_protection.h"
 #include "hv.h"
+#include "virtual_console.h"
 
 // Will own it. Will not increase proc's numThread
 tcb* SpawnThread(pcb* proc) {
@@ -81,6 +82,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   npcb->status = PROCESS_INITIALIZED;
   npcb->unwaitedChildProc = 0;
   npcb->prezombieWatcher = NULL;
+  npcb->vcNumber = -1;
   initCrossCPULock(&npcb->prezombieWatcherLock);
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
@@ -261,6 +263,8 @@ int forkProcess(tcb* currentThread) {
   newProc->memMeta = currentProc->memMeta;
   newProc->parentPID = currentProc->id;
   newProc->retStatus = currentProc->retStatus;
+  newProc->vcNumber = currentProc->vcNumber;
+  referVirtualConsole(newProc->vcNumber);
 
   // thread-related
   newThread->regs = currentThread->regs;
@@ -384,7 +388,8 @@ int execProcess(tcb* currentThread, const char* filename, ArgPackage* argpkg) {
   // Will never return!
   if (currentThread->process->hyperInfo.isHyper) {
     bootstrapHypervisorAndSwitchToRing3(
-        &currentThread->process->hyperInfo, eip, neweflags);
+        &currentThread->process->hyperInfo, eip, neweflags,
+        currentThread->process->vcNumber);
   } else {
     switchToRing3(esp, neweflags, eip);
   }
@@ -443,6 +448,7 @@ int waitThread(tcb* currentThread, int* returnCodeAddr) {
 
       // no one will access zombie, so I own the process
       zombie->status = PROCESS_DEAD;
+      dereferVirtualConsole(zombie->vcNumber);
       int zombieTID = zombie->firstTID;
       *returnCodeAddr = zombie->retStatus;
 

@@ -42,6 +42,7 @@ typedef struct {
   virtualKeyboard i;
   virtualGraphix o;
   int ref;
+  bool dead;
 } virtualConsole;
 
 

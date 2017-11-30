@@ -96,9 +96,11 @@ void RunInit(const char* filename, pcb* firstProc, tcb* firstThread) {
 // Emit the first process, construct its initial kernel stack so that scheduler
 // can control it. Filename is the first process to launch. However, another
 // idle will be forked too, to keep scheduler always have sth. to schedule.
-void EmitInitProcess(const char* filename) {
+void EmitInitProcess(const char* filename, int firstVC) {
   tcb* firstThread;
   pcb* firstProc = SpawnProcess(&firstThread);
+  firstProc->vcNumber = firstVC;
+  referVirtualConsole(firstProc->vcNumber);
   firstThread->regs.eip = (uint32_t)RunInit;
   firstThread->regs.esp = firstThread->kernelStackPage + PAGE_SIZE - 1;
   firstThread->regs.ebp = 0;    // we set ebp initialized to zero
@@ -126,7 +128,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
     initCPU();
     initMemManagement();
 
-    initVirtualConsole();
+    int firstVC = initVirtualConsole();
 
     initTimeout();
     if (handler_install(_tickback, onKeyboardSync, onKeyboardAsync) != 0) {
@@ -144,7 +146,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp) {
 
     initHypervisor();
 
-    EmitInitProcess("init");
+    EmitInitProcess("init", firstVC);
 
     while (1) {
         continue;

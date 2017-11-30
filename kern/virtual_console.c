@@ -28,11 +28,45 @@
 static virtualConsole* vcList[MAX_LIVE_VIRTUAL_CONSOLE];
 static CrossCPULock latch;
 
-void useVirtualConsole(int vcNumber) {
+void* getVirtualConsole(int vcNumber) {
   assert(vcNumber != -1);
   GlobalLockR(&latch);
-  useVirtualKeyboard(vcList[vcNumber]);
+  virtualConsole* theVC = vcList[vcNumber];
   GlobalUnlockR(&latch);
+  assert(theVC != NULL);
+  assert(!theVC->dead);
+  return theVC;
+}
+
+void useVirtualConsole(int vcNumber) {
+  assert(vcNumber != -1);
+  // Use the latch to ensure serial
+  GlobalLockR(&latch);
+  assert(vcList[vcNumber] != NULL);
+  assert(!vcList[vcNumber]->dead);
+  useVirtualKeyboard(vcNumber);
+  GlobalUnlockR(&latch);
+}
+
+void referVirtualConsole(int vcNumber) {
+  GlobalLockR(&latch);
+  virtualConsole* theVC = vcList[vcNumber];
+  GlobalUnlockR(&latch);
+  assert(theVC != NULL);
+  assert(!theVC->dead);
+  __sync_fetch_and_add(&theVC->ref, 1);
+}
+
+void dereferVirtualConsole(int vcNumber) {
+  GlobalLockR(&latch);
+  virtualConsole* theVC = vcList[vcNumber];
+  GlobalUnlockR(&latch);
+  assert(theVC != NULL);
+  assert(!theVC->dead);
+  int currentRef = __sync_sub_and_fetch(&theVC->ref, 1);
+  if (currentRef) {
+    theVC->dead = true;
+  }
 }
 
 int newVirtualConsole() {
@@ -42,6 +76,7 @@ int newVirtualConsole() {
     return -1;
   }
   newVC->ref = 0;
+  newVC->dead = false;
   initKeyboardEvent(newVC);
   // TODO initGraphix
 
@@ -69,6 +104,7 @@ int initVirtualConsole() {
   }
   initCrossCPULock(&latch);
   // 1. setting up the default vc
-  int initConsole = newVirtualConsole()
+  int initConsole = newVirtualConsole();
   useVirtualConsole(initConsole);
+  return initConsole;
 }

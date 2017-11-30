@@ -12,4 +12,8 @@ int initVirtualConsole();
 void useVirtualConsole(int vcNumber);
 int newVirtualConsole();
 
+void referVirtualConsole(int vcNumber);
+void dereferVirtualConsole(int vcNumber);
+void* getVirtualConsole(int vcNumber);
+
 #endif

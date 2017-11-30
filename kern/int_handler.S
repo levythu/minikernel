@@ -5,28 +5,28 @@
 
 timerIntHandler:
     pusha
-    push %ds
-    push %es
+    pushl %ds
+    pushl %es
     mov $SEGSEL_KERNEL_DS, %eax
     mov %ax, %ds
     mov %ax, %es
     mov $0, %ebp
     call timerIntHandlerInternal
-    pop %es
-    pop %ds
+    popl %es
+    popl %ds
     popa
     iret
 
 keyboardIntHandler:
     pusha
-    push %ds
-    push %es
+    pushl %ds
+    pushl %es
     mov $SEGSEL_KERNEL_DS, %eax
     mov %ax, %ds
     mov %ax, %es
     mov $0, %ebp
     call keyboardIntHandlerInternal
-    pop %es
-    pop %ds
+    popl %es
+    popl %ds
     popa
     iret

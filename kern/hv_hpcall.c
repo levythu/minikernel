@@ -27,12 +27,23 @@ void initHyperCall() {
 }
 
 // The dispatcher
-int hyperCallHandler_Internal(int userEsp, int eax) {
+int hyperCallHandler_Internal(int userEsp, int eax,
+    const int es, const int ds,
+    const int _edi, const int _esi, const int _ebp, // pusha region
+    const int _espOnCurrentStack, // pusha region
+    const int _ebx, const int _edx, const int _, const int _eax, // pusha
+    const int _ecx,
+    const int eip, const int cs,  // from-user-mode only
+    const int eflags, const int esp,  // from-user-mode only
+    const int ss  // from-user-mode only
+    ) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   if (!currentThread->process->hyperInfo.isHyper) {
     // Not a hypervisor. Cannot issue hyper call
     return -1;
   }
+  assert(es == SEGSEL_GUEST_DS);
+  assert(cs == SEGSEL_GUEST_CS);
 
   HPC_ON(HV_MAGIC_OP, hpc_magic);
   HPC_ON(HV_EXIT_OP, hpc_exit);
@@ -46,7 +57,7 @@ int hyperCallHandler_Internal(int userEsp, int eax) {
   HPC_ON(HV_DISABLE_OP, hpc_disable_interrupts);
   HPC_ON(HV_ENABLE_OP, hpc_enable_interrupts);
   HPC_ON(HV_SETIDT_OP, hpc_setidt);
-  HPC_ON(HV_IRET_OP, hpc_iret);
+  HPC_ON_X(HV_IRET_OP, hpc_iret);
 
   return -1;
 }

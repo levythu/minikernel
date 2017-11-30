@@ -25,7 +25,8 @@
 
 // In hvinterrupt.c, internal use only
 bool applyInt(HyperInfo* info, hvInt hvi,
-    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP);
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
+    int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax);
 
 void hv_CallMeOnTick(HyperInfo* info) {
   if (!HYPER_STATUS_READY(info->status)) return;
@@ -55,7 +56,8 @@ FAULT_ACTION(HyperFaultHandler) {
   hvi.spCode = errCode;
   hvi.cr2 = faultNumber == IDT_PF ? cr2 : 0;
 
-  if (!applyInt(&thr->process->hyperInfo, hvi, esp, eflags, eip)) {
+  if (!applyInt(&thr->process->hyperInfo, hvi, esp, eflags, eip,
+                edi, esi, ebp, ebx, edx, ecx, eax)) {
     // Fail to deliver this, because no idt is registered. Crash guest
     exitHyperWithStatus(&thr->process->hyperInfo, thr, GUEST_CRASH_STATUS);
   }

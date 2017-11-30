@@ -22,11 +22,18 @@ int hpc_print_at(int userEsp, tcb* thr);
 int hpc_disable_interrupts(int userEsp, tcb* thr);
 int hpc_enable_interrupts(int userEsp, tcb* thr);
 int hpc_setidt(int userEsp, tcb* thr);
-int hpc_iret(int userEsp, tcb* thr);
+int hpc_iret(int userEsp, tcb* thr,
+    int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax);
 
 #define HPC_ON(opNumber, func) \
   if (eax == opNumber) { \
     return func(userEsp, currentThread); \
+  } \
+
+#define HPC_ON_X(opNumber, func) \
+  if (eax == opNumber) { \
+    return func(userEsp, currentThread, \
+                _edi, _esi, _ebp, _ebx, _edx, _ecx, _eax); \
   } \
 
 #define DEFINE_PARAM(type, name, pos) \

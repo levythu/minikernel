@@ -6,8 +6,8 @@ hyperCallHandler:
     push %ecx
     mov 16(%esp), %ecx        # user %esp
     pusha
-    push %ds
-    push %es
+    pushl %ds
+    pushl %es
 
     mov $SEGSEL_KERNEL_DS, %ebx
     mov %bx, %ds
@@ -20,8 +20,8 @@ hyperCallHandler:
     pop %ecx
     pop %ecx            # we want to preserve %eax here
 
-    pop %es
-    pop %ds
+    popl %es
+    popl %ds
     movl %eax, 28(%esp)
     popa
     pop %ecx

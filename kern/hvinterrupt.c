@@ -41,7 +41,8 @@ bool appendIntTo(void* _info, hvInt hvi) {
 
 // One-way function.
 bool applyInt(HyperInfo* info, hvInt hvi,
-    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
+    int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax) {
 
   assert(hvi.intNum >= 0 && hvi.intNum <= MAX_SUPPORTED_VIRTUAL_INT);
   GlobalLockR(&info->latch);
@@ -64,14 +65,16 @@ bool applyInt(HyperInfo* info, hvInt hvi,
   uint32_t newESP = (uint32_t)(&stack[-5]) - info->baseAddr;
 
   // 2. Prepare to swtich
-  switchToRing3X(newESP, oldEFLAGS, localIDT.eip, 0, 0, 0, 0, 0, 0, 0,
+  switchToRing3X(newESP, oldEFLAGS, localIDT.eip,
+                 oedi, oesi, oebp, oebx, oedx, oecx, oeax,
                  info->cs, info->ds);
   return true;
 }
 
 // Called on timer interrupt return when it's from kernel to guest
 void applyDelayedInt(HyperInfo* info,
-    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP) {
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
+    int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax) {
   if (!info->interrupt) return;
   GlobalLockR(&info->latch);
   lprintf("%d", info->delayedInt.size);
@@ -83,7 +86,8 @@ void applyDelayedInt(HyperInfo* info,
   hvInt hvi = varQueueDeq(&info->delayedInt);
   GlobalUnlockR(&info->latch);
 
-  applyInt(info, hvi, oldESP, oldEFLAGS, oldEIP);
+  applyInt(info, hvi, oldESP, oldEFLAGS, oldEIP,
+           oedi, oesi, oebp, oebx, oedx, oecx, oeax);
 }
 
 // Will be called after each timer event is handled completely.
@@ -104,7 +108,8 @@ void hypervisorTimerHook(const int es, const int ds,
   assert(thr != NULL);
   assert(thr->process->hyperInfo.isHyper);
 
-  applyDelayedInt(&thr->process->hyperInfo, esp, eflags, eip);
+  applyDelayedInt(&thr->process->hyperInfo, esp, eflags, eip,
+                  _edi, _esi, _ebp, _ebx, _edx, _ecx, _eax);
 }
 
 /****************************************************************************/

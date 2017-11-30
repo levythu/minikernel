@@ -51,7 +51,8 @@ int hpc_setidt(int userEsp, tcb* thr) {
   return 0;
 }
 
-int hpc_iret(int userEsp, tcb* thr) {
+int hpc_iret(int userEsp, tcb* thr,
+    int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax) {
   DEFINE_PARAM(uint32_t, eip, 0);
   DEFINE_PARAM(uint32_t, eflags, 1);
   DEFINE_PARAM(uint32_t, esp, 2);
@@ -75,7 +76,7 @@ int hpc_iret(int userEsp, tcb* thr) {
   // TODO set esp0
 
   // One-way trip
-  switchToRing3X(esp, eflags, eip, 0, 0, 0, 0, 0, 0, eax,
+  switchToRing3X(esp, eflags, eip, oedi, oesi, oebp, oebx, oedx, oecx, eax,
                  info->cs, info->ds);
   return 0;
 }

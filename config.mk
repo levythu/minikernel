@@ -186,4 +186,4 @@ STUDENTREQPROGS =
 
 CONFIG_DEBUG = user kernel
 
-410GUESTBINS = hello dumper magic console station tick_tock gomoku
+410GUESTBINS = hello dumper magic console station tick_tock gomoku cliff

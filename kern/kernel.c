@@ -56,9 +56,9 @@ void _tickback(unsigned int tk) {
     tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     if (currentThread && !currentThread->descheduling) {
       yieldToNext();
+      hv_CallMeOnTick(&currentThread->process->hyperInfo);
     }
   #endif
-  hv_CallMeOnTick();
 }
 
 // The init function that runs inside first kernel stack.

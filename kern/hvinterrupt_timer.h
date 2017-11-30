@@ -8,6 +8,4 @@
 
 #include "hvinterrupt.h"
 
-extern intMultiplexer timeMultiplexter;
-
 #endif

@@ -84,6 +84,7 @@ pcb* SpawnProcess(tcb** firstThread) {
   initCrossCPULock(&npcb->prezombieWatcherLock);
   kmutexInit(&npcb->mutex);
   kmutexInit(&npcb->memlock);
+  initHyperInfo(&npcb->hyperInfo);
 
   tcb* ntcb = SpawnThread(npcb);
 

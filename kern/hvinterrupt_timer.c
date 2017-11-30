@@ -21,10 +21,9 @@
 #include "hvinterrupt_timer.h"
 #include "zeus.h"
 
-intMultiplexer timeMultiplexter;
-
-void hv_CallMeOnTick() {
+void hv_CallMeOnTick(HyperInfo* info) {
+  if (!HYPER_STATUS_READY(info->status)) return;
   hvInt tint;
   tint.intNum = TIMER_IDT_ENTRY;
-  broadcastIntTo(&timeMultiplexter, tint);
+  broadcastIntTo(&info->selfMulti, tint);
 }

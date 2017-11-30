@@ -12,6 +12,6 @@
 
 void initHypervisor();
 
-void hv_CallMeOnTick();
+void hv_CallMeOnTick(HyperInfo* info);
 
 #endif

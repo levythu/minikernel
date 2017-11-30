@@ -17,6 +17,14 @@
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
+void initHyperInfo(HyperInfo* info) {
+  info->cs = SEGSEL_USER_CS;
+  info->ds = SEGSEL_USER_DS;
+  info->baseAddr = 0;
+  info->isHyper = false;
+  info->status = HyperNA;
+}
+
 bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   if (elfMetadata->e_txtstart < USER_MEM_START) {
     // We are virtual machine!
@@ -33,6 +41,7 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
     info->ds = SEGSEL_GUEST_DS;
     info->baseAddr = GUEST_PHYSICAL_START;
     info->isHyper = true;
+    info->status = HyperNew;
   } else {
     // normal elf
 
@@ -40,13 +49,14 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
     info->ds = SEGSEL_USER_DS;
     info->baseAddr = 0;
     info->isHyper = false;
+    info->status = HyperNA;
   }
 
   return info->isHyper;
 }
 
 void destroyHyperInfo(HyperInfo* info) {
-  removeWaiter(&timeMultiplexter, info);
+  removeWaiter(&info->selfMulti, info);
 
   varQueueDestroy(&info->delayedInt);
   sfree(info->idt, sizeof(IDTEntry) * (MAX_SUPPORTED_VIRTUAL_INT + 1));
@@ -58,6 +68,9 @@ void bootstrapHypervisorAndSwitchToRing3(
 
   // set all the other fields for hyperInfo before activating it
   info->interrupt = false;
+
+  initMultiplexer(&info->selfMulti);
+
   initCrossCPULock(&info->latch);
   varQueueInit(&info->delayedInt, MAX_WAITING_INT);
   // TODO: check sucessful of smalloc
@@ -67,8 +80,10 @@ void bootstrapHypervisorAndSwitchToRing3(
     info->idt[i].present = false;
   }
 
-  // register myself to timer multiplexer
-  addToWaiter(&timeMultiplexter, info);
+  // register myself to self-multiplexer
+  addToWaiter(&info->selfMulti, info);
+
+  info->status = HyperInited;
 
   #ifdef HYPERVISOR_VERBOSE_PRINT
     lprintf("Entering into virtual machine at 0x%08lx", entryPoint);

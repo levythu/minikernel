@@ -13,5 +13,4 @@
 void initHypervisor() {
   setupVirtualSegmentation();
   initHyperCall();
-  initMultiplexer(&timeMultiplexter);
 }

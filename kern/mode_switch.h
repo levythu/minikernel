@@ -30,4 +30,6 @@ void switchToRing3X(uint32_t esp, uint32_t eflags, uint32_t eip, uint32_t edi,
 // Validate whether the target ureg is good to be set when entering ring3
 bool validateUregs(ureg_t* uregs);
 
+bool validateEFLAGS(uint32_t eflags);
+
 #endif

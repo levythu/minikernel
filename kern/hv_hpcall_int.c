@@ -6,6 +6,7 @@
 #include <hvcall_int.h>
 #include <hvcall.h>
 #include <x86/asm.h>
+#include <x86/eflags.h>
 
 #include "int_handler.h"
 #include "common_kern.h"
@@ -47,5 +48,34 @@ int hpc_setidt(int userEsp, tcb* thr) {
   info->idt[irqno].eip = eip;
   info->idt[irqno].privileged = privileged;
   GlobalUnlockR(&info->latch);
+  return 0;
+}
+
+int hpc_iret(int userEsp, tcb* thr) {
+  DEFINE_PARAM(uint32_t, eip, 0);
+  DEFINE_PARAM(uint32_t, eflags, 1);
+  DEFINE_PARAM(uint32_t, esp, 2);
+  DEFINE_PARAM(uint32_t, esp0, 3);
+  DEFINE_PARAM(uint32_t, eax, 4);
+
+  HyperInfo* info = &thr->process->hyperInfo;
+
+  // Manually apply IF flag
+  if (eflags & EFL_IF) {
+    info->interrupt = true;
+  } else {
+    info->interrupt = false;
+  }
+  eflags |= EFL_IF;
+  if (!validateEFLAGS(eflags)) {
+    // TODO crash the guest
+    return -1;
+  }
+  // TODO validate others?
+  // TODO set esp0
+
+  // One-way trip
+  switchToRing3X(esp, eflags, eip, 0, 0, 0, 0, 0, 0, eax,
+                 info->cs, info->ds);
   return 0;
 }

@@ -26,7 +26,7 @@
 // Only bit 0/2/4/6/7/8/10/11 can be changed in user mode,
 // And bit 16 (RF) is auto-set by instr, we ignore it
 #define EFLAGS_USER_WRITABLE_BIT 0x10DD5        // 1 0000 1101 1101 0101
-static bool validateEFLAGS(uint32_t eflags) {
+bool validateEFLAGS(uint32_t eflags) {
   uint32_t standardEflags = (get_eflags() | EFL_RESV1 | EFL_IF) & ~EFL_AC;
   eflags ^= standardEflags;
   if (eflags & ~EFLAGS_USER_WRITABLE_BIT) {

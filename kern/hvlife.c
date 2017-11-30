@@ -45,6 +45,13 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   return info->isHyper;
 }
 
+void destroyHyperInfo(HyperInfo* info) {
+  removeWaiter(&timeMultiplexter, info);
+
+  varQueueDestroy(&info->delayedInt);
+  sfree(info->idt, sizeof(IDTEntry) * (MAX_SUPPORTED_VIRTUAL_INT + 1));
+}
+
 void bootstrapHypervisorAndSwitchToRing3(
     HyperInfo* info, uint32_t entryPoint, uint32_t eflags) {
   assert(info->isHyper);

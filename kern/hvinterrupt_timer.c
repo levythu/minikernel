@@ -23,7 +23,13 @@
 
 void hv_CallMeOnTick(HyperInfo* info) {
   if (!HYPER_STATUS_READY(info->status)) return;
+
+  uint32_t currentTic = __sync_fetch_and_add(&info->status, 1);
+  if (currentTic % GENERATE_TIC_EVERY_N_TIMESLICE != 0) return;
+  
   hvInt tint;
   tint.intNum = TIMER_IDT_ENTRY;
+  tint.spCode = 0;
+  tint.cr2 = 0;
   broadcastIntTo(&info->selfMulti, tint);
 }

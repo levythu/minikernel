@@ -8,4 +8,6 @@
 
 #include "hvinterrupt.h"
 
+#define GENERATE_TIC_EVERY_N_TIMESLICE 2
+
 #endif

@@ -14,6 +14,7 @@
 #include "dbgconf.h"
 #include "hvinterrupt.h"
 #include "hvinterrupt_timer.h"
+#include "keyboard_event.h"
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
@@ -57,6 +58,8 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
 
 void destroyHyperInfo(HyperInfo* info) {
   removeWaiter(&info->selfMulti, info);
+  intMultiplexer* currentKB = getKeyboardMultiplexer();
+  removeWaiter(currentKB, info);
 
   varQueueDestroy(&info->delayedInt);
   sfree(info->idt, sizeof(IDTEntry) * (MAX_SUPPORTED_VIRTUAL_INT + 1));
@@ -66,8 +69,10 @@ void bootstrapHypervisorAndSwitchToRing3(
     HyperInfo* info, uint32_t entryPoint, uint32_t eflags) {
   assert(info->isHyper);
 
-  // set all the other fields for hyperInfo before activating it
+  // 1. set all the other fields for hyperInfo before activating it
   info->interrupt = false;
+
+  info->tics = 0;
 
   initMultiplexer(&info->selfMulti);
 
@@ -80,8 +85,11 @@ void bootstrapHypervisorAndSwitchToRing3(
     info->idt[i].present = false;
   }
 
-  // register myself to self-multiplexer
+  // 2. register myself to self-multiplexer
   addToWaiter(&info->selfMulti, info);
+  // listen to keyboard
+  intMultiplexer* currentKB = getKeyboardMultiplexer();
+  addToWaiter(currentKB, info);
 
   info->status = HyperInited;
 

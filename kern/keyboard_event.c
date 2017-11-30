@@ -26,12 +26,14 @@
 #include "dbgconf.h"
 #include "context_switch.h"
 #include "kernel_stack_protection.h"
+#include "hv.h"
 
 static kmutex keyboardHolder;
 
 static bool waitingForAnyChar; // true for char, false for string
 static tcb* eventWaiter;
 static CrossCPULock latch;
+static intMultiplexer kbMul;
 
 // let kernel call it on startup!
 // It must happen before register keyboard driver
@@ -39,6 +41,11 @@ void initKeyboardEvent() {
   kmutexInit(&keyboardHolder);
   initCrossCPULock(&latch);
   eventWaiter = NULL;
+  initMultiplexer(&kbMul);
+}
+
+intMultiplexer* getKeyboardMultiplexer() {
+  return &kbMul;
 }
 
 void occupyKeyboard() {
@@ -140,6 +147,14 @@ void onKeyboardSync(int ch) {
 // For the rest of work (awakening the waiter), out-of-order is acceptable
 void onKeyboardAsync(int ch) {
   KERNEL_STACK_CHECK;
+
+  hvInt ev;
+  ev.intNum = KEY_IDT_ENTRY;
+  ev.spCode = ch;
+  ev.cr2 = 0;
+  broadcastIntTo(&kbMul, ev);
+
+  if (ch < 0) return;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
     if (ch == KHE_ARROW_RIGHT) {

@@ -39,6 +39,8 @@ typedef struct HyperInfo {
   // (idt and delayedInt are vanishing)
   intMultiplexer selfMulti;
 
+  uint32_t tics;
+
   // The following two are protected by GlobalLock, and also they are the only
   // fields accessible by something outside hypersivor
   IDTEntry* idt;

@@ -17,6 +17,8 @@
 
 typedef struct {
   int intNum;
+  int spCode;
+  int cr2;
 } hvInt;
 
 typedef struct {

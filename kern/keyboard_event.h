@@ -14,6 +14,10 @@
 #include <stdlib.h>
 #include <x86/page.h>
 
+#include "hv.h"
+
+intMultiplexer* getKeyboardMultiplexer();
+
 // let kernel call it on startup!
 // It must happen before register keyboard driver
 void initKeyboardEvent();

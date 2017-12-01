@@ -98,6 +98,9 @@ int hv_isguest(void)
 void *
 hv_maxvaddr(void)
 {
+    if (!hv_guest_mode)
+        panic("hv_maxvaddr() called in host mode");
+
     return ((void *)hv_max_vaddr);
 }
 

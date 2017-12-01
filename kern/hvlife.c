@@ -86,6 +86,11 @@ void bootstrapHypervisorAndSwitchToRing3(
 
   info->tics = 0;
 
+  info->originalPD = NULL;
+  info->vCR3 = 0;
+  info->writeProtection = false;
+  info->inKernelMode = true;
+
   initMultiplexer(&info->selfMulti);
 
   initCrossCPULock(&info->latch);

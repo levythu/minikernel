@@ -26,9 +26,7 @@ PageDirectory newPageDirectory() {
     panic("newPageDirectory: fail to allocate space for new page directory");
   }
   for (int i = 0; i < PD_SIZE; i++) {
-    newPD[i] = PE_PRESENT(0) | PE_WRITABLE(0) | PE_USERMODE(0) |
-               PE_WRITETHROUGH_CACHE(0) | PE_DISABLE_CACHE(0) |
-               PE_SIZE_FLAG(0);
+    newPD[i] = EMPTY_PDE;
   }
   return newPD;
 }

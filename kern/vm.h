@@ -48,6 +48,7 @@ typedef PDE* PageDirectory;
 #define PE_IS_WRITABLE(pe) ((pe) & PE_WRITABLE(1))
 
 #define PE_USERMODE(flag) ((flag) << 2)
+#define PE_IS_USERMODE(pe) ((pe) & PE_USERMODE(1))
 
 #define PE_WRITETHROUGH_CACHE(flag) ((flag) << 3)
 
@@ -66,6 +67,10 @@ typedef PDE* PageDirectory;
 #define PTE_CLEAR_ADDR(pte) PDE_CLEAR_PT(pte)
 
 #define IS_PAGE_ALIGNED(addr) (((addr) >> PAGE_SHIFT << PAGE_SHIFT) == addr)
+
+#define EMPTY_PDE (PE_PRESENT(0) | PE_WRITABLE(0) | PE_USERMODE(0) | \
+                   PE_WRITETHROUGH_CACHE(0) | PE_DISABLE_CACHE(0) | \
+                   PE_SIZE_FLAG(0))
 
 // Start paging (vm)
 void enablePaging();

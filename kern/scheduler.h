@@ -24,7 +24,7 @@
 
 #include "process.h"
 
-void yieldToNext();
+bool yieldToNext();
 tcb* pickNextRunnableThread(tcb* currentThread);
 
 #endif

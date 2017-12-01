@@ -48,7 +48,7 @@ int new_console_Internal(SyscallParams params) {
   currentThread->process->vcNumber = newVC;
   referVirtualConsole(newVC);
   dereferVirtualConsole(oldVC);
-
+  
   switchToVirtualConsole(newVC);
   return 0;
 }

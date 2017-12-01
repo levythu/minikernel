@@ -6,7 +6,9 @@
 #include <simics.h>
 #include <malloc.h>
 #include <assert.h>
+#include <string.h>
 #include <x86/keyhelp.h>
+#include <x86/video_defines.h>
 
 #include "vm.h"
 #include "bool.h"
@@ -35,26 +37,32 @@ void* getVirtualConsole(int vcNumber) {
   virtualConsole* theVC = vcList[vcNumber];
   GlobalUnlockR(&latch);
   assert(theVC != NULL);
-  assert(!theVC->dead);
   return theVC;
 }
 
 static void _useVirtualConsole(int vcNumber) {
   assert(vcNumber != -1);
   assert(vcList[vcNumber] != NULL);
-  assert(!vcList[vcNumber]->dead);
   currentVCN = vcNumber;
   useVirtualKeyboard(vcNumber);
   useVirtualVideo(vcNumber);
 }
 
 void switchToVirtualConsole(int vcNumber) {
+  virtualConsole* toFree = NULL;
   GlobalLockR(&latch);
-  // TODO Do something to the old
+  assert(currentVCN != vcNumber);
+  if (vcList[currentVCN]->dead) {
+    toFree = vcList[currentVCN];
+    vcList[currentVCN] = NULL;
+  }
   _useVirtualConsole(vcNumber);
   lprintf("Virtual Console #%d activated, now %d processes inside.",
           vcNumber, vcList[vcNumber]->ref);
   GlobalUnlockR(&latch);
+  if (toFree) {
+    sfree(toFree, sizeof(virtualConsole));
+  }
 }
 
 void switchNextVirtualConsole() {
@@ -84,7 +92,21 @@ void dereferVirtualConsole(int vcNumber) {
   assert(theVC != NULL);
   assert(!theVC->dead);
   int currentRef = __sync_sub_and_fetch(&theVC->ref, 1);
+
   if (currentRef == 0) {
+    // It's dead now. We can draw quitting info and finnaly set dead flag.
+    // DO NOT set dead before finish drawing -- someone else may clear the VC
+
+    const static char* quitInfo1 =
+        "\nThere's no process running inside. Press [TAB] to switch out.\n";
+    const static char* quitInfo2 =
+        "WARNING: nce you switch, you can **NEVER** get back to this console!";
+
+    set_term_color(vcNumber, BGND_BLACK | FGND_CYAN);
+    putbytes(vcNumber, quitInfo1, strlen(quitInfo1));
+    set_term_color(vcNumber, BGND_BLACK | FGND_RED);
+    putbytes(vcNumber, quitInfo2, strlen(quitInfo2));
+
     theVC->dead = true;
   }
 }

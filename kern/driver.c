@@ -17,7 +17,6 @@
 int handler_install(void (*tickback)(unsigned int),
                     void (*keybacksync)(int),
                     void (*keybackasync)(int)) {
-  LocalLockR();
   int rc;
   lprintf("Installing video driver...");
   if ((rc = install_graphic_driver()) != 0) {
@@ -32,6 +31,7 @@ int handler_install(void (*tickback)(unsigned int),
   if ((rc = install_keyboard_driver(keybackasync, keybacksync)) != 0) {
     return rc;
   }
+  // Corresponding to the LockLockR() at initCPU();
   LocalUnlockR();
   return 0;
 }

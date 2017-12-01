@@ -30,6 +30,8 @@ void initCPU() {
   UniCore.runningPID = -1;
   UniCore.currentMutexLayer = -1;
   lprintf("CPU env initiated, count = 1");
+  // Corresponding to the LockLockR() at handler_install();
+  LocalLockR();
 }
 
 cpu* getLocalCPU() {

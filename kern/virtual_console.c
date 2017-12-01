@@ -64,7 +64,7 @@ void dereferVirtualConsole(int vcNumber) {
   assert(theVC != NULL);
   assert(!theVC->dead);
   int currentRef = __sync_sub_and_fetch(&theVC->ref, 1);
-  if (currentRef) {
+  if (currentRef == 0) {
     theVC->dead = true;
   }
 }

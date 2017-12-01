@@ -23,16 +23,18 @@ int hpc_print(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, len, 0);
   DEFINE_PARAM(uint32_t, bufPos, 1);
   bufPos += thr->process->hyperInfo.baseAddr;
+  if (len < 0 || len > HV_PRINT_MAX) return -1;
+  if (len == 0) return 0;
 
-  char* buf = (char*)smalloc(HV_PRINT_MAX);
-  int actualLen = sGetString(bufPos, buf, HV_PRINT_MAX);
-  if (actualLen < 0 || actualLen == HV_PRINT_MAX) {
+  char* buf = (char*)smalloc(len);
+  int actualLen = sGetString(bufPos, buf, len);
+  if (actualLen < 0) {
     // Text too long or invalid
-    sfree(buf, HV_PRINT_MAX);
+    sfree(buf, len);
     return -1;
   }
   putbytes(thr->process->vcNumber, buf, actualLen);
-  sfree(buf, HV_PRINT_MAX);
+  sfree(buf, len);
   return 0;
 }
 
@@ -79,12 +81,14 @@ int hpc_print_at(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, col, 3);
   DEFINE_PARAM(int, color, 4);
   bufPos += thr->process->hyperInfo.baseAddr;
+  if (len < 0 || len > HV_PRINT_MAX) return -1;
+  if (len == 0) return 0;
 
-  char* buf = (char*)smalloc(HV_PRINT_MAX);
-  int actualLen = sGetString(bufPos, buf, HV_PRINT_MAX);
-  if (actualLen < 0 || actualLen == HV_PRINT_MAX) {
+  char* buf = (char*)smalloc(len);
+  int actualLen = sGetString(bufPos, buf, len);
+  if (actualLen < 0) {
     // Text too long or invalid
-    sfree(buf, HV_PRINT_MAX);
+    sfree(buf, len);
     return -1;
   }
 
@@ -95,11 +99,11 @@ int hpc_print_at(int userEsp, tcb* thr) {
   set_term_color(thr->process->vcNumber, color);
   if (set_cursor(thr->process->vcNumber, row, col) != 0) {
     // TODO crash the guest
-    sfree(buf, HV_PRINT_MAX);
+    sfree(buf, len);
     return -1;
   }
   putbytes(thr->process->vcNumber, buf, actualLen);
-  sfree(buf, HV_PRINT_MAX);
+  sfree(buf, len);
 
   set_term_color(thr->process->vcNumber, _color);
   set_cursor(thr->process->vcNumber, _row, _col);

@@ -21,8 +21,5 @@ typedef void (*KeyboardCallback)(int ch);
 // otherwise return 0;
 extern int install_keyboard_driver(KeyboardCallback asyncCallback,
     KeyboardCallback syncCallback);
-extern int fetchCharEvent();
-
-#define KEY_BUFFER_SIZE 4096
 
 #endif

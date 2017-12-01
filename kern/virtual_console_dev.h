@@ -15,6 +15,8 @@
 #include "kmutex.h"
 #include "process.h"
 
+#define KEY_BUFFER_SIZE 512
+
 typedef struct {
   kmutex keyboardHolder;
 
@@ -22,6 +24,10 @@ typedef struct {
   tcb* eventWaiter;
   CrossCPULock latch;
   intMultiplexer kbMul;
+
+  int keyPressBuffer[KEY_BUFFER_SIZE];
+  int bufferStart;
+  int bufferEnd;
 } virtualKeyboard;
 
 typedef struct {

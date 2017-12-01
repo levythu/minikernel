@@ -32,6 +32,25 @@
 
 static virtualConsole* currentVC = NULL;
 
+static void _pushCharcode(virtualConsole* vc, int ch) {
+  int bufferNext = (vc->i.bufferEnd + 1) % KEY_BUFFER_SIZE;
+  if (bufferNext == vc->i.bufferStart) {
+    // When the buffer is full, we discard any new event.
+    return;
+  }
+  vc->i.keyPressBuffer[vc->i.bufferEnd] = ch;
+  vc->i.bufferEnd = bufferNext;
+}
+
+static int _fetchCharEvent(virtualConsole* vc) {
+  if (vc->i.bufferStart == vc->i.bufferEnd) {
+    return -1;
+  }
+  int ret = vc->i.keyPressBuffer[vc->i.bufferStart];
+  vc->i.bufferStart = (vc->i.bufferStart + 1) % KEY_BUFFER_SIZE;
+  return ret;
+}
+
 void useVirtualKeyboard(int vcn) {
   currentVC = (virtualConsole*)getVirtualConsole(vcn);
 }
@@ -41,6 +60,7 @@ void initKeyboardEvent(void* _vc) {
   kmutexInit(&vc->i.keyboardHolder);
   initCrossCPULock(&vc->i.latch);
   vc->i.eventWaiter = NULL;
+  vc->i.bufferStart = vc->i.bufferEnd = 0;
   initMultiplexer(&vc->i.kbMul);
 }
 
@@ -64,7 +84,7 @@ int getcharBlocking(int vcn) {
   virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   while (true) {
     GlobalLockR(&vc->i.latch);
-    int ch = fetchCharEvent();
+    int ch = _fetchCharEvent(vc);
     if (ch >= 0) {
       GlobalUnlockR(&vc->i.latch);
       return ch;
@@ -97,7 +117,7 @@ int getStringBlocking(int vcn, char* space, int maxlen) {
   while (true) {
     GlobalLockR(&vc->i.latch);
     while (true) {
-      int ch = fetchCharEvent();
+      int ch = _fetchCharEvent(vc);
       if (ch >= 0 && preexist) {
         putbyte_(vcn, ch);
       }
@@ -144,6 +164,7 @@ int getStringBlocking(int vcn, char* space, int maxlen) {
 void onKeyboardSync(int ch) {
   virtualConsole* vc = currentVC;
   GlobalLockR(&vc->i.latch);
+  _pushCharcode(vc, ch);
   if (vc->i.eventWaiter && !vc->i.waitingForAnyChar) {
     putbyte_(vc->vcNumber, ch);
   }

@@ -161,7 +161,8 @@ int getStringBlocking(int vcn, char* space, int maxlen) {
 }
 
 // In readline mode, print the char in synchronously to avoid re-order
-void onKeyboardSync(int ch) {
+void onKeyboardSync(int ch, int augChar) {
+  if (ch < 0) return;
   virtualConsole* vc = currentVC;
   GlobalLockR(&vc->i.latch);
   _pushCharcode(vc, ch);
@@ -172,23 +173,23 @@ void onKeyboardSync(int ch) {
 }
 
 // For the rest of work (awakening the waiter), out-of-order is acceptable
-void onKeyboardAsync(int ch) {
+void onKeyboardAsync(int ch, int augChar) {
   KERNEL_STACK_CHECK;
   virtualConsole* vc = currentVC;
 
   hvInt ev;
   ev.intNum = KEY_IDT_ENTRY;
-  ev.spCode = ch;
+  ev.spCode = augChar;
   ev.cr2 = 0;
   broadcastIntTo(&vc->i.kbMul, ev);
 
+  if (ch < 0) return;
 
   if (ch == KHE_TAB) {
     switchNextVirtualConsole();
     return;
   }
 
-  if (ch < 0) return;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY
     if (ch == KHE_ARROW_RIGHT) {

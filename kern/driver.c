@@ -15,8 +15,8 @@
 #include "cpu.h"
 
 int handler_install(void (*tickback)(unsigned int),
-                    void (*keybacksync)(int),
-                    void (*keybackasync)(int)) {
+                    void (*keybacksync)(int, int),
+                    void (*keybackasync)(int, int)) {
   int rc;
   lprintf("Installing timer driver...");
   // We skip install timer callback if tickback is not provided

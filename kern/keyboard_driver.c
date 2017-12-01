@@ -23,10 +23,11 @@
 #include "x86/keyhelp.h"
 #include "cpu.h"
 
-static int translateScancode(uint8_t scanCode) {
+static int translateScancode(uint8_t scanCode, int* augChar) {
   int ret = -1;
   LocalLockR();
   kh_type augmentedChar = process_scancode(scanCode);
+  *augChar = (int)augmentedChar;
   if (KH_HASDATA(augmentedChar) && KH_ISMAKE(augmentedChar)) {
     ret = KH_GETCHAR(augmentedChar);
   }
@@ -58,12 +59,13 @@ int install_keyboard_driver(KeyboardCallback asyncCallback,
 // It will also send ACK after pushing the scancode to buffer.
 void keyboardIntHandlerInternal() {
   uint8_t scanCode = inb(KEYBOARD_PORT);
-  int ch = translateScancode(scanCode);
-  if (kbCallbackSync && ch >= 0) {
-    kbCallbackSync(ch);
+  int augChar;
+  int ch = translateScancode(scanCode, &augChar);
+  if (kbCallbackSync) {
+    kbCallbackSync(ch, augChar);
   }
   outb(INT_CTL_PORT, INT_ACK_CURRENT);
-  if (kbCallbackAsync && ch >= 0) {
-    kbCallbackAsync(ch);
+  if (kbCallbackAsync) {
+    kbCallbackAsync(ch, augChar);
   }
 }

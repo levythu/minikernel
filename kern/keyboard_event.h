@@ -37,7 +37,7 @@ int getStringBlocking(int vcn, char* space, int maxlen);
 
 // Exposed two functions, and kernel.c should use them to register to kayboard
 // driver
-void onKeyboardSync(int ch);
-void onKeyboardAsync(int ch);
+void onKeyboardSync(int ch, int augChar);
+void onKeyboardAsync(int ch, int augChar);
 
 #endif

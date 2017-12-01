@@ -74,7 +74,7 @@ UPDATE_METHOD = afs
 410TESTS += make_crash make_crash_helper mem_permissions minclone_mem new_pages
 410TESTS += register_test remove_pages_test2
 410TESTS += cho cho2 cho_variant
-410TESTS += bg
+410TESTS += bg new_shell
 
 ###########################################################################
 # Test programs you have written which you wish to run

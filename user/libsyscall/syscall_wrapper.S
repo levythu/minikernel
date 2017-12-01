@@ -29,6 +29,9 @@ MAKE_WRAPPER_MULTIPARAMS(get_cursor_pos, GET_CURSOR_POS_INT)
 # int set_cursor_pos(int row, int col)
 MAKE_WRAPPER_MULTIPARAMS(set_cursor_pos, SET_CURSOR_POS_INT)
 
+# int new_console(void)
+MAKE_WRAPPER_NOPARAM(new_console, NEW_CONSOLE_INT)
+
 
 
 # ##############################################################################

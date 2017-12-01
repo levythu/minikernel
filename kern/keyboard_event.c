@@ -161,6 +161,12 @@ void onKeyboardAsync(int ch) {
   ev.cr2 = 0;
   broadcastIntTo(&vc->i.kbMul, ev);
 
+
+  if (ch == KHE_TAB) {
+    switchNextVirtualConsole();
+    return;
+  }
+
   if (ch < 0) return;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   #ifdef CONTEXT_SWTICH_ON_RIGHT_KEY

@@ -8,9 +8,10 @@
 #define MAX_LIVE_VIRTUAL_CONSOLE 10
 
 int initVirtualConsole();
-
-void useVirtualConsole(int vcNumber);
 int newVirtualConsole();
+
+void switchToVirtualConsole(int vcNumber);
+void switchNextVirtualConsole();
 
 void referVirtualConsole(int vcNumber);
 void dereferVirtualConsole(int vcNumber);

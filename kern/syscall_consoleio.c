@@ -26,8 +26,32 @@
 #include "kmutex.h"
 #include "console.h"
 #include "keyboard_event.h"
+#include "virtual_console.h"
 
 #define MAX_READWRITE_BUFFER_SIZE (CONSOLE_WIDTH * CONSOLE_HEIGHT)
+
+int new_console_Internal(SyscallParams params) {
+  // We own currentThread
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  // Precheck: the process has only one thread
+  kmutexRLock(&currentThread->process->mutex);
+  if (currentThread->process->numThread > 1) {
+    kmutexRUnlock(&currentThread->process->mutex);
+    // We reject a multithread process to fork
+    return -1;
+  }
+  kmutexRUnlock(&currentThread->process->mutex);
+
+  int newVC = newVirtualConsole();
+  if (newVC < 0) return -1;
+  int oldVC = currentThread->process->vcNumber;
+  currentThread->process->vcNumber = newVC;
+  referVirtualConsole(newVC);
+  dereferVirtualConsole(oldVC);
+
+  switchToVirtualConsole(newVC);
+  return 0;
+}
 
 int readline_Internal(SyscallParams params) {
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
@@ -194,7 +218,7 @@ int get_cursor_pos_Internal(SyscallParams params) {
   int row, col;
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
   get_cursor(currentThread->process->vcNumber, &row, &col);
-  
+
   int rowAddr, colAddr;
   kmutexWLockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);

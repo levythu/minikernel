@@ -48,6 +48,7 @@ void initSyscall() {
   MAKE_SYSCALL_IDT(set_term_color, SET_TERM_COLOR_INT);
   MAKE_SYSCALL_IDT(set_cursor_pos, SET_CURSOR_POS_INT);
   MAKE_SYSCALL_IDT(get_cursor_pos, GET_CURSOR_POS_INT);
+  MAKE_SYSCALL_IDT(new_console, NEW_CONSOLE_INT);
 
   MAKE_SYSCALL_IDT(swexn, SWEXN_INT);
   MAKE_SYSCALL_IDT(sleep, SLEEP_INT);

@@ -27,6 +27,7 @@
 
 static virtualConsole* vcList[MAX_LIVE_VIRTUAL_CONSOLE];
 static CrossCPULock latch;
+static int currentVCN;
 
 void* getVirtualConsole(int vcNumber) {
   assert(vcNumber != -1);
@@ -38,14 +39,32 @@ void* getVirtualConsole(int vcNumber) {
   return theVC;
 }
 
-void useVirtualConsole(int vcNumber) {
+static void _useVirtualConsole(int vcNumber) {
   assert(vcNumber != -1);
-  // Use the latch to ensure serial
-  GlobalLockR(&latch);
   assert(vcList[vcNumber] != NULL);
   assert(!vcList[vcNumber]->dead);
+  currentVCN = vcNumber;
   useVirtualKeyboard(vcNumber);
   useVirtualVideo(vcNumber);
+}
+
+void switchToVirtualConsole(int vcNumber) {
+  GlobalLockR(&latch);
+  // TODO Do something to the old
+  _useVirtualConsole(vcNumber);
+  lprintf("Virtual Console #%d activated, now %d processes inside.",
+          vcNumber, vcList[vcNumber]->ref);
+  GlobalUnlockR(&latch);
+}
+
+void switchNextVirtualConsole() {
+  GlobalLockR(&latch);
+  for (int i = 1; i < MAX_LIVE_VIRTUAL_CONSOLE; i++) {
+    int thisVCN = (currentVCN + i) % MAX_LIVE_VIRTUAL_CONSOLE;
+    if (vcList[thisVCN] == NULL) continue;
+    switchToVirtualConsole(thisVCN);
+    break;
+  }
   GlobalUnlockR(&latch);
 }
 
@@ -109,6 +128,6 @@ int initVirtualConsole() {
   initCrossCPULock(&latch);
   // 1. setting up the default vc
   int initConsole = newVirtualConsole();
-  useVirtualConsole(initConsole);
+  _useVirtualConsole(initConsole);
   return initConsole;
 }

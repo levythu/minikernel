@@ -21,5 +21,8 @@
 // Install the graphic driver. For any errors return negative integer;
 // otherwise return 0;
 extern int install_graphic_driver();
+int initVirtualVideo(void* _vc);
+
+void useVirtualVideo(int vcn);
 
 #endif

@@ -99,7 +99,7 @@ int getStringBlocking(int vcn, char* space, int maxlen) {
     while (true) {
       int ch = fetchCharEvent();
       if (ch >= 0 && preexist) {
-        putbyte(ch);
+        putbyte_(vcn, ch);
       }
       if (ch == '\b') {
         if (currentLen > 0) currentLen--;
@@ -145,7 +145,7 @@ void onKeyboardSync(int ch) {
   virtualConsole* vc = currentVC;
   GlobalLockR(&vc->i.latch);
   if (vc->i.eventWaiter && !vc->i.waitingForAnyChar) {
-    putbyte(ch);
+    putbyte_(vc->vcNumber, ch);
   }
   GlobalUnlockR(&vc->i.latch);
 }

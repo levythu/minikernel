@@ -23,66 +23,69 @@
 #include "x86/asm.h"
 #include "cpu.h"
 #include "kmutex.h"
-
-static CrossCPULock videoLock;
-static kmutex longPrintLock;
-
-static int16_t characterBuffer[CONSOLE_HEIGHT][CONSOLE_WIDTH];
-static int currentCursorX, currentCursorY;  // relative cursor position
-// the startX for characterBuffer, relative position should add this to become
-// the absolute position in characterBuffer.
-static int validStartX;
-
-static int currentColor;
-static bool showCursor;
+#include "virtual_console_dev.h"
+#include "virtual_console.h"
 
 static const int defaultColor = BGND_BLACK | FGND_LGRAY;
 static const int blankChar = ' ';
 
+static virtualConsole* currentVC = NULL;
+static CrossCPULock syncLock;
+
 #define MAKE_CCHAR(ch, color) (((color) << 8) + (ch))
 #define CCHAR_TO_CHAR(cchar) ((cchar) & 0xff)
-static void syncCursor(bool toggling);
+static void syncCursor(int vcn, bool toggling);
 
 // Synchronzie the buffer to graphic memory, of lines [startX, endX)
-// Note that the start/end line number is relative to validStartX
-static void syncGraphicMemory(int relativeStartX, int relativeEndX) {
+// Note that the start/end line number is relative to vc->o.validStartX
+static void syncGraphicMemory(int vcn, int relativeStartX, int relativeEndX) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&syncLock);
+  if (vc != currentVC) {
+    GlobalUnlockR(&syncLock);
+    return;
+  }
   int i = 0;
   for (i = relativeStartX; i < relativeEndX; i++) {
-    int theLine = (validStartX + i) % CONSOLE_HEIGHT;
+    int theLine = (vc->o.validStartX + i) % CONSOLE_HEIGHT;
     memcpy((char*)(CONSOLE_MEM_BASE + 2*i*CONSOLE_WIDTH),
-           characterBuffer[theLine],
+           vc->o.characterBuffer[theLine],
            2*CONSOLE_WIDTH);
   }
+  GlobalUnlockR(&syncLock);
 }
 
 // Move the cursor to the first character of new line. If the current buffer
 // is full, scroll happens and the earliest line is discarded
-static void moveCursorNewLine() {
-  currentCursorY = 0;
-  if (currentCursorX < CONSOLE_HEIGHT-1) {
-    currentCursorX++;
+static void moveCursorNewLine(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  vc->o.currentCursorY = 0;
+  if (vc->o.currentCursorX < CONSOLE_HEIGHT-1) {
+    vc->o.currentCursorX++;
   } else {
     int j;
     for (j = 0; j < CONSOLE_WIDTH; j++) {
-      characterBuffer[validStartX][j] = MAKE_CCHAR(blankChar, defaultColor);
+      vc->o.characterBuffer[vc->o.validStartX][j] =
+          MAKE_CCHAR(blankChar, defaultColor);
     }
-    validStartX = (validStartX + 1) % CONSOLE_HEIGHT;
+    vc->o.validStartX = (vc->o.validStartX + 1) % CONSOLE_HEIGHT;
     // Since scroll happens, everything in the graphic memory may have to be
     // re-synced
-    syncGraphicMemory(0, CONSOLE_HEIGHT);
+    syncGraphicMemory(vcn, 0, CONSOLE_HEIGHT);
   }
-  syncCursor(false);
+  syncCursor(vcn, false);
 }
 
 // Move cursor to the next position, typically the next column; if currently
 // it is the last column, moveCursorNewLine() os called..
-static void moveCursorNext() {
-  if (currentCursorY < CONSOLE_WIDTH-1) {
-    currentCursorY++;
+static void moveCursorNext(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  if (vc->o.currentCursorY < CONSOLE_WIDTH-1) {
+    vc->o.currentCursorY++;
   } else {
-    moveCursorNewLine();
+    moveCursorNewLine(vcn);
   }
-  syncCursor(false);
+  syncCursor(vcn, false);
 }
 
 static bool checkValidColor(int color) {
@@ -93,32 +96,58 @@ static bool checkValidColor(int color) {
 // we want to show it. When we decide to hide it, typically we just do nothing
 // However, when toggling is set to true, we will forcely hide the cursor by
 // moving the physical cursor outside screen.
-static void syncCursor(bool toggling) {
+static void syncCursor(int vcn, bool toggling) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&syncLock);
+  if (vc != currentVC) {
+    GlobalUnlockR(&syncLock);
+    return;
+  }
   int pos;
-  if (showCursor) {
-    pos = currentCursorY + currentCursorX * CONSOLE_WIDTH;
+  if (vc->o.showCursor) {
+    pos = vc->o.currentCursorY + vc->o.currentCursorX * CONSOLE_WIDTH;
   } else if (toggling) {
     pos = CONSOLE_HEIGHT * CONSOLE_WIDTH;
   } else {
+    GlobalUnlockR(&syncLock);
     return;
   }
   outb(CRTC_IDX_REG, CRTC_CURSOR_LSB_IDX);
   outb(CRTC_DATA_REG, pos & 0xff);
   outb(CRTC_IDX_REG, CRTC_CURSOR_MSB_IDX);
   outb(CRTC_DATA_REG, (pos >> 8) & 0xff);
+  GlobalUnlockR(&syncLock);
 }
 
 /******************************************************************************/
 
-int install_graphic_driver() {
-  initCrossCPULock(&videoLock);
-  kmutexInit(&longPrintLock);
-  currentColor = defaultColor;
-  showCursor = true;
-  clear_console();
+int initVirtualVideo(void* _vc) {
+  virtualConsole* vc = (virtualConsole*)_vc;
+  initCrossCPULock(&vc->o.videoLock);
+  kmutexInit(&vc->o.longPrintLock);
+  vc->o.currentColor = defaultColor;
+  vc->o.showCursor = true;
+  for (int i = 0; i < CONSOLE_HEIGHT; i++) {
+    for (int j = 0; j < CONSOLE_WIDTH; j++) {
+      vc->o.characterBuffer[i][j] = MAKE_CCHAR(blankChar, vc->o.currentColor);
+    }
+  }
+  vc->o.currentCursorX = vc->o.currentCursorY = 0;
+  vc->o.validStartX = 0;
   return 0;
 }
 
+int install_graphic_driver() {
+  initCrossCPULock(&syncLock);
+  return 0;
+}
+
+void useVirtualVideo(int vcn) {
+  GlobalLockR(&syncLock);
+  currentVC = (virtualConsole*)getVirtualConsole(vcn);
+  syncGraphicMemory(vcn, 0, CONSOLE_HEIGHT);
+  GlobalUnlockR(&syncLock);
+}
 
 // Put a byte on the current cursor of screen, with the current color
 // If the character is a newline ('\n'), the cursor is moved to the beginning
@@ -129,112 +158,127 @@ int install_graphic_driver() {
 // If backspace ('\b') is encountered, the previous character is erased and
 // cursor is backed. If there is no character in the line, then nothing will
 // happen.
-int putbyte(char ch) {
-  GlobalLockR(&videoLock);
+int putbyte_(int vcn, char ch) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&vc->o.videoLock);
   if (ch == '\n') {
-    moveCursorNewLine();
+    moveCursorNewLine(vcn);
   } else if (ch == '\r') {
-    currentCursorY = 0;
-    syncCursor(false);
+    vc->o.currentCursorY = 0;
+    syncCursor(vcn, false);
   } else if (ch == '\b') {
-    if (currentCursorY > 0) {
-      currentCursorY--;
-      draw_char(currentCursorX, currentCursorY, blankChar, currentColor);
-      syncCursor(false);
+    if (vc->o.currentCursorY > 0) {
+      vc->o.currentCursorY--;
+      draw_char(vcn, vc->o.currentCursorX, vc->o.currentCursorY,
+          blankChar, vc->o.currentColor);
+      syncCursor(vcn, false);
     }
   } else {
-    draw_char(currentCursorX, currentCursorY, ch, currentColor);
-    moveCursorNext();
+    draw_char(vcn, vc->o.currentCursorX, vc->o.currentCursorY, ch,
+        vc->o.currentColor);
+    moveCursorNext(vcn);
   }
-  GlobalUnlockR(&videoLock);
+  GlobalUnlockR(&vc->o.videoLock);
   return ch;
 }
 
+int putbyte(char ch) {
+  return putbyte_(currentVC->vcNumber, ch);
+}
+
 // Print the string with length len on the screen by repeatedly calling
-// putbyte(). If s is NULL nothing will happen
+// putbyte_(). If s is NULL nothing will happen
 // Unlike putbyte, which use global spinlock for atomicity, putbytes use kmutex
 // that is, it can be interleaved by some putbyte. (Imagine putbytes put long
 // string, so we allow context switch!)
-void putbytes(const char *s, int len) {
+void putbytes(int vcn, const char *s, int len) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   if (len <= 0 || !s) return;
   int i;
-  kmutexWLock(&longPrintLock);
+  kmutexWLock(&vc->o.longPrintLock);
   for (i = 0; i < len; i++) {
-    putbyte(s[i]);
+    putbyte_(vcn, s[i]);
   }
-  kmutexWUnlock(&longPrintLock);
+  kmutexWUnlock(&vc->o.longPrintLock);
 }
 
 // Set the current terminal color, successful call will return 0, otherwise a
 // negative integer
-int set_term_color(int color) {
+int set_term_color(int vcn, int color) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   if (!checkValidColor(color)) return GRAPHIC_INVALID_COLOR;
-  GlobalLockR(&videoLock);
-  currentColor = color;
-  GlobalUnlockR(&videoLock);
+  GlobalLockR(&vc->o.videoLock);
+  vc->o.currentColor = color;
+  GlobalUnlockR(&vc->o.videoLock);
   return 0;
 }
 
 // Get the current terminal color
-void get_term_color(int *color) {
-  GlobalLockR(&videoLock);
-  *color = currentColor;
-  GlobalUnlockR(&videoLock);
+void get_term_color(int vcn, int *color) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&vc->o.videoLock);
+  *color = vc->o.currentColor;
+  GlobalUnlockR(&vc->o.videoLock);
 }
 
 // Set the current cursor position, successful call will return 0, otherwise a
 // negative integer
-int set_cursor(int row, int col) {
+int set_cursor(int vcn, int row, int col) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   if (row<0 || row>=CONSOLE_HEIGHT || col<0 || col>=CONSOLE_WIDTH) {
     return GRAPHIC_INVALID_POSITION;
   }
-  GlobalLockR(&videoLock);
-  currentCursorX = row;
-  currentCursorY = col;
-  syncCursor(false);
-  GlobalUnlockR(&videoLock);
+  GlobalLockR(&vc->o.videoLock);
+  vc->o.currentCursorX = row;
+  vc->o.currentCursorY = col;
+  syncCursor(vcn, false);
+  GlobalUnlockR(&vc->o.videoLock);
   return 0;
 }
 
 // Get the current cursor position
-void get_cursor(int *row, int *col) {
-  GlobalLockR(&videoLock);
-  *row = currentCursorX;
-  *col = currentCursorY;
-  GlobalUnlockR(&videoLock);
+void get_cursor(int vcn, int *row, int *col) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&vc->o.videoLock);
+  *row = vc->o.currentCursorX;
+  *col = vc->o.currentCursorY;
+  GlobalUnlockR(&vc->o.videoLock);
 }
 
 // Hide the physical cursor on the screen
-void hide_cursor() {
-  GlobalLockR(&videoLock);
-  showCursor = false;
-  syncCursor(true);
-  GlobalUnlockR(&videoLock);
+void hide_cursor(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&vc->o.videoLock);
+  vc->o.showCursor = false;
+  syncCursor(vcn, true);
+  GlobalUnlockR(&vc->o.videoLock);
 }
 
 // Show the physical cursor on the screen
-void show_cursor() {
-  GlobalLockR(&videoLock);
-  showCursor = true;
-  syncCursor(true);
-  GlobalUnlockR(&videoLock);
+void show_cursor(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&vc->o.videoLock);
+  vc->o.showCursor = true;
+  syncCursor(vcn, true);
+  GlobalUnlockR(&vc->o.videoLock);
 }
 
 // Clear the whole console with current background. Reset the cursor to the 1st
 // col in the 1st row.
-void clear_console() {
-  GlobalLockR(&videoLock);
+void clear_console(int vcn) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
+  GlobalLockR(&vc->o.videoLock);
   int i, j;
   for (i = 0; i < CONSOLE_HEIGHT; i++) {
     for (j = 0; j < CONSOLE_WIDTH; j++) {
-      characterBuffer[i][j] = MAKE_CCHAR(blankChar, currentColor);
+      vc->o.characterBuffer[i][j] = MAKE_CCHAR(blankChar, vc->o.currentColor);
     }
   }
-  currentCursorX = currentCursorY = 0;
-  syncCursor(false);
-  validStartX = 0;
-  syncGraphicMemory(0, CONSOLE_HEIGHT);
-  GlobalUnlockR(&videoLock);
+  vc->o.currentCursorX = vc->o.currentCursorY = 0;
+  syncCursor(vcn, false);
+  vc->o.validStartX = 0;
+  syncGraphicMemory(vcn, 0, CONSOLE_HEIGHT);
+  GlobalUnlockR(&vc->o.videoLock);
 }
 
 // Draw a character on given position with given color; if the position or color
@@ -243,28 +287,30 @@ void clear_console() {
 // NOTE this function is lower level and has nothing to do with cursor,
 // scrolling, etc.. Unless you know what you are doing, most of time you want to
 // use put_char() or put_chars()
-void draw_char(int row, int col, int ch, int color) {
+void draw_char(int vcn, int row, int col, int ch, int color) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   if (row<0 || row>=CONSOLE_HEIGHT || col<0 || col>=CONSOLE_WIDTH) return;
   if (!isprint(ch)) return;
   if (!checkValidColor(color)) return;
 
-  GlobalLockR(&videoLock);
-  int absRow = (validStartX + row) % CONSOLE_HEIGHT;
-  characterBuffer[absRow][col] = MAKE_CCHAR(ch, color);
-  syncGraphicMemory(row, row+1);
-  GlobalUnlockR(&videoLock);
+  GlobalLockR(&vc->o.videoLock);
+  int absRow = (vc->o.validStartX + row) % CONSOLE_HEIGHT;
+  vc->o.characterBuffer[absRow][col] = MAKE_CCHAR(ch, color);
+  syncGraphicMemory(vcn, row, row+1);
+  GlobalUnlockR(&vc->o.videoLock);
 }
 
 // Get the char on a given point of screen
 // For any errors a negative value is returnedl; otherwise a valid ASCII char
 // is returned.
-char get_char(int row, int col) {
+char get_char(int vcn, int row, int col) {
+  virtualConsole* vc = (virtualConsole*)getVirtualConsole(vcn);
   if (row<0 || row>=CONSOLE_HEIGHT || col<0 || col>=CONSOLE_WIDTH) {
     return GRAPHIC_INVALID_POSITION;
   }
-  GlobalLockR(&videoLock);
-  row = (validStartX + row) % CONSOLE_HEIGHT;
-  int16_t res = characterBuffer[row][col];
-  GlobalUnlockR(&videoLock);
+  GlobalLockR(&vc->o.videoLock);
+  row = (vc->o.validStartX + row) % CONSOLE_HEIGHT;
+  int16_t res = vc->o.characterBuffer[row][col];
+  GlobalUnlockR(&vc->o.videoLock);
   return CCHAR_TO_CHAR(res);
 }

@@ -43,6 +43,7 @@ typedef struct {
   virtualGraphix o;
   int ref;
   bool dead;
+  int vcNumber;
 } virtualConsole;
 
 

@@ -145,7 +145,7 @@ int print_Internal(SyscallParams params) {
   kmutexRUnlockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
 
-  putbytes(source, actualLen);
+  putbytes(currentThread->process->vcNumber, source, actualLen);
   sfree(source, len);
   return 0;
 }
@@ -164,7 +164,7 @@ int set_term_color_Internal(SyscallParams params) {
   kmutexRUnlockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
 
-  return set_term_color(color);
+  return set_term_color(currentThread->process->vcNumber, color);
 }
 
 int set_cursor_pos_Internal(SyscallParams params) {
@@ -187,14 +187,14 @@ int set_cursor_pos_Internal(SyscallParams params) {
   kmutexRUnlockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);
 
-  return set_cursor(row, col);
+  return set_cursor(currentThread->process->vcNumber, row, col);
 }
 
 int get_cursor_pos_Internal(SyscallParams params) {
   int row, col;
-  get_cursor(&row, &col);
-
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+  get_cursor(currentThread->process->vcNumber, &row, &col);
+  
   int rowAddr, colAddr;
   kmutexWLockRecord(&currentThread->process->memlock,
       &currentThread->memLockStatus);

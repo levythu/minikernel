@@ -45,6 +45,7 @@ void useVirtualConsole(int vcNumber) {
   assert(vcList[vcNumber] != NULL);
   assert(!vcList[vcNumber]->dead);
   useVirtualKeyboard(vcNumber);
+  useVirtualVideo(vcNumber);
   GlobalUnlockR(&latch);
 }
 
@@ -78,7 +79,7 @@ int newVirtualConsole() {
   newVC->ref = 0;
   newVC->dead = false;
   initKeyboardEvent(newVC);
-  // TODO initGraphix
+  initVirtualVideo(newVC);
 
   GlobalLockR(&latch);
   int i;
@@ -92,6 +93,7 @@ int newVirtualConsole() {
     return -1;
   }
   vcList[i] = newVC;
+  newVC->vcNumber = i;
   GlobalUnlockR(&latch);
   return i;
 }
@@ -99,6 +101,8 @@ int newVirtualConsole() {
 // let kernel call it on startup!
 // It must happen before register keyboard driver
 int initVirtualConsole() {
+  install_graphic_driver();
+
   for (int i = 0; i < MAX_LIVE_VIRTUAL_CONSOLE; i++) {
     vcList[i] = NULL;
   }

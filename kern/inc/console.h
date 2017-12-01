@@ -29,7 +29,10 @@
  *  @param ch the character to print
  *  @return The input character
  */
-int putbyte( char ch );
+int putbyte_(int vcn, char ch );
+
+// Only to accommodate 410kern/stdio/putchar.c
+int putbyte(char ch);
 
 /** @brief Prints the string s, starting at the current
  *         location of the cursor.
@@ -48,7 +51,7 @@ int putbyte( char ch );
  *  @param len The length of the string s.
  *  @return Void.
  */
-void putbytes(const char* s, int len);
+void putbytes(int vcn, const char* s, int len);
 
 /** @brief Changes the foreground and background color
  *         of future characters printed on the console.
@@ -59,7 +62,7 @@ void putbytes(const char* s, int len);
  *  @return 0 on success or integer error code less than 0 if
  *          color code is invalid.
  */
-int set_term_color(int color);
+int set_term_color(int vcn, int color);
 
 /** @brief Writes the current foreground and background
  *         color of characters printed on the console
@@ -68,7 +71,7 @@ int set_term_color(int color);
  *         information will be written.
  *  @return Void.
  */
-void get_term_color(int* color);
+void get_term_color(int vcn, int* color);
 
 /** @brief Sets the position of the cursor to the
  *         position (row, col).
@@ -83,7 +86,7 @@ void get_term_color(int* color);
  *  @return 0 on success or integer error code less than 0 if
  *          cursor location is invalid.
  */
-int set_cursor(int row, int col);
+int set_cursor(int vcn, int row, int col);
 
 /** @brief Writes the current position of the cursor
  *         into the arguments row and col.
@@ -93,7 +96,7 @@ int set_cursor(int row, int col);
  *         column will be written.
  *  @return Void.
  */
-void get_cursor(int* row, int* col);
+void get_cursor(int vcn, int* row, int* col);
 
 /** @brief Hides the cursor.
  *
@@ -102,7 +105,7 @@ void get_cursor(int* row, int* col);
  *
  *  @return Void.
  */
-void hide_cursor();
+void hide_cursor(int vcn);
 
 /** @brief Shows the cursor.
  *
@@ -110,7 +113,7 @@ void hide_cursor();
  *
  *  @return Void.
  */
-void show_cursor();
+void show_cursor(int vcn);
 
 /** @brief Clears the entire console.
  *
@@ -118,7 +121,7 @@ void show_cursor();
  *
  *  @return Void.
  */
-void clear_console();
+void clear_console(int vcn);
 
 /** @brief Prints character ch with the specified color
  *         at position (row, col).
@@ -131,13 +134,13 @@ void clear_console();
  *  @param color The color to use to display the character.
  *  @return Void.
  */
-void draw_char(int row, int col, int ch, int color);
+void draw_char(int vcn, int row, int col, int ch, int color);
 
 /** @brief Returns the character displayed at position (row, col).
  *  @param row Row of the character.
  *  @param col Column of the character.
  *  @return The character at (row, col).
  */
-char get_char(int row, int col);
+char get_char(int vcn, int row, int col);
 
 #endif /* _CONSOLE_H */

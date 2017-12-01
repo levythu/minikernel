@@ -31,21 +31,21 @@ int hpc_print(int userEsp, tcb* thr) {
     sfree(buf, HV_PRINT_MAX);
     return -1;
   }
-  putbytes(buf, actualLen);
+  putbytes(thr->process->vcNumber, buf, actualLen);
   sfree(buf, HV_PRINT_MAX);
   return 0;
 }
 
 int hpc_cons_set_term_color(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, color, 0);
-  set_term_color(color);
+  set_term_color(thr->process->vcNumber, color);
   return 0;
 }
 
 int hpc_cons_set_cursor_pos(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, row, 0);
   DEFINE_PARAM(int, col, 1);
-  if (set_cursor(row, col) != 0) {
+  if (set_cursor(thr->process->vcNumber, row, col) != 0) {
     // TODO crash the guest
   }
   return 0;
@@ -65,7 +65,7 @@ int hpc_cons_get_cursor_pos(int userEsp, tcb* thr) {
   }
 
   int row, col;
-  get_cursor(&row, &col);
+  get_cursor(thr->process->vcNumber, &row, &col);
   *((int*)rowAddr) = row;
   *((int*)colAddr) = col;
 
@@ -89,20 +89,20 @@ int hpc_print_at(int userEsp, tcb* thr) {
   }
 
   int _color, _row, _col;
-  get_term_color(&_color);
-  get_cursor(&_row, &_col);
+  get_term_color(thr->process->vcNumber, &_color);
+  get_cursor(thr->process->vcNumber, &_row, &_col);
 
-  set_term_color(color);
-  if (set_cursor(row, col) != 0) {
+  set_term_color(thr->process->vcNumber, color);
+  if (set_cursor(thr->process->vcNumber, row, col) != 0) {
     // TODO crash the guest
     sfree(buf, HV_PRINT_MAX);
     return -1;
   }
-  putbytes(buf, actualLen);
+  putbytes(thr->process->vcNumber, buf, actualLen);
   sfree(buf, HV_PRINT_MAX);
 
-  set_term_color(_color);
-  set_cursor(_row, _col);
+  set_term_color(thr->process->vcNumber, _color);
+  set_cursor(thr->process->vcNumber, _row, _col);
 
   return 0;
 }

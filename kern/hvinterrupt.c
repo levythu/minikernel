@@ -68,13 +68,21 @@ bool applyInt(HyperInfo* info, hvInt hvi,
     return false;
   }
 
+  tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+
   // TODO: address validation
-  // TODO: privilege validation
   uint32_t* stack;
   uint32_t newESP;
   // 1. Push state:
   if (info->inKernelMode) {
     // No stack change
+    if (!verifyUserSpaceAddr(oldESP + info->baseAddr - 10 * sizeof(uint32_t),
+                             oldESP + info->baseAddr - 1,
+                             true)) {
+      // Not a proper stack to push. Crash the kernel
+      lprintf("Hypervisor crashes: not a proper esp on int delivery");
+      exitHyperWithStatus(info, currentThread, GUEST_CRASH_STATUS);
+    }
     stack = (uint32_t*)(oldESP + info->baseAddr);
     stack[-1] = oldEFLAGS;
     stack[-2] = GUEST_INTERRUPT_KMODE;
@@ -84,9 +92,15 @@ bool applyInt(HyperInfo* info, hvInt hvi,
     newESP = (uint32_t)(&stack[-5]) - info->baseAddr;
   } else {
     // Elevate priviledge
-    tcb* currentThread = findTCB(getLocalCPU()->runningTID);
     elevatePriviledge(info, currentThread);
-    // TODO validate esp0
+    if (!verifyUserSpaceAddr(
+          info->esp0 + info->baseAddr - 10 * sizeof(uint32_t),
+          info->esp0 + info->baseAddr - 1,
+          true)) {
+      // Not a proper stack to push. Crash the kernel
+      lprintf("Hypervisor crashes: not a proper esp0 on int delivery");
+      exitHyperWithStatus(info, currentThread, GUEST_CRASH_STATUS);
+    }
     stack = (uint32_t*)(info->esp0 + info->baseAddr);
     stack[-1] = oldESP;
     stack[-2] = oldEFLAGS;

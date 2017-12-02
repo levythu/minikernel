@@ -114,6 +114,8 @@ typedef struct HyperInfo {
 
 } HyperInfo;
 
+// Setup sane value for a hyperinfo.
+void initHyperInfo(HyperInfo* info);
 
 // Return true if given elfMetadata is a virtual machine.
 // In this case, modify elfMetadata to apply proper offset, and set HyperInfo

@@ -29,7 +29,7 @@
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
-static void initHyperInfo(HyperInfo* info) {
+void initHyperInfo(HyperInfo* info) {
   info->cs = SEGSEL_USER_CS;
   info->ds = SEGSEL_USER_DS;
   info->baseAddr = 0;

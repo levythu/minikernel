@@ -1,3 +1,10 @@
+/** @file hv_hpcall_int.c
+ *
+ *  @brief Implementation of interrupt related hypercalls
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>
@@ -75,7 +82,7 @@ int hpc_iret(int userEsp, tcb* thr,
     exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
     return -1;
   }
-  // TODO validate others?
+  
   if (esp0 != 0) {
     // Switch to guest ring3!!
     info->inKernelMode = false;

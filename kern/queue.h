@@ -1,4 +1,26 @@
-/** @file TODO
+/** @file queue.h
+ *
+ *  @brief A templated circular queue
+ *
+ *  varQueue is just the header of a general-type queue, with no payload. When
+ *  you run MAKE_VAR_QUEUE_UTILITY(TYPE) in a .c file, it will generate
+ *  several static functions for manipulating a varQueue:
+ *
+ *  void varQueueInit(varQueue* q, int capacity) will initiate the queue, with
+ *  max capacity = capacity
+ *
+ *  void varQueueDestroy(varQueue* q) destroy a varQueueInit'd queue and release
+ *  memory
+ *
+ *  bool varQueueEnq(varQueue* q, TYPE payload) enqueue a payload of given type,
+ *  will fail if the queue has been filled. Return value indicates whether succ
+ *
+ *  TYPE varQueueDeq(varQueue* q) dequeue. It panics when there's nothing in the
+ *  queue, so the caller should use q->size to check whether it's empty before
+ *  calling this
+ *
+ *  Note that this data structure has no protection against multithread or
+ *  interrupt at all. The caller should know that.
  *
  *  @author Leiyu Zhao
  */

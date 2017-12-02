@@ -1,3 +1,10 @@
+/** @file hv.c
+ *
+ *  @brief Implementation of basic hypervisor initiator
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>

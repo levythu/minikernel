@@ -58,19 +58,22 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   return info->isHyper;
 }
 
-void destroyHyperInfo(HyperInfo* info, int vcn) {
+extern void exitPagingMode(tcb* thr);
+void destroyHyperInfo(HyperInfo* info, tcb* thr, int vcn) {
   removeWaiter(&info->selfMulti, info);
   intMultiplexer* currentKB = getKeyboardMultiplexer(vcn);
   removeWaiter(currentKB, info);
 
   varQueueDestroy(&info->delayedInt);
   sfree(info->idt, sizeof(IDTEntry) * (MAX_SUPPORTED_VIRTUAL_INT + 1));
+
+  exitPagingMode(thr);
 }
 
 void exitHyperWithStatus(HyperInfo* info, void* _thr, int statusCode) {
   tcb* thr = (tcb*)_thr;
   assert((&thr->process->hyperInfo) == info);
-  destroyHyperInfo(info, thr->process->vcNumber);
+  destroyHyperInfo(info, thr, thr->process->vcNumber);
 
   thr->process->retStatus = statusCode;
   // one way trp

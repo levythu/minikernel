@@ -59,5 +59,8 @@ int hyperCallHandler_Internal(int userEsp, int eax,
   HPC_ON(HV_SETIDT_OP, hpc_setidt);
   HPC_ON_X(HV_IRET_OP, hpc_iret);
 
+  HPC_ON(HV_SETPD_OP, hpc_setpd);
+  HPC_ON(HV_ADJUSTPG_OP, hpc_adjustpg);
+
   return -1;
 }

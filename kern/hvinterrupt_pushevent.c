@@ -1,3 +1,16 @@
+/** @file hvinterrupt_pushevent.c
+ *
+ *  @brief The push event interface from outside hypervisor
+ *
+ *  Kernel pass things to hypervisor via two ways: 1. via intMultiplexer (see
+ *  interrupt.c); 2. via push event
+ *
+ *  Push event is the procedure when hypervisor expose pushevent interface
+ *  directly, and kernel call those "hook" interface when needed.
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>
@@ -28,6 +41,8 @@ bool applyInt(HyperInfo* info, hvInt hvi,
     uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
     int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax);
 
+// This forward timer interrupt to active hypervisor. Kernel should call it
+// asynchonously in timer callback
 void hv_CallMeOnTick(HyperInfo* info) {
   if (!HYPER_STATUS_READY(info->status)) return;
 
@@ -41,6 +56,8 @@ void hv_CallMeOnTick(HyperInfo* info) {
   broadcastIntTo(&info->selfMulti, tint);
 }
 
+// This hack syscall path before actual syscallHandler_Internal happens
+// See (make_syscall_handler.h) for the hook point.
 // If it's from guest, it never return (and shade normal syscall)
 // Otherwise, it does nothing
 void hypervisorSyscallHook(int intNum, const int es, const int ds,
@@ -75,6 +92,10 @@ void hypervisorSyscallHook(int intNum, const int es, const int ds,
   }
 }
 
+// This hack fault path before actual other fault handler happens
+// See (fault.c) for the hook point.
+// It simply forward the exception to guest kernel. If guest kernel hasn't
+// set up corresponding IDT, crash the guest
 FAULT_ACTION(HyperFaultHandler) {
   lprintf("Hypervisor exception.");
   printError(es, ds, edi, esi, ebp,
@@ -88,7 +109,7 @@ FAULT_ACTION(HyperFaultHandler) {
   hvInt hvi;
   hvi.intNum = faultNumber;
   hvi.spCode = errCode;
-  hvi.cr2 = faultNumber == IDT_PF ? 
+  hvi.cr2 = faultNumber == IDT_PF ?
       (cr2 - thr->process->hyperInfo.baseAddr) : 0;
 
   if (!applyInt(&thr->process->hyperInfo, hvi, esp, eflags, eip,

@@ -1,3 +1,10 @@
+/** @file hv_hpcall_int.c
+ *
+ *  @brief Implementation of misc hypercalls
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>

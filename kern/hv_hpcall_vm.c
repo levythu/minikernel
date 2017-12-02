@@ -1,3 +1,33 @@
+/** @file hv_hpcall_vm.h
+ *
+ *  @brief All about guest virtual memory and related hypercalls
+ *
+ *  In hyperInfo, there're several fields about guest virtual memory
+ *  (see hvlife.h). And they work in the following way:
+ *
+ *  When paging is off, hypervisor process keeps default direct mapping page
+ *  directory (original page directory). And originalPD = null.
+ *
+ *  As long as paging is turned on, the original mapping is shallow copied (
+ *  copy page directory only, not page tables) to originalPD. originalPD is used
+ *  in the following situation:
+ *  - When we need to access the guest physical memory (e.g. access guest PD)
+ *  - When we are about to exit, so that we must recover original page directory
+ *    to let Reaper reclaim all user-pages (see reaper.c)
+ *
+ *  We don't keep a copy of guest page table in kernel memory, instead, we
+ *  recompile it everytime on 1. change cr3; 2. mode switch.
+ *
+ *  Except adjustpg, which just changes a one mapping, every large-scale mapping
+ *  mutation (e.g. change cr3, mode switch, temporarily use originalPD) needs
+ *  flush the whole TLB. To avoid any race with context switcher itself, we
+ *  deligate it to context switch, i.e., achieving flushing TLB by forcing a
+ *  context switch to other threads. Since for hypervisor there should only be
+ *  one thread (in host kernel's view), there's no race at all.
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>
@@ -21,9 +51,10 @@
 #include "vm.h"
 
 
-// clear the current pd's user space
-// If it's the same as backed pd, then it's just a shallow clear
-// Otherwise it's a deep clear (free PT)
+// Clear the current page directory's user space
+// If it's the same as backed pd, then it's just a shallow clear (remove them
+// from page directory)
+// Otherwise it's a deep clear (free related page tables)
 static void clearCurrentPD(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   PageDirectory pd = thr->process->pd;
@@ -39,13 +70,16 @@ static void clearCurrentPD(tcb* thr) {
   }
 }
 
-// guestPAddr = 0xffffffff for remove,
+// The key function for establishing a mapping from guest virtual addr to guest
+// physical addr in host's page directory.
+// guestPAddr = 0xffffffff for remove
 // return true for success
 static bool generatePDMapping(tcb* thr, bool isWritable, bool isUser,
     uint32_t guestVAddr, uint32_t guestPAddr, bool forceRefresh) {
   HyperInfo* info = &thr->process->hyperInfo;
   PageDirectory pd = thr->process->pd;
 
+  // Validate guestVAddr and guestPAddr
   if (guestVAddr > GUEST_PHYSICAL_MAXVADDR) {
     return false;
   }
@@ -64,6 +98,9 @@ static bool generatePDMapping(tcb* thr, bool isWritable, bool isUser,
     }
     *currentPTE &= ~PE_PRESENT(1);
   } else {
+    // create mapping
+
+    // 1. Find the host physical address of given guest physical address
     PTE* directMapPTE = searchPTEntryPageDirectory(info->originalPD,
         guestPAddr + info->baseAddr);
     if (!directMapPTE) {
@@ -71,6 +108,9 @@ static bool generatePDMapping(tcb* thr, bool isWritable, bool isUser,
       return false;
     }
 
+    // 2. Make the mapping in page directory
+    // The page is writable if: 1. it's defined as writable; 2. guest is in
+    // ring0 and write protection is off.
     bool shouldBeWritable =
         isWritable || (info->inKernelMode && !info->writeProtection);
     createMapPageDirectory(pd, hostVAddr, PE_DECODE_ADDR(*directMapPTE),
@@ -83,6 +123,12 @@ static bool generatePDMapping(tcb* thr, bool isWritable, bool isUser,
   return true;
 }
 
+// Check if a PTE/PDE is a "good" one, iff it uses no bits other than:
+// 1. present bit (bit0)
+// 2. writable bit (bit1)
+// 3. privilege bit (bit2)
+// 4. user-custom bits (bits 9~11)
+// 5. actual memory bits (bits >=12)
 #define IS_VALID_GUEST_PE(pe) \
     ( \
       ( \
@@ -92,11 +138,12 @@ static bool generatePDMapping(tcb* thr, bool isWritable, bool isUser,
       ) == 0 \
     )
 
+// Recompile given guestPD to current page directory and activate it
 // Will discard the current mapping
 // We don't fear that interrupt may use guest memory: that only happens when
 // iret will directly going back.
-// Failure may leave page directory in a total mess
-// pdGuestAddr must has already applied segment offset
+// Failure may leave page directory (user part) in a total mess, so caller need
+// to follow standard crashing sequence (reActivate originalPD and vanish)
 // guestPD must be a kernel space guest PD
 static bool reCompileGuestPD(tcb* thr, PageDirectory guestPD) {
   // clear current page table
@@ -132,7 +179,8 @@ static bool reCompileGuestPD(tcb* thr, PageDirectory guestPD) {
   return true;
 }
 
-// shallow - backing up the current pd
+// shallow - backing up the current pd to originalPD. This cannot be called more
+// than once: just do it when first turning on paging
 static void backupOriginalPD(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   PageDirectory pd = thr->process->pd;
@@ -144,7 +192,8 @@ static void backupOriginalPD(tcb* thr) {
   }
 }
 
-// Will discard current guest page directory
+// Discard current guest page directory and activate original PD.
+// This is needed before crashing or want to accessing guest page directory
 void reActivateOriginalPD(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   PageDirectory pd = thr->process->pd;
@@ -159,6 +208,9 @@ void reActivateOriginalPD(tcb* thr) {
   assert(yieldToNext());
 }
 
+// recover originalPD, free its back up and permannently leave paging mode
+// Hypercall is not allowed to turn off paging, so this only happens on
+// hypervisor exiting
 void exitPagingMode(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   if (info->originalPD) {
@@ -167,7 +219,11 @@ void exitPagingMode(tcb* thr) {
   }
 }
 
-// NOTE: restore originalPD before calling
+// The wrapper of reCompileGuestPD, since reCompileGuestPD needs a in-memory
+// copy of guest page directory. This function make a temporary copy, call it,
+// and destroy the copy.
+// NOTE: this function will access guest physical memory, so caller must
+// recover originalPD before calling me
 bool swtichGuestPD(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   uint32_t pdbase = info->vCR3 + info->baseAddr;
@@ -211,7 +267,11 @@ bool swtichGuestPD(tcb* thr) {
   return succ;
 }
 
-// NOTE: don't restore originalPD
+// Invalidate only one mapping is complicated: we have to clear the current
+// page directory, recover originalPD; while we need to preserve most.
+// Simply recover originalPD will cause loss to current PD. Therefore, caller
+// mustn't recover originalPD before calling this. (it's different from
+// swtichGuestPD)
 bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
   HyperInfo* info = &thr->process->hyperInfo;
   uint32_t pdbase = info->vCR3 + info->baseAddr;
@@ -283,6 +343,8 @@ bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
 
   return generatePDMapping(thr, false, false, guestaddr, 0xffffffff, true);
 }
+
+// Below are simple entries for virtual memory -related hypercalls
 
 int hpc_setpd(int userEsp, tcb* thr) {
   DEFINE_PARAM(uint32_t, pdbase, 0);

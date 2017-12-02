@@ -1,3 +1,12 @@
+/** @file hvinterrupt.c
+ *
+ *  @brief The key functions for interrupt delivery
+ *
+ *  For the overview of interrupt delivery, see hvinterrupt.h
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>
@@ -24,7 +33,9 @@
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
-// Will return false if there's no corresponding IDT entry
+// Append an delayed int to one hypervisor, returns false if IDT is not
+// specified or int queue is full
+// Info is actually a hyperInfo*
 bool appendIntTo(void* _info, hvInt hvi) {
   assert(hvi.intNum >= 0 && hvi.intNum <= MAX_SUPPORTED_VIRTUAL_INT);
   HyperInfo* info = (HyperInfo*)_info;
@@ -41,6 +52,7 @@ bool appendIntTo(void* _info, hvInt hvi) {
   return succ;
 }
 
+// Elevate privilege, which happens on interrupt delivery
 static void elevatePriviledge(HyperInfo* info, tcb* thr) {
   assert(!info->inKernelMode);
   info->inKernelMode = true;
@@ -53,8 +65,9 @@ static void elevatePriviledge(HyperInfo* info, tcb* thr) {
   }
 }
 
-// One-way function.
-// It will not be reentrant. Since it only happens when switching back to
+// One-way function. Deliver the virtual interrupt immediately to guest, with
+// given registers
+// It needn't be reentrant. Since it only happens when switching back to
 // guest.
 bool applyInt(HyperInfo* info, hvInt hvi,
     uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
@@ -118,7 +131,9 @@ bool applyInt(HyperInfo* info, hvInt hvi,
   return true;
 }
 
-// Called on timer interrupt return when it's from kernel to guest
+// Called on hypervisorTimerHook (context switch on my own) when it's from
+//  kernel to guest
+// Deliver a delayed int to guest. If success, it never returns
 void applyDelayedInt(HyperInfo* info,
     uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
     int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax) {
@@ -172,6 +187,8 @@ void initMultiplexer(intMultiplexer* mper){
 }
 
 void broadcastIntTo(intMultiplexer* mper, hvInt hvi){
+  // TODO bug: when add waiter while interrupted by some one calls
+  // broadcastIntTo at the same process. It deadlocks
   kmutexRLock(&mper->mutex);
   for (int i = 0; i < MAX_CONCURRENT_VM; i++) {
     if (mper->waiter[i] == 0) continue;

@@ -1,4 +1,7 @@
-/** @file TODO
+/** @file virtual_console.c
+ *
+ *  @brief Implementation of virtual console helper functions
+ *
  *  @author Leiyu Zhao
  */
 
@@ -27,6 +30,7 @@
 #include "virtual_console_dev.h"
 #include "virtual_console.h"
 
+// The list of virtual console, NULL for a invalid console
 static virtualConsole* vcList[MAX_LIVE_VIRTUAL_CONSOLE];
 static CrossCPULock latch;
 static int currentVCN;
@@ -53,6 +57,8 @@ void* getVirtualConsole(int vcNumber) {
   return theVC;
 }
 
+// Use a virtual console, must be protected under latch
+// Or in init phase
 static void _useVirtualConsole(int vcNumber) {
   assert(vcNumber != -1);
   assert(vcList[vcNumber] != NULL);

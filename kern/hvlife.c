@@ -1,3 +1,11 @@
+/** @file hvlife.c
+ *
+ *  @brief Controlling the life time for a hypervisor
+ *
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>
@@ -21,7 +29,7 @@
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
-void initHyperInfo(HyperInfo* info) {
+static void initHyperInfo(HyperInfo* info) {
   info->cs = SEGSEL_USER_CS;
   info->ds = SEGSEL_USER_DS;
   info->baseAddr = 0;

@@ -1,3 +1,10 @@
+/** @file hvseg.c
+ *
+ *  @brief Segmentation setup just for guest
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <assert.h>
 #include <simics.h>
 #include <common_kern.h>
@@ -44,23 +51,4 @@ void setupVirtualSegmentation() {
       GUEST_PHYSICAL_START,
       GUEST_PHYSICAL_LIMIT_MINUS_ONE_PAGE,
       3, SEG_TYPE_DATA);
-  // assert(MAKE_SEG_LOWER(0, 0xfffff000, 0, 0xb) ==
-  //     gdt[SEGSEL_KERNEL_CS_IDX * 2]);
-  // assert(MAKE_SEG_HIGHER(0, 0xfffff000, 0, 0xb) ==
-  //     gdt[SEGSEL_KERNEL_CS_IDX * 2 + 1]);
-  //
-  // assert(MAKE_SEG_LOWER(0, 0xfffff000, 0, SEG_TYPE_DATA) ==
-  //     gdt[SEGSEL_KERNEL_DS_IDX * 2]);
-  // assert(MAKE_SEG_HIGHER(0, 0xfffff000, 0, SEG_TYPE_DATA) ==
-  //     gdt[SEGSEL_KERNEL_DS_IDX * 2 + 1]);
-  //
-  // assert(MAKE_SEG_LOWER(0, 0xfffff000, 3, 0xb) ==
-  //     gdt[SEGSEL_USER_CS_IDX * 2]);
-  // assert(MAKE_SEG_HIGHER(0, 0xfffff000, 3, 0xb) ==
-  //     gdt[SEGSEL_USER_CS_IDX * 2 + 1]);
-  //
-  // assert(MAKE_SEG_LOWER(0, 0xfffff000, 3, SEG_TYPE_DATA) ==
-  //     gdt[SEGSEL_USER_DS_IDX * 2]);
-  // assert(MAKE_SEG_HIGHER(0, 0xfffff000, 3, SEG_TYPE_DATA) ==
-  //     gdt[SEGSEL_USER_DS_IDX * 2 + 1]);
 }

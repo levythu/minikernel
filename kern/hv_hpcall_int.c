@@ -51,6 +51,8 @@ int hpc_setidt(int userEsp, tcb* thr) {
     return -1;
   }
 
+  // TODO: handle removal
+
   HyperInfo* info = &thr->process->hyperInfo;
   GlobalLockR(&info->latch);
   info->idt[irqno].present = true;
@@ -82,7 +84,7 @@ int hpc_iret(int userEsp, tcb* thr,
     exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
     return -1;
   }
-  
+
   if (esp0 != 0) {
     // Switch to guest ring3!!
     info->inKernelMode = false;

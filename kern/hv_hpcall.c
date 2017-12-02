@@ -1,3 +1,16 @@
+/** @file hv_hpcall.c
+ *
+ *  @brief The entry of hypercall (actually a special syscall)
+ *
+ *  Besides packaging everything and pass it to different hypercall handler,
+ *  The hypercall dispatcher does sth else like
+ *  1. Verify that it is issued by guest kernel only, if not:
+ *    - If issued by normal programs, silently fail with -1
+ *    - If issued by guest user, deliver a GF exception to target kernel
+ *
+ *  @author Leiyu Zhao
+ */
+
 #include <stdio.h>
 #include <simics.h>
 #include <malloc.h>

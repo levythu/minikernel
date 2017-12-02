@@ -83,6 +83,15 @@ static bool generatePDMapping(tcb* thr, bool isWritable, bool isUser,
   return true;
 }
 
+#define IS_VALID_GUEST_PE(pe) \
+    ( \
+      ( \
+        PTE_CLEAR_ADDR(pe) & \
+        ~(PE_PRESENT(1) | PE_WRITABLE(1) |  \
+          PE_USERMODE(1) | PE_ENCODE_CUSTOM(3)) \
+      ) == 0 \
+    )
+
 // Will discard the current mapping
 // We don't fear that interrupt may use guest memory: that only happens when
 // iret will directly going back.
@@ -95,8 +104,10 @@ static bool reCompileGuestPD(tcb* thr, PageDirectory guestPD) {
 
   // compile
   for (int i = 0; i < PD_SIZE; i++) {
-    // TODO validate unneeded bits
     if (!PE_IS_PRESENT(guestPD[i])) continue;
+    if (!IS_VALID_GUEST_PE(guestPD[i])) {
+      return false;
+    }
     bool isUserRoot = PE_IS_USERMODE(guestPD[i]);
     bool isWritableRoot = PE_IS_WRITABLE(guestPD[i]);
     PageTable cpt = PDE2PT(guestPD[i]);
@@ -104,7 +115,9 @@ static bool reCompileGuestPD(tcb* thr, PageDirectory guestPD) {
       if (!PE_IS_PRESENT(cpt[j])) continue;
       bool isUser = isUserRoot && PE_IS_USERMODE(cpt[j]);
       bool isWritable = isWritableRoot && PE_IS_WRITABLE(cpt[j]);
-      // TODO validate unneeded bits
+      if (!IS_VALID_GUEST_PE(cpt[j])) {
+        return false;
+      }
       if (!generatePDMapping(thr, isWritable, isUser,
                              RECONSTRUCT_ADDR(i, j), PE_DECODE_ADDR(cpt[j]),
                              false)) {
@@ -232,6 +245,10 @@ bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
   if (PE_IS_PRESENT(guestPD[STRIP_PD_INDEX(guestaddr)])) {
     bool isUser = PE_IS_USERMODE(guestPD[STRIP_PD_INDEX(guestaddr)]);
     bool isWritable = PE_IS_WRITABLE(guestPD[STRIP_PD_INDEX(guestaddr)]);
+    if (!IS_VALID_GUEST_PE(guestPD[STRIP_PD_INDEX(guestaddr)])) {
+      sfree(tPD, sizeof(PDE) * PD_SIZE);
+      return false;
+    }
     PageTable cpt = (PageTable)PE_DECODE_ADDR(
         guestPD[STRIP_PD_INDEX(guestaddr)] + info->baseAddr);
     if (!verifyUserSpaceAddr(
@@ -240,6 +257,10 @@ bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
       return false;
     }
     if (PE_IS_PRESENT(cpt[STRIP_PT_INDEX(guestaddr)])) {
+      if (!IS_VALID_GUEST_PE(cpt[STRIP_PT_INDEX(guestaddr)])) {
+        sfree(tPD, sizeof(PDE) * PD_SIZE);
+        return false;
+      }
       isUser &= PE_IS_USERMODE(cpt[STRIP_PT_INDEX(guestaddr)]);
       isWritable &= PE_IS_WRITABLE(cpt[STRIP_PT_INDEX(guestaddr)]);
       uint32_t guestPAddr = PE_DECODE_ADDR(cpt[STRIP_PT_INDEX(guestaddr)]);

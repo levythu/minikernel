@@ -99,9 +99,11 @@ void bootstrapHypervisorAndSwitchToRing3(
 
   initCrossCPULock(&info->latch);
   varQueueInit(&info->delayedInt, MAX_WAITING_INT);
-  // TODO: check sucessful of smalloc
   info->idt = (IDTEntry*)smalloc(sizeof(IDTEntry) *
                                  (MAX_SUPPORTED_VIRTUAL_INT + 1));
+  if (!info->idt) {
+    panic("No enough kernel memory to launch hypervisor");
+  }
   for (int i = 0; i <= MAX_SUPPORTED_VIRTUAL_INT; i++) {
     info->idt[i].present = false;
   }

@@ -39,7 +39,8 @@ int hpc_setidt(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, privileged, 2);
 
   if (irqno < 0 || irqno > MAX_SUPPORTED_VIRTUAL_INT) {
-    // TODO crash the guest
+    lprintf("Warning:: non-conforming IDT setting, "
+            "try to set irqno = %d. Ignored.", irqno);
     return -1;
   }
 
@@ -70,7 +71,8 @@ int hpc_iret(int userEsp, tcb* thr,
   }
   eflags |= EFL_IF;
   if (!validateEFLAGS(eflags)) {
-    // TODO crash the guest
+    lprintf("Hypervisor crashes: bad eflags");
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
     return -1;
   }
   // TODO validate others?
@@ -79,12 +81,15 @@ int hpc_iret(int userEsp, tcb* thr,
     info->inKernelMode = false;
     if (!info->originalPD) {
       // Oh... how can you get into user mode without turning on paging !?
-      // TODO crash guest
+      lprintf("Hypervisor crashes: Try to switch to user mode with "
+              "paging off");
+      exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
     }
     reActivateOriginalPD(thr);
     // Recompile PD to shadow kernel only memories
     if (!swtichGuestPD(thr)) {
-      // TODO crash guest
+      lprintf("Hypervisor crashes: fail to recompile user page table");
+      exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
     }
     info->esp0 = esp0;
   }

@@ -48,7 +48,8 @@ int hpc_cons_set_cursor_pos(int userEsp, tcb* thr) {
   DEFINE_PARAM(int, row, 0);
   DEFINE_PARAM(int, col, 1);
   if (set_cursor(thr->process->vcNumber, row, col) != 0) {
-    // TODO crash the guest
+    lprintf("Hypervisor crashes: bad set_cursor_pos call");
+    exitHyperWithStatus(&thr->process->hyperInfo, thr, GUEST_CRASH_STATUS);
   }
   return 0;
 }
@@ -62,7 +63,8 @@ int hpc_cons_get_cursor_pos(int userEsp, tcb* thr) {
   if (!verifyUserSpaceAddr(rowAddr, rowAddr + sizeof(int) - 1, true) ||
       !verifyUserSpaceAddr(colAddr, colAddr + sizeof(int) - 1, true)) {
     // row/col destination is not writable
-    // TODO crash the guest
+    lprintf("Hypervisor crashes: bad get_cursor_pos call");
+    exitHyperWithStatus(&thr->process->hyperInfo, thr, GUEST_CRASH_STATUS);
     return -1;
   }
 
@@ -98,8 +100,9 @@ int hpc_print_at(int userEsp, tcb* thr) {
 
   set_term_color(thr->process->vcNumber, color);
   if (set_cursor(thr->process->vcNumber, row, col) != 0) {
-    // TODO crash the guest
     sfree(buf, len);
+    lprintf("Hypervisor crashes: bad print_at call");
+    exitHyperWithStatus(&thr->process->hyperInfo, thr, GUEST_CRASH_STATUS);
     return -1;
   }
   putbytes(thr->process->vcNumber, buf, actualLen);

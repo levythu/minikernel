@@ -277,8 +277,8 @@ int hpc_setpd(int userEsp, tcb* thr) {
   info->writeProtection = (wp == 1);
 
   if (!swtichGuestPD(thr)) {
-    assert(false);
-    // TODO Crash it!
+    lprintf("Hypervisor crashes: fail to set new page directory");
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
   }
   return 0;
 }
@@ -289,13 +289,13 @@ int hpc_adjustpg(int userEsp, tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   if (!info->originalPD) {
     // Has not got a valid cr3 yet.
-      assert(false);
-    // TODO crash it!
+    lprintf("Hypervisor crashes: cannot call adjustpg before setting cr3");
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
   }
 
   if (!invalidateGuestPDAt(thr, vaddr)) {
-    assert(false);
-    // TODO Crash it!
+    lprintf("Hypervisor crashes: fail to adjust page");
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
   }
   return 0;
 

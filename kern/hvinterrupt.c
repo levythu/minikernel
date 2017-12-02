@@ -48,7 +48,8 @@ static void elevatePriviledge(HyperInfo* info, tcb* thr) {
   reActivateOriginalPD(thr);
   // Recompile PD to shadow kernel only memories
   if (!swtichGuestPD(thr)) {
-    // TODO crash guest
+    lprintf("Hypervisor crashes: fail to recompile kernel page directory");
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
   }
 }
 

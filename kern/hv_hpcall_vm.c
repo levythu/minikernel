@@ -154,6 +154,7 @@ void exitPagingMode(tcb* thr) {
   }
 }
 
+// NOTE: restore originalPD before calling
 bool swtichGuestPD(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   uint32_t pdbase = info->vCR3 + info->baseAddr;
@@ -197,6 +198,7 @@ bool swtichGuestPD(tcb* thr) {
   return succ;
 }
 
+// NOTE: don't restore originalPD
 bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
   HyperInfo* info = &thr->process->hyperInfo;
   uint32_t pdbase = info->vCR3 + info->baseAddr;
@@ -205,9 +207,23 @@ bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
     return false;
   }
 
-  // Check the address validation for PD
+  // 1. Make a shallow-copy of current compiled pagetable, before it's cleared
+  // Also, we want to protect current page tables from being freed by
+  // clearCurrentPD, so we give them all zero
+  PageDirectory tPD = newPageDirectory();
+  memcpy(tPD, thr->process->pd, sizeof(PDE) * PD_SIZE);
+  for (int i = STRIP_PD_INDEX(USER_MEM_START); i <= STRIP_PD_INDEX(0xffffffff);
+      i++) {
+    thr->process->pd[i] = EMPTY_PDE;
+  }
+
+  // 2. activate original pd to fetch the guest pd entry
+  reActivateOriginalPD(thr);
+
+  // 3. Check the address validation for PD
   if (!verifyUserSpaceAddr(
       pdbase, pdbase + sizeof(PDE) * PD_SIZE - 1, false)) {
+    sfree(tPD, sizeof(PDE) * PD_SIZE);
     return false;
   }
 
@@ -220,17 +236,30 @@ bool invalidateGuestPDAt(tcb* thr, uint32_t guestaddr) {
         guestPD[STRIP_PD_INDEX(guestaddr)] + info->baseAddr);
     if (!verifyUserSpaceAddr(
         (uint32_t)cpt, (uint32_t)cpt + sizeof(PTE) * PT_SIZE - 1, false)) {
+      sfree(tPD, sizeof(PDE) * PD_SIZE);
       return false;
     }
     if (PE_IS_PRESENT(cpt[STRIP_PT_INDEX(guestaddr)])) {
       isUser &= PE_IS_USERMODE(cpt[STRIP_PT_INDEX(guestaddr)]);
       isWritable &= PE_IS_WRITABLE(cpt[STRIP_PT_INDEX(guestaddr)]);
+      uint32_t guestPAddr = PE_DECODE_ADDR(cpt[STRIP_PT_INDEX(guestaddr)]);
+
+      // 4.1. Restore pd copied in step 1 and apply new mapping
+      memcpy(thr->process->pd, tPD, sizeof(PDE) * PD_SIZE);
+      sfree(tPD, sizeof(PDE) * PD_SIZE);
+      assert(yieldToNext());  // force pd flush
+
       return generatePDMapping(thr, isWritable, isUser, guestaddr,
-                               PE_DECODE_ADDR(cpt[STRIP_PT_INDEX(guestaddr)]),
-                               true);
+                               guestPAddr, true);
     }
   }
   // No page directory or page table. Remove it
+
+  // 4.2. Restore pd copied in step 1 and apply new mapping
+  memcpy(thr->process->pd, tPD, sizeof(PDE) * PD_SIZE);
+  sfree(tPD, sizeof(PDE) * PD_SIZE);
+  assert(yieldToNext());  // force pd flush
+
   return generatePDMapping(thr, false, false, guestaddr, 0xffffffff, true);
 }
 
@@ -248,6 +277,7 @@ int hpc_setpd(int userEsp, tcb* thr) {
   info->writeProtection = (wp == 1);
 
   if (!swtichGuestPD(thr)) {
+    assert(false);
     // TODO Crash it!
   }
   return 0;
@@ -259,11 +289,12 @@ int hpc_adjustpg(int userEsp, tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   if (!info->originalPD) {
     // Has not got a valid cr3 yet.
+      assert(false);
     // TODO crash it!
   }
-  reActivateOriginalPD(thr);
 
   if (!invalidateGuestPDAt(thr, vaddr)) {
+    assert(false);
     // TODO Crash it!
   }
   return 0;

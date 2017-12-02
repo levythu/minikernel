@@ -20,7 +20,7 @@
 // EAX, ECX, EDX, EBX, EBP, ESP, EBP, ESI, EDI, DS, ES
 //                                                  ^
 //                                                 %esp
-#define MAKE_SYSCALL_WRAPPER(syscallName)                          \
+#define MAKE_SYSCALL_WRAPPER(syscallName, intNum)                          \
     .globl syscallName ## _Handler;                         \
     syscallName ## _Handler:                                \
       pusha;                                                       \
@@ -30,9 +30,33 @@
       mov %ax, %ds;                    \
       mov %ax, %es;                    \
       mov $0, %ebp;                   \
+      push $intNum;            \
+      call hypervisorSyscallHook;   \
+      pop %eax;            \
       push %esi;                       \
       call syscallName ## _Internal;                        \
       pop %esi;                       \
+      pop %es;  \
+      pop %ds;  \
+      movl %eax, 28(%esp);                                            \
+      popa;                                                        \
+      iret;
+
+// Same as above. But given a generate handler funcname
+// It only goes to hypervisorSyscallHook
+#define MAKE_SYSCALL_WRAPPER_HYPERVISOR_ONLY(funcName, intNum) \
+    .globl funcName;                         \
+    funcName:                                \
+      pusha;                                                       \
+      push %ds;                        \
+      push %es;                          \
+      mov $SEGSEL_KERNEL_DS, %eax;     \
+      mov %ax, %ds;                    \
+      mov %ax, %es;                    \
+      mov $0, %ebp;                   \
+      push $intNum;            \
+      call hypervisorSyscallHook;   \
+      pop %eax;            \
       pop %es;  \
       pop %ds;  \
       movl %eax, 28(%esp);                                            \

@@ -17,6 +17,7 @@
 #include "keyboard_event.h"
 #include "process.h"
 #include "zeus.h"
+#include "hvvm.h"
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
@@ -58,19 +59,21 @@ bool fillHyperInfo(simple_elf_t* elfMetadata, HyperInfo* info) {
   return info->isHyper;
 }
 
-void destroyHyperInfo(HyperInfo* info, int vcn) {
+void destroyHyperInfo(HyperInfo* info, tcb* thr, int vcn) {
   removeWaiter(&info->selfMulti, info);
   intMultiplexer* currentKB = getKeyboardMultiplexer(vcn);
   removeWaiter(currentKB, info);
 
   varQueueDestroy(&info->delayedInt);
   sfree(info->idt, sizeof(IDTEntry) * (MAX_SUPPORTED_VIRTUAL_INT + 1));
+
+  exitPagingMode(thr);
 }
 
 void exitHyperWithStatus(HyperInfo* info, void* _thr, int statusCode) {
   tcb* thr = (tcb*)_thr;
   assert((&thr->process->hyperInfo) == info);
-  destroyHyperInfo(info, thr->process->vcNumber);
+  destroyHyperInfo(info, thr, thr->process->vcNumber);
 
   thr->process->retStatus = statusCode;
   // one way trp
@@ -85,6 +88,12 @@ void bootstrapHypervisorAndSwitchToRing3(
   info->interrupt = false;
 
   info->tics = 0;
+
+  info->originalPD = NULL;
+  info->vCR3 = 0;
+  info->writeProtection = false;
+  info->inKernelMode = true;
+  info->esp0 = 0;
 
   initMultiplexer(&info->selfMulti);
 

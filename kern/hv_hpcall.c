@@ -6,6 +6,7 @@
 #include <hvcall_int.h>
 #include <hvcall.h>
 #include <x86/asm.h>
+#include <x86/idt.h>
 
 #include "int_handler.h"
 #include "common_kern.h"
@@ -26,6 +27,11 @@ void initHyperCall() {
     3, (int32_t)(hyperCallHandler), 1, SEGSEL_KERNEL_CS, 1);
 }
 
+// In hvinterrupt.c
+extern bool applyInt(HyperInfo* info, hvInt hvi,
+    uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
+    int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax);
+
 // The dispatcher
 int hyperCallHandler_Internal(int userEsp, int eax,
     const int es, const int ds,
@@ -45,6 +51,19 @@ int hyperCallHandler_Internal(int userEsp, int eax,
   assert(es == SEGSEL_GUEST_DS);
   assert(cs == SEGSEL_GUEST_CS);
 
+  if (!currentThread->process->hyperInfo.inKernelMode) {
+    // Guest-user cannot make hupercall. Convert it to a GP and give it to
+    // guest kernel
+    hvInt hvi;
+    hvi.intNum = IDT_GP;
+    hvi.spCode = 0;
+    hvi.cr2 = 0;
+    // One way trip
+    applyInt(&currentThread->process->hyperInfo, hvi,
+             esp, eflags, eip, _edi, _esi, _ebp, _ebx, _edx, _ecx, _eax);
+    return -1;
+  }
+
   HPC_ON(HV_MAGIC_OP, hpc_magic);
   HPC_ON(HV_EXIT_OP, hpc_exit);
 
@@ -58,6 +77,9 @@ int hyperCallHandler_Internal(int userEsp, int eax,
   HPC_ON(HV_ENABLE_OP, hpc_enable_interrupts);
   HPC_ON(HV_SETIDT_OP, hpc_setidt);
   HPC_ON_X(HV_IRET_OP, hpc_iret);
+
+  HPC_ON(HV_SETPD_OP, hpc_setpd);
+  HPC_ON(HV_ADJUSTPG_OP, hpc_adjustpg);
 
   return -1;
 }

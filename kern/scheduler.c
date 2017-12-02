@@ -45,10 +45,10 @@ extern void dumpAll();
 // So, it risks some cases when the thread is shceduled by the other core and
 // shut itself down (thread data structure does not exist anymore)
 // We must be super careful about this.
-void yieldToNext() {
+bool yieldToNext() {
   int currentTID = getLocalCPU()->runningTID;
   if (currentTID == -1) {
-    return;
+    return false;
   }
 
   // Don't have to acquire lock, pickNextRunnableThread will do it!
@@ -61,13 +61,14 @@ void yieldToNext() {
       dumpAll();
       panic("yieldToNext: current TID = no runnable thread. DL.");
     }
-    return;
+    return false;
   }
 
   #ifdef VERBOSE_PRINT
   lprintf("Scheduling to thread #%d", nextThread->id);
   #endif
   swtichToThread_Prelocked(nextThread);
+  return true;
 }
 
 // NULL if there's no other thread runnable

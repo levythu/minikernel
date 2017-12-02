@@ -14,6 +14,7 @@
 #include "hvinterrupt.h"
 #include "cpu.h"
 #include "queue.h"
+#include "vm.h"
 
 typedef enum {
   HyperNA = 0,
@@ -46,6 +47,22 @@ typedef struct HyperInfo {
   IDTEntry* idt;
   varQueue delayedInt;
   CrossCPULock latch;
+
+  // About paging:
+  // If null, paging is off;
+  // Otherwise, point to one copy of the original direct-map page table
+  // This is a copied table, so destructor should release it when unnecessary
+  PageDirectory originalPD;
+
+  // virtual CR3. (after + segment offset)
+  // When == 0, page is off
+  uint32_t vCR3;
+
+  bool writeProtection;
+
+  bool inKernelMode;
+
+  uint32_t esp0;
 
 } HyperInfo;
 

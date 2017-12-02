@@ -41,6 +41,40 @@ void hv_CallMeOnTick(HyperInfo* info) {
   broadcastIntTo(&info->selfMulti, tint);
 }
 
+// If it's from guest, it never return (and shade normal syscall)
+// Otherwise, it does nothing
+void hypervisorSyscallHook(int intNum, const int es, const int ds,
+    const int _edi, const int _esi, const int _ebp, // pusha region
+    const int _espOnCurrentStack, // pusha region
+    const int _ebx, const int _edx, const int _ecx, const int _eax, // pusha
+    const int eip, const int cs,  // from-user-mode only
+    const int eflags, const int esp,  // from-user-mode only
+    const int ss) {
+  if (es != SEGSEL_GUEST_DS) {
+    // either from normal elf or kernel mode. We are not interested.
+    return;
+  }
+  tcb* thr = findTCB(getLocalCPU()->runningTID);
+  assert(thr);
+  assert(thr->process->hyperInfo.isHyper);
+
+  HyperInfo* info = &thr->process->hyperInfo;
+  if (info->inKernelMode) {
+    // Why a kernel mode guest is calling INT ?!
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
+  }
+
+  hvInt hvi;
+  hvi.intNum = intNum;
+  hvi.spCode = 0;
+  hvi.cr2 = 0;
+  if (!applyInt(info, hvi, esp, eflags, eip,
+                _edi, _esi, _ebp, _ebx, _edx, _ecx, _eax)) {
+    // Fail to deliver this, because no idt is registered. Crash guest
+    exitHyperWithStatus(info, thr, GUEST_CRASH_STATUS);
+  }
+}
+
 FAULT_ACTION(HyperFaultHandler) {
   lprintf("Hypervisor exception.");
   printError(es, ds, edi, esi, ebp,

@@ -31,6 +31,19 @@ static virtualConsole* vcList[MAX_LIVE_VIRTUAL_CONSOLE];
 static CrossCPULock latch;
 static int currentVCN;
 
+void reportVC() {
+  GlobalLockR(&latch);
+    lprintf("├ Virtual Console List");
+  int totCount = 0;
+  for (int i = 0; i < MAX_LIVE_VIRTUAL_CONSOLE; i++) {
+    if (vcList[i] == NULL) continue;
+    totCount++;
+    lprintf("│ ├ [Console #%d] Shared by %d procs", i, vcList[i]->ref);
+  }
+    lprintf("│ └ Total %d screens", totCount);
+  GlobalUnlockR(&latch);
+}
+
 void* getVirtualConsole(int vcNumber) {
   assert(vcNumber != -1);
   GlobalLockR(&latch);

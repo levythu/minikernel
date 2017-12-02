@@ -150,7 +150,7 @@ KERNEL_OBJS += kernel_stack_protection.o
 KERNEL_OBJS += hv.o hvseg.o hvlife.o
 KERNEL_OBJS += hv_hpcall_s.o hv_hpcall.o hv_hpcall_misc.o hv_hpcall_consoleio.o
 KERNEL_OBJS += hvinterrupt.o hvinterrupt_pushevent.o hv_hpcall_int.o
-KERNEL_OBJS += virtual_console.o
+KERNEL_OBJS += virtual_console.o hv_hpcall_vm.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your
@@ -188,3 +188,5 @@ STUDENTREQPROGS =
 CONFIG_DEBUG = user kernel
 
 410GUESTBINS = hello dumper magic console station tick_tock gomoku cliff
+410GUESTBINS += teeny vast warp fondle
+410GUESTBINS += pathos

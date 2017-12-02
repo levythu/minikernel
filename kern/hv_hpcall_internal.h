@@ -25,6 +25,9 @@ int hpc_setidt(int userEsp, tcb* thr);
 int hpc_iret(int userEsp, tcb* thr,
     int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax);
 
+int hpc_setpd(int userEsp, tcb* thr);
+int hpc_adjustpg(int userEsp, tcb* thr);
+
 #define HPC_ON(opNumber, func) \
   if (eax == opNumber) { \
     return func(userEsp, currentThread); \

@@ -83,7 +83,6 @@ bool applyInt(HyperInfo* info, hvInt hvi,
 
   tcb* currentThread = findTCB(getLocalCPU()->runningTID);
 
-  // TODO: address validation
   uint32_t* stack;
   uint32_t newESP;
   // 1. Push state:

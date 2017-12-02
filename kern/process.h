@@ -80,7 +80,7 @@ typedef struct _pcb {
   int parentPID;
   // the first thread for the process. Only serves for fork() return
   int firstTID;
-  // TODO
+  // All info about the hypervisor
   HyperInfo hyperInfo;
   // Not really readonly, but in multithreaded mode it's not modifiable
   int vcNumber;

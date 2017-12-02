@@ -20,6 +20,7 @@
 #include "hvinterrupt.h"
 #include "zeus.h"
 #include "hvvm.h"
+#include "dbgconf.h"
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
@@ -108,7 +109,9 @@ void applyDelayedInt(HyperInfo* info,
     int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax) {
   if (!info->interrupt) return;
   GlobalLockR(&info->latch);
-  lprintf("%d", info->delayedInt.size);
+  #ifdef HYPERVISOR_VERBOSE_PRINT
+    lprintf("%d", info->delayedInt.size);
+  #endif
   if (info->delayedInt.size == 0) {
     GlobalUnlockR(&info->latch);
     return;

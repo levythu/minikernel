@@ -293,13 +293,14 @@ void reportProcessAndThread() {
   int totCount = 0;
   for (pcb* proc = pcbList; proc != NULL; proc = proc->next ) {
     totCount++;
-    lprintf("│ ├ [%4d <- %4d] (%s) fTID:%d, nThr:%d, wCh:%d",
+    lprintf("│ ├ [%4d <- %4d] (%s) fTID:%d, nThr:%d, wCh:%d %s",
                         proc->id,
                         proc->parentPID,
                         ProcessStatusToString(proc->status),
                         proc->firstTID,
                         proc->numThread,
-                        proc->unwaitedChildProc);
+                        proc->unwaitedChildProc,
+                        proc->hyperInfo.isHyper ? "(VirtualMachine)" : "");
   }
     lprintf("│ └ Total %d processes", totCount);
 

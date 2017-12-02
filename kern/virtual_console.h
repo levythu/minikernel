@@ -17,4 +17,6 @@ void referVirtualConsole(int vcNumber);
 void dereferVirtualConsole(int vcNumber);
 void* getVirtualConsole(int vcNumber);
 
+void reportVC();
+
 #endif

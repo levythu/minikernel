@@ -30,6 +30,7 @@
 #include "kmutex.h"
 #include "console.h"
 #include "keyboard_event.h"
+#include "virtual_console.h"
 #include "page.h"
 
 #define MISBEHAVE_NUM_SHOW_EVERYTHING 701
@@ -42,6 +43,7 @@ void dumpAll() {
   reportProcessAndThread();
   reportCPU();
   reportKernelMemAlloc();
+  reportVC();
   lprintf("└─────────────────────────────────────────────────────");
   LocalUnlockR();
 }

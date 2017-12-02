@@ -88,7 +88,8 @@ FAULT_ACTION(HyperFaultHandler) {
   hvInt hvi;
   hvi.intNum = faultNumber;
   hvi.spCode = errCode;
-  hvi.cr2 = faultNumber == IDT_PF ? cr2 : 0;
+  hvi.cr2 = faultNumber == IDT_PF ? 
+      (cr2 - thr->process->hyperInfo.baseAddr) : 0;
 
   if (!applyInt(&thr->process->hyperInfo, hvi, esp, eflags, eip,
                 edi, esi, ebp, ebx, edx, ecx, eax)) {

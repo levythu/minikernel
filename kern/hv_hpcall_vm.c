@@ -132,7 +132,7 @@ static void backupOriginalPD(tcb* thr) {
 }
 
 // Will discard current guest page directory
-static void reActivateOriginalPD(tcb* thr) {
+void reActivateOriginalPD(tcb* thr) {
   HyperInfo* info = &thr->process->hyperInfo;
   PageDirectory pd = thr->process->pd;
 

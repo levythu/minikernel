@@ -62,6 +62,8 @@ typedef struct HyperInfo {
 
   bool inKernelMode;
 
+  uint32_t esp0;
+
 } HyperInfo;
 
 void initHyperInfo(HyperInfo* info);

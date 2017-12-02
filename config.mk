@@ -188,4 +188,4 @@ STUDENTREQPROGS =
 CONFIG_DEBUG = user kernel
 
 410GUESTBINS = hello dumper magic console station tick_tock gomoku cliff
-410GUESTBINS += teeny vast warp
+410GUESTBINS += teeny vast warp fondle

@@ -19,6 +19,7 @@
 #include "mode_switch.h"
 #include "hvinterrupt.h"
 #include "zeus.h"
+#include "hvvm.h"
 
 MAKE_VAR_QUEUE_UTILITY(hvInt);
 
@@ -39,7 +40,20 @@ bool appendIntTo(void* _info, hvInt hvi) {
   return succ;
 }
 
+static void elevatePriviledge(HyperInfo* info, tcb* thr) {
+  assert(!info->inKernelMode);
+  info->inKernelMode = true;
+  assert(info->originalPD);
+  reActivateOriginalPD(thr);
+  // Recompile PD to shadow kernel only memories
+  if (!swtichGuestPD(thr)) {
+    // TODO crash guest
+  }
+}
+
 // One-way function.
+// It will not be reentrant. Since it only happens when switching back to
+// guest.
 bool applyInt(HyperInfo* info, hvInt hvi,
     uint32_t oldESP, uint32_t oldEFLAGS, uint32_t oldEIP,
     int oedi, int oesi, int oebp, int oebx, int oedx, int oecx, int oeax) {
@@ -54,15 +68,32 @@ bool applyInt(HyperInfo* info, hvInt hvi,
 
   // TODO: address validation
   // TODO: privilege validation
-  uint32_t* stack = (uint32_t*)(oldESP + info->baseAddr);
+  uint32_t* stack;
+  uint32_t newESP;
   // 1. Push state:
-  // No stack change
-  stack[-1] = oldEFLAGS;
-  stack[-2] = GUEST_INTERRUPT_KMODE;
-  stack[-3] = oldEIP;
-  stack[-4] = hvi.spCode;
-  stack[-5] = hvi.cr2;
-  uint32_t newESP = (uint32_t)(&stack[-5]) - info->baseAddr;
+  if (info->inKernelMode) {
+    // No stack change
+    stack = (uint32_t*)(oldESP + info->baseAddr);
+    stack[-1] = oldEFLAGS;
+    stack[-2] = GUEST_INTERRUPT_KMODE;
+    stack[-3] = oldEIP;
+    stack[-4] = hvi.spCode;
+    stack[-5] = hvi.cr2;
+    newESP = (uint32_t)(&stack[-5]) - info->baseAddr;
+  } else {
+    // Elevate priviledge
+    tcb* currentThread = findTCB(getLocalCPU()->runningTID);
+    elevatePriviledge(info, currentThread);
+    // TODO validate esp0
+    stack = (uint32_t*)(info->esp0 + info->baseAddr);
+    stack[-1] = oldESP;
+    stack[-2] = oldEFLAGS;
+    stack[-3] = GUEST_INTERRUPT_UMODE;
+    stack[-4] = oldEIP;
+    stack[-5] = hvi.spCode;
+    stack[-6] = hvi.cr2;
+    newESP = (uint32_t)(&stack[-6]) - info->baseAddr;
+  }
 
   // 2. Prepare to swtich
   switchToRing3X(newESP, oldEFLAGS, localIDT.eip,

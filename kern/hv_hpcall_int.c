@@ -51,13 +51,18 @@ int hpc_setidt(int userEsp, tcb* thr) {
     return -1;
   }
 
-  // TODO: handle removal
-
   HyperInfo* info = &thr->process->hyperInfo;
   GlobalLockR(&info->latch);
-  info->idt[irqno].present = true;
-  info->idt[irqno].eip = eip;
-  info->idt[irqno].privileged = privileged;
+  if (eip == 0) {
+    // Uninstall
+    info->idt[irqno].present = false;
+  } else {
+    // Install
+    info->idt[irqno].present = true;
+    info->idt[irqno].eip = eip;
+    info->idt[irqno].privileged = privileged;
+  }
+
   GlobalUnlockR(&info->latch);
   return 0;
 }

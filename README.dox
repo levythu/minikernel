@@ -53,3 +53,15 @@ We have implemented good support for virtual console. And by running `new_shell`
 [TAB] is the key to switch among virtual consoles (and in simics console it will prints the VCNumber of current virtual console). Forked process will share the same virtual console as the parent. When one virtual console has no process in it (which means there will not be anymore), it prints *WARNING: once you switch, you can NEVER get back to this console!* at that screen, and destroy the console next time it's switched out.
 
 As mentioned, we've changed all internal functions of keyboard and consoles to include the VCNumber as the 1st param. However, `putbyte()` cannot be changed -- 410kern's libc use this to implement printf and we cannot touch it. Although we can always call get current running thread in `putbyte()` to get the correct virtual console, this operation is not cheap and may not be good to appear in such function that may be called hundreds of times to print something. As a workaround, `putbyte()` will put strings on currently active virtual console.
+
+### Enriched `misbehave 701` Support
+
+Now, `misbehave 701` will also prints virtual console usage inside the large system status tree. A sample is like:
+
+```
+├ Virtual Console List
+│ ├ [Console #0] Shared by 4 procs
+│ ├ [Console #1] Shared by 2 procs
+│ ├ [Console #2] Shared by 61 procs
+│ └ Total 3 screens
+```

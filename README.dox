@@ -9,6 +9,7 @@ Make my own kernel capable of running virtual machines! Current version of hyper
     - For exception (0~19): forward it immediately to guest
     - For hardware interrupt (32~33): multiplex it by virtual console / the hypervisor in this timeslice
     - For syscalls (65~116, 128~134): forward it immediately to guest
+    - According to the writeup, we don't support IDT > 134, however, `pathos` try to register something to it. Our hypervisor treat it as a no-op and print one warning on simics console (so when launching `pathos` you'll find 100+ lines of warnings, that's expected)
 - Paging
 - Ring0/3 Switching (Mode Switch)
 
@@ -52,7 +53,7 @@ We have implemented good support for virtual console. And by running `new_shell`
 
 [TAB] is the key to switch among virtual consoles (and in simics console it will prints the VCNumber of current virtual console). Forked process will share the same virtual console as the parent. When one virtual console has no process in it (which means there will not be anymore), it prints *WARNING: once you switch, you can NEVER get back to this console!* at that screen, and destroy the console next time it's switched out.
 
-As mentioned, we've changed all internal functions of keyboard and consoles to include the VCNumber as the 1st param. However, `putbyte()` cannot be changed -- 410kern's libc use this to implement printf and we cannot touch it. Although we can always call get current running thread in `putbyte()` to get the correct virtual console, this operation is not cheap and may not be good to appear in such function that may be called hundreds of times to print something. As a workaround, `putbyte()` will put strings on currently active virtual console.
+As mentioned, we've changed all internal functions of keyboard and consoles to include the VCNumber as the 1st param. However, `putbyte()` cannot be changed -- 410kern's libc use this to implement printf and we cannot touch it. Although we can always call get current running thread in `putbyte()` to get the correct virtual console, this operation is not cheap and may not be good to appear in such function that may be called hundreds of times to print something. As a workaround, `printf()` in kernel will put strings on currently active virtual console. (But in our kernel, we almost didn't use `printf()`)
 
 ### Enriched `misbehave 701` Support
 

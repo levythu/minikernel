@@ -3,7 +3,7 @@ Leiyu Zhao (leiyuz)
 
 ## Hypervisor
 
-Make my own kernel capable of running virtual machines! Current version of hypervisor is able to run `pathos` kernel, and inside the guest kernel, run tests like `nibbles`/`make_crash`/`stack_test`/`mem_eat_test`/etc. (but with much longer run time, and those more complicated tests like `cho` are not run because it takes too long). The hypervisor supports all hypercall specified in the writeup:
+Make my own kernel capable of running virtual machines! Current version of hypervisor is able to run `pathos` kernel, and inside the guest kernel, run tests like `nibbles`/`make_crash`/`stack_test`/`mem_eat_test`/etc. (but with much longer run time, and those more complicated tests like `cho` are not run because it takes too long). The hypervisor supports all hypercall specified in the writeup. And all the parts in the writeup are well-supported, like:
 
 - Interrupt forwarding
     - For exception (0~19): forward it immediately to guest

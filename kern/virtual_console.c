@@ -119,7 +119,7 @@ void dereferVirtualConsole(int vcNumber) {
     const static char* quitInfo1 =
         "\nThere's no process running inside. Press [TAB] to switch out.\n";
     const static char* quitInfo2 =
-        "WARNING: nce you switch, you can **NEVER** get back to this console!";
+        "WARNING: once you switch, you can **NEVER** get back to this console!";
 
     set_term_color(vcNumber, BGND_BLACK | FGND_CYAN);
     putbytes(vcNumber, quitInfo1, strlen(quitInfo1));

@@ -4,6 +4,10 @@
  *
  *  For the overview of interrupt delivery, see hvinterrupt.h
  *
+ *  @bug For when intMultiplexer::addToWaiter gets the kmutex and interrupted,
+ *       and the interrupt handler call intMultiplexer::broadcastIntTo on the
+ *       same multiplexer, it may deadlock
+ *
  *  @author Leiyu Zhao
  */
 
@@ -186,7 +190,6 @@ void initMultiplexer(intMultiplexer* mper){
 }
 
 void broadcastIntTo(intMultiplexer* mper, hvInt hvi){
-  // TODO bug: when add waiter while interrupted by some one calls
   // broadcastIntTo at the same process. It deadlocks
   kmutexRLock(&mper->mutex);
   for (int i = 0; i < MAX_CONCURRENT_VM; i++) {
